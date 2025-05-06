@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
- <class>MainWindow</class>
- <widget class="QMainWindow" name="MainWindow">
+ <class>ventana_estudio_observacional</class>
+ <widget class="QMainWindow" name="ventana_estudio_observacional">
   <property name="geometry">
    <rect>
     <x>0</x>
@@ -116,7 +116,7 @@ li.checked::marker { content: &quot;\2612&quot;; }
       </item>
       <item>
        <property name="text">
-        <string>Pacientes adultos de ambos sexos que van a ser sometidos a una cirugía programada de más de 3 horas de duración, por parte del serviciode Neurocirugía Unidad de Raquis del HUMV, entre el año 2023 y 2024</string>
+        <string>Pacientes adultos de ambos sexos que van a ser sometidos a una cirugía programada de más de 3 horas de duración, por parte del serviciode Neurocirugía Unidad de Raquis del HUMV, entre el año 2023 y 2024</string>
        </property>
       </item>
       <item>

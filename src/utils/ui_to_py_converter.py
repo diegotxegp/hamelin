@@ -1,8 +1,8 @@
-# src/utils/ui_converter.py
+# src/utils/ui_to_py_converter.py
 import os
 import subprocess
 
-def convert_ui_files(ui_folder: str = "src/ui", output_folder: str = "src/windows"):
+def convert_ui_to_py(ui_folder: str = "src/ui", output_folder: str = "src/windows"):
     """
     Convert all .ui files in the specified ui_folder and save them
     as Python modules in the output_folder using pyside6-uic.
