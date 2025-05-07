@@ -2,7 +2,7 @@ import os
 import sys
 from PySide6.QtWidgets import QApplication
 from utils.ui_to_py_converter import convert_ui_to_py
-from controller.inicio_controller import InicioController
+from controller.controller import Controller
 
 def converter():
     base_dir = os.path.dirname(os.path.abspath(__file__))
@@ -17,8 +17,8 @@ def converter():
 
 def show_gui():
     app = QApplication(sys.argv)
-    controller = InicioController()
-    controller.show()
+    controller = Controller()
+    controller.start()
     sys.exit(app.exec())
 
 def main():

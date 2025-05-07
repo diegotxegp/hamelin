@@ -2,18 +2,24 @@ import os
 import shutil
 from PySide6.QtWidgets import QFileDialog, QMainWindow
 from view.inicio_ui import Ui_ventana_inicio
-from model.inicio_model import InicioModel
+from model.model import Model
 from view.registro_pacientes_ui import Ui_ventana_registro_pacientes
 
 class InicioController(QMainWindow):
-    def __init__(self):
+    def __init__(self, controller, model):
         super().__init__()
+        self.controller = controller
+        self.model = model
+
         self.ui = Ui_ventana_inicio()
         self.ui.setupUi(self)
 
         # Instantiate the model
-        self.model = InicioModel()
+        self.model = Model()
 
+        self.setup_signals()    
+
+    def setup_signals(self):
         # Connect signals to slots
         self.ui.pushButton.clicked.connect(self.attach_csv)
         self.ui.pushButton_2.clicked.connect(self.select_option)

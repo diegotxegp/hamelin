@@ -1,7 +1,7 @@
 # models/inicio_model.py
 import pandas as pd
 
-class InicioModel:
+class Model:
     def __init__(self):
         self.df = None
 
