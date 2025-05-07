@@ -40,42 +40,42 @@ class Ui_ventana_inicio(object):
         self.tabWidget = QTabWidget(self.gridLayoutWidget)
         self.tabWidget.setObjectName(u"tabWidget")
         self.tabWidget.setEnabled(True)
-        self.tab_inicio = QWidget()
-        self.tab_inicio.setObjectName(u"tab_inicio")
-        self.tab_inicio.setCursor(QCursor(Qt.CursorShape.ArrowCursor))
-        self.textEdit = QTextEdit(self.tab_inicio)
-        self.textEdit.setObjectName(u"textEdit")
-        self.textEdit.setGeometry(QRect(10, 10, 651, 121))
-        self.tabWidget.addTab(self.tab_inicio, "")
+        self.tab_bienvenida = QWidget()
+        self.tab_bienvenida.setObjectName(u"tab_bienvenida")
+        self.tab_bienvenida.setCursor(QCursor(Qt.CursorShape.ArrowCursor))
+        self.textEdit_bienvenida = QTextEdit(self.tab_bienvenida)
+        self.textEdit_bienvenida.setObjectName(u"textEdit_bienvenida")
+        self.textEdit_bienvenida.setGeometry(QRect(10, 10, 651, 121))
+        self.tabWidget.addTab(self.tab_bienvenida, "")
         self.tab_datos = QWidget()
         self.tab_datos.setObjectName(u"tab_datos")
-        self.textEdit_2 = QTextEdit(self.tab_datos)
-        self.textEdit_2.setObjectName(u"textEdit_2")
-        self.textEdit_2.setGeometry(QRect(10, 10, 651, 121))
-        self.pushButton = QPushButton(self.tab_datos)
-        self.pushButton.setObjectName(u"pushButton")
-        self.pushButton.setGeometry(QRect(290, 180, 83, 22))
+        self.textEdit_datos = QTextEdit(self.tab_datos)
+        self.textEdit_datos.setObjectName(u"textEdit_datos")
+        self.textEdit_datos.setGeometry(QRect(10, 10, 651, 121))
+        self.pushButton_adjuntar = QPushButton(self.tab_datos)
+        self.pushButton_adjuntar.setObjectName(u"pushButton_adjuntar")
+        self.pushButton_adjuntar.setGeometry(QRect(290, 180, 83, 22))
         self.tabWidget.addTab(self.tab_datos, "")
         self.tab_estado = QWidget()
         self.tab_estado.setObjectName(u"tab_estado")
-        self.textEdit_3 = QTextEdit(self.tab_estado)
-        self.textEdit_3.setObjectName(u"textEdit_3")
-        self.textEdit_3.setGeometry(QRect(10, 10, 651, 121))
+        self.textEdit_estado = QTextEdit(self.tab_estado)
+        self.textEdit_estado.setObjectName(u"textEdit_estado")
+        self.textEdit_estado.setGeometry(QRect(10, 10, 651, 121))
         self.tabWidget.addTab(self.tab_estado, "")
         self.tab_opciones = QWidget()
         self.tab_opciones.setObjectName(u"tab_opciones")
-        self.comboBox = QComboBox(self.tab_opciones)
-        self.comboBox.addItem("")
-        self.comboBox.addItem("")
-        self.comboBox.addItem("")
-        self.comboBox.setObjectName(u"comboBox")
-        self.comboBox.setGeometry(QRect(250, 170, 161, 22))
-        self.textEdit_4 = QTextEdit(self.tab_opciones)
-        self.textEdit_4.setObjectName(u"textEdit_4")
-        self.textEdit_4.setGeometry(QRect(10, 10, 651, 121))
-        self.pushButton_2 = QPushButton(self.tab_opciones)
-        self.pushButton_2.setObjectName(u"pushButton_2")
-        self.pushButton_2.setGeometry(QRect(290, 210, 83, 22))
+        self.comboBox_opciones = QComboBox(self.tab_opciones)
+        self.comboBox_opciones.addItem("")
+        self.comboBox_opciones.addItem("")
+        self.comboBox_opciones.addItem("")
+        self.comboBox_opciones.setObjectName(u"comboBox_opciones")
+        self.comboBox_opciones.setGeometry(QRect(250, 170, 161, 22))
+        self.textEdit_opciones = QTextEdit(self.tab_opciones)
+        self.textEdit_opciones.setObjectName(u"textEdit_opciones")
+        self.textEdit_opciones.setGeometry(QRect(10, 10, 651, 121))
+        self.pushButton_opciones = QPushButton(self.tab_opciones)
+        self.pushButton_opciones.setObjectName(u"pushButton_opciones")
+        self.pushButton_opciones.setGeometry(QRect(290, 210, 83, 22))
         self.tabWidget.addTab(self.tab_opciones, "")
 
         self.gridLayout.addWidget(self.tabWidget, 0, 0, 1, 1)
@@ -102,7 +102,7 @@ class Ui_ventana_inicio(object):
 
         self.retranslateUi(ventana_inicio)
 
-        self.tabWidget.setCurrentIndex(0)
+        self.tabWidget.setCurrentIndex(3)
 
 
         QMetaObject.connectSlotsByName(ventana_inicio)
@@ -113,9 +113,9 @@ class Ui_ventana_inicio(object):
         self.actionAbout.setText(QCoreApplication.translate("ventana_inicio", u"Acerca", None))
         self.actionAcerca_de_Hamelin.setText(QCoreApplication.translate("ventana_inicio", u"Acerca de Hamelin", None))
 #if QT_CONFIG(accessibility)
-        self.tab_inicio.setAccessibleName("")
+        self.tab_bienvenida.setAccessibleName("")
 #endif // QT_CONFIG(accessibility)
-        self.textEdit.setHtml(QCoreApplication.translate("ventana_inicio", u"<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0//EN\" \"http://www.w3.org/TR/REC-html40/strict.dtd\">\n"
+        self.textEdit_bienvenida.setHtml(QCoreApplication.translate("ventana_inicio", u"<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0//EN\" \"http://www.w3.org/TR/REC-html40/strict.dtd\">\n"
 "<html><head><meta name=\"qrichtext\" content=\"1\" /><meta charset=\"utf-8\" /><style type=\"text/css\">\n"
 "p, li { white-space: pre-wrap; }\n"
 "hr { height: 1px; border-width: 0; }\n"
@@ -123,8 +123,8 @@ class Ui_ventana_inicio(object):
 "li.checked::marker { content: \"\\2612\"; }\n"
 "</style></head><body style=\" font-family:'Sans Serif'; font-size:9pt; font-weight:400; font-style:normal;\">\n"
 "<p align=\"center\" style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-size:12pt;\">Hamelin es una aplicaci\u00f3n que capacita a los Profesionales de Investigaci\u00f3n Cl\u00ednica (CRPs) para crear sus propios modelos predictivos de Aprendizaje Autom\u00e1tico (ML).</span></p></body></html>", None))
-        self.tabWidget.setTabText(self.tabWidget.indexOf(self.tab_inicio), QCoreApplication.translate("ventana_inicio", u"Inicio", None))
-        self.textEdit_2.setHtml(QCoreApplication.translate("ventana_inicio", u"<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0//EN\" \"http://www.w3.org/TR/REC-html40/strict.dtd\">\n"
+        self.tabWidget.setTabText(self.tabWidget.indexOf(self.tab_bienvenida), QCoreApplication.translate("ventana_inicio", u"Bienvenida", None))
+        self.textEdit_datos.setHtml(QCoreApplication.translate("ventana_inicio", u"<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0//EN\" \"http://www.w3.org/TR/REC-html40/strict.dtd\">\n"
 "<html><head><meta name=\"qrichtext\" content=\"1\" /><meta charset=\"utf-8\" /><style type=\"text/css\">\n"
 "p, li { white-space: pre-wrap; }\n"
 "hr { height: 1px; border-width: 0; }\n"
@@ -132,9 +132,9 @@ class Ui_ventana_inicio(object):
 "li.checked::marker { content: \"\\2612\"; }\n"
 "</style></head><body style=\" font-family:'Sans Serif'; font-size:9pt; font-weight:400; font-style:normal;\">\n"
 "<p align=\"center\" style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-size:12pt;\">Adjunta un fichero CSV para analizar los datos.</span></p></body></html>", None))
-        self.pushButton.setText(QCoreApplication.translate("ventana_inicio", u"Adjuntar", None))
+        self.pushButton_adjuntar.setText(QCoreApplication.translate("ventana_inicio", u"Adjuntar", None))
         self.tabWidget.setTabText(self.tabWidget.indexOf(self.tab_datos), QCoreApplication.translate("ventana_inicio", u"Datos", None))
-        self.textEdit_3.setHtml(QCoreApplication.translate("ventana_inicio", u"<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0//EN\" \"http://www.w3.org/TR/REC-html40/strict.dtd\">\n"
+        self.textEdit_estado.setHtml(QCoreApplication.translate("ventana_inicio", u"<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0//EN\" \"http://www.w3.org/TR/REC-html40/strict.dtd\">\n"
 "<html><head><meta name=\"qrichtext\" content=\"1\" /><meta charset=\"utf-8\" /><style type=\"text/css\">\n"
 "p, li { white-space: pre-wrap; }\n"
 "hr { height: 1px; border-width: 0; }\n"
@@ -143,11 +143,11 @@ class Ui_ventana_inicio(object):
 "</style></head><body style=\" font-family:'Sans Serif'; font-size:9pt; font-weight:400; font-style:normal;\">\n"
 "<p align=\"center\" style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-size:12pt;\">Estado de los datos.</span></p></body></html>", None))
         self.tabWidget.setTabText(self.tabWidget.indexOf(self.tab_estado), QCoreApplication.translate("ventana_inicio", u"Estado", None))
-        self.comboBox.setItemText(0, QCoreApplication.translate("ventana_inicio", u"Registro de pacientes", None))
-        self.comboBox.setItemText(1, QCoreApplication.translate("ventana_inicio", u"Estudio observacional", None))
-        self.comboBox.setItemText(2, QCoreApplication.translate("ventana_inicio", u"Estudio cl\u00ednico", None))
+        self.comboBox_opciones.setItemText(0, QCoreApplication.translate("ventana_inicio", u"Registro de pacientes", None))
+        self.comboBox_opciones.setItemText(1, QCoreApplication.translate("ventana_inicio", u"Estudio observacional", None))
+        self.comboBox_opciones.setItemText(2, QCoreApplication.translate("ventana_inicio", u"Estudio cl\u00ednico", None))
 
-        self.textEdit_4.setHtml(QCoreApplication.translate("ventana_inicio", u"<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0//EN\" \"http://www.w3.org/TR/REC-html40/strict.dtd\">\n"
+        self.textEdit_opciones.setHtml(QCoreApplication.translate("ventana_inicio", u"<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0//EN\" \"http://www.w3.org/TR/REC-html40/strict.dtd\">\n"
 "<html><head><meta name=\"qrichtext\" content=\"1\" /><meta charset=\"utf-8\" /><style type=\"text/css\">\n"
 "p, li { white-space: pre-wrap; }\n"
 "hr { height: 1px; border-width: 0; }\n"
@@ -155,7 +155,7 @@ class Ui_ventana_inicio(object):
 "li.checked::marker { content: \"\\2612\"; }\n"
 "</style></head><body style=\" font-family:'Sans Serif'; font-size:9pt; font-weight:400; font-style:normal;\">\n"
 "<p align=\"center\" style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-size:12pt;\">Selecciona un procedimiento a seguir.</span></p></body></html>", None))
-        self.pushButton_2.setText(QCoreApplication.translate("ventana_inicio", u"Ok", None))
+        self.pushButton_opciones.setText(QCoreApplication.translate("ventana_inicio", u"Ok", None))
         self.tabWidget.setTabText(self.tabWidget.indexOf(self.tab_opciones), QCoreApplication.translate("ventana_inicio", u"Opciones", None))
         self.menuArchivo.setTitle(QCoreApplication.translate("ventana_inicio", u"Archivo", None))
         self.menuEdici_n.setTitle(QCoreApplication.translate("ventana_inicio", u"Edici\u00f3n", None))

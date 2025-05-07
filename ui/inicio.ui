@@ -30,9 +30,9 @@
         <bool>true</bool>
        </property>
        <property name="currentIndex">
-        <number>0</number>
+        <number>3</number>
        </property>
-       <widget class="QWidget" name="tab_inicio">
+       <widget class="QWidget" name="tab_bienvenida">
         <property name="cursor">
          <cursorShape>ArrowCursor</cursorShape>
         </property>
@@ -40,9 +40,9 @@
          <string/>
         </property>
         <attribute name="title">
-         <string>Inicio</string>
+         <string>Bienvenida</string>
         </attribute>
-        <widget class="QTextEdit" name="textEdit">
+        <widget class="QTextEdit" name="textEdit_bienvenida">
          <property name="geometry">
           <rect>
            <x>10</x>
@@ -67,7 +67,7 @@ li.checked::marker { content: &quot;\2612&quot;; }
         <attribute name="title">
          <string>Datos</string>
         </attribute>
-        <widget class="QTextEdit" name="textEdit_2">
+        <widget class="QTextEdit" name="textEdit_datos">
          <property name="geometry">
           <rect>
            <x>10</x>
@@ -87,7 +87,7 @@ li.checked::marker { content: &quot;\2612&quot;; }
 &lt;p align=&quot;center&quot; style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;span style=&quot; font-size:12pt;&quot;&gt;Adjunta un fichero CSV para analizar los datos.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
          </property>
         </widget>
-        <widget class="QPushButton" name="pushButton">
+        <widget class="QPushButton" name="pushButton_adjuntar">
          <property name="geometry">
           <rect>
            <x>290</x>
@@ -105,7 +105,7 @@ li.checked::marker { content: &quot;\2612&quot;; }
         <attribute name="title">
          <string>Estado</string>
         </attribute>
-        <widget class="QTextEdit" name="textEdit_3">
+        <widget class="QTextEdit" name="textEdit_estado">
          <property name="geometry">
           <rect>
            <x>10</x>
@@ -130,7 +130,7 @@ li.checked::marker { content: &quot;\2612&quot;; }
         <attribute name="title">
          <string>Opciones</string>
         </attribute>
-        <widget class="QComboBox" name="comboBox">
+        <widget class="QComboBox" name="comboBox_opciones">
          <property name="geometry">
           <rect>
            <x>250</x>
@@ -155,7 +155,7 @@ li.checked::marker { content: &quot;\2612&quot;; }
           </property>
          </item>
         </widget>
-        <widget class="QTextEdit" name="textEdit_4">
+        <widget class="QTextEdit" name="textEdit_opciones">
          <property name="geometry">
           <rect>
            <x>10</x>
@@ -175,7 +175,7 @@ li.checked::marker { content: &quot;\2612&quot;; }
 &lt;p align=&quot;center&quot; style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;span style=&quot; font-size:12pt;&quot;&gt;Selecciona un procedimiento a seguir.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
          </property>
         </widget>
-        <widget class="QPushButton" name="pushButton_2">
+        <widget class="QPushButton" name="pushButton_opciones">
          <property name="geometry">
           <rect>
            <x>290</x>

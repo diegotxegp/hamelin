@@ -1,8 +1,6 @@
 import os
-import shutil
 from PySide6.QtWidgets import QFileDialog, QMainWindow
 from view.inicio_ui import Ui_ventana_inicio
-from model.model import Model
 from view.registro_pacientes_ui import Ui_ventana_registro_pacientes
 
 class InicioController(QMainWindow):
@@ -13,38 +11,14 @@ class InicioController(QMainWindow):
 
         self.ui = Ui_ventana_inicio()
         self.ui.setupUi(self)
+        self.ui.tabWidget.setCurrentIndex(0)
 
-        # Instantiate the model
-        self.model = Model()
-
-        self.setup_signals()    
+        self.setup_signals()
 
     def setup_signals(self):
         # Connect signals to slots
-        self.ui.pushButton.clicked.connect(self.attach_csv)
-        self.ui.pushButton_2.clicked.connect(self.select_option)
-
-    def attach_csv(self):
-        # Open file dialog to select the CSV file
-        path, _ = QFileDialog.getOpenFileName(self, "Open CSV File", "", "CSV Files (*.csv)")
-        if path:
-            # Define the target directory (e.g., 'data' folder inside your project)
-            target_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "../..", "data")
-            if not os.path.exists(target_dir):
-                os.makedirs(target_dir)  # Create the 'data' folder if it doesn't exist
-
-            # Define the target file path where the CSV will be saved
-            target_file = os.path.join(target_dir, os.path.basename(path))
-
-            # Copy the CSV file to the target folder
-            shutil.copy(path, target_file)
-
-            # Update the model (if necessary)
-            message = self.model.load_csv(target_file)
-
-            # Update UI with a success message
-            self.ui.textEdit_2.setPlainText(message)
-            self.ui.textEdit_3.setPlainText(f"📊 CSV loaded and saved to {target_file}. You may proceed with the analysis.")
+        self.ui.pushButton_adjuntar.clicked.connect(self.model.attach_csv)
+        self.ui.pushButton_opciones.clicked.connect(self.select_option)
 
     def select_option(self):
         option = self.ui.comboBox.currentText()

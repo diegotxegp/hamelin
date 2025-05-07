@@ -7,9 +7,9 @@ class Controller:
         self.current_window = None
 
     def start(self):
-        self.show_main_window()
+        self.show_inicio()
 
-    def show_main_window(self):
+    def show_inicio(self):
         if self.current_window:
             self.current_window.close()
         self.current_window = InicioController(self, self.model)
