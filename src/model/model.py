@@ -10,7 +10,7 @@ class Model:
 
     def attach_csv(self):
         # Open file dialog to select the CSV file
-        path, _ = QFileDialog.getOpenFileName(self, "Open CSV File", "", "CSV Files (*.csv)")
+        path, _ = QFileDialog.getOpenFileName(None, "Open CSV File", "", "CSV Files (*.csv)")
         if path:
             # Define the target directory (e.g., 'data' folder inside your project)
             target_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "../..", "data")

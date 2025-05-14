@@ -18,7 +18,7 @@ def converter():
 def show_gui():
     app = QApplication(sys.argv)
     controller = Controller()
-    controller.start()
+    controller.show_window()
     sys.exit(app.exec())
 
 def main():
