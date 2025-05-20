@@ -15,15 +15,15 @@ def converter():
 
     convert_ui_to_py(ui_folder, output_folder)
 
-def show_gui():
+def start():
     app = QApplication(sys.argv)
     controller = Controller()
-    controller.show_window()
+    controller.show_initial_window()
     sys.exit(app.exec())
 
 def main():
     converter()
-    show_gui()
+    start()
 
 if __name__ == "__main__":
     main()
