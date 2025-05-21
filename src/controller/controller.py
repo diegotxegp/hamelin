@@ -1,28 +1,58 @@
+# controller/controller.py
+
+from PySide6.QtWidgets import QMainWindow
+from view.interface_ui import Ui_MainWindow
+
+from controller.registro_controller import RegistroController
+from controller.observacional_controller import ObservacionalController
+from controller.clinico_controller import ClinicoController
 from controller.inicio_controller import InicioController
+
 from model.model import Model
+
+
+class MainWindow(QMainWindow):
+    def __init__(self):
+        super().__init__()
+        self.ui = Ui_MainWindow()
+        self.ui.setupUi(self)
+
 
 class Controller:
     def __init__(self):
         self.model = Model()
-        self.current_window = None
-        self.current_page = 0
-        self.current_tab = 0
+        self.window = MainWindow()
 
-    def show_initial_window(self):
-        if self.current_window:
-            self.current_window.close()
-        self.current_window = InicioController(self, self.model)
-        self.current_window.ui.stackedWidget.setCurrentIndex(self.current_page)
-        self.current_window.ui.tabWidget_inicio.setCurrentIndex(self.current_tab)
-        self.current_window.showMaximized()
+        self.page = 0
+        self.tab = 0
 
-    def change_page(self, option):
+        # Set initial page and tab
+        self.window.ui.stackedWidget.setCurrentIndex(self.page)
+        self.window.ui.tabWidget_inicio.setCurrentIndex(self.tab)
+
+        # Instantiate subcontrollers
+        self.inicio_controller = InicioController(
+            self.window.ui.page_inicio, self.model, self
+        )
+
+    def show(self):
+        self.window.showMaximized()
+
+    def change_page(self, option: str):
+        pages = {
+            "Inicio": 0,
+            "Registro de pacientes": 1,
+            "Estudio observacional": 2,
+            "Estudio clínico": 3,
+        }
+        index = pages.get(option, 0)
+        self.window.ui.stackedWidget.setCurrentIndex(index)
+
+        if option == "Inicio":
+            self.window.ui.tabWidget_inicio.setCurrentIndex(0)
         if option == "Registro de pacientes":
-            self.current_page = 1
-        elif option == "Estudio observacional":
-            self.current_page = 2
-        elif option == "Estudio clínico":
-            self.current_page = 3
-
-        self.current_window.ui.stackedWidget.setCurrentIndex(self.current_page)
-        
+            self.window.ui.tabWidget_registro.setCurrentIndex(1)
+        if option == "Estudio observacional":
+            self.window.ui.tabWidget_observacional.setCurrentIndex(1)
+        if option == "Estudio clínico":
+            self.window.ui.tabWidget_clinico.setCurrentIndex(1)
