@@ -3,10 +3,10 @@
 from PySide6.QtWidgets import QMainWindow
 from view.interface_ui import Ui_MainWindow
 
-from controller.registro_controller import RegistroController
-from controller.observacional_controller import ObservacionalController
-from controller.clinico_controller import ClinicoController
-from controller.inicio_controller import InicioController
+from controller.controller_inicio import ControllerInicio
+from controller.controller_registro import ControllerRegistro
+from controller.controller_observacional import ControllerObservacional
+from controller.controller_clinico import ControllerClinico
 
 from model.model import Model
 
@@ -31,28 +31,21 @@ class Controller:
         self.window.ui.tabWidget_inicio.setCurrentIndex(self.tab)
 
         # Instantiate subcontrollers
-        self.inicio_controller = InicioController(
+        self.inicio_controller = ControllerInicio(
             self.window.ui.page_inicio, self.model, self
         )
+        """self.inicio_controller = ControllerRegistro(
+            self.window.ui.page_inicio, self.model, self
+        )
+        self.inicio_controller = ControllerObservacional(
+            self.window.ui.page_inicio, self.model, self
+        )
+        self.inicio_controller = ControllerClinico(
+            self.window.ui.page_inicio, self.model, self
+        )"""
 
     def show(self):
         self.window.showMaximized()
 
-    def change_page(self, option: str):
-        pages = {
-            "Inicio": 0,
-            "Registro de pacientes": 1,
-            "Estudio observacional": 2,
-            "Estudio clínico": 3,
-        }
-        index = pages.get(option, 0)
+    def change_page(self, index: int):
         self.window.ui.stackedWidget.setCurrentIndex(index)
-
-        if option == "Inicio":
-            self.window.ui.tabWidget_inicio.setCurrentIndex(0)
-        if option == "Registro de pacientes":
-            self.window.ui.tabWidget_registro.setCurrentIndex(1)
-        if option == "Estudio observacional":
-            self.window.ui.tabWidget_observacional.setCurrentIndex(1)
-        if option == "Estudio clínico":
-            self.window.ui.tabWidget_clinico.setCurrentIndex(1)

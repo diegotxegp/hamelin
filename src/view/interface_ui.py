@@ -120,10 +120,10 @@ class Ui_MainWindow(object):
 
         self.gridLayout_8.addWidget(self.textEdit_volver_inicio, 0, 0, 1, 1)
 
-        self.pushButton_volver_inicio = QPushButton(self.tab_inicio)
-        self.pushButton_volver_inicio.setObjectName(u"pushButton_volver_inicio")
+        self.pushButton_registro_volver_inicio = QPushButton(self.tab_inicio)
+        self.pushButton_registro_volver_inicio.setObjectName(u"pushButton_registro_volver_inicio")
 
-        self.gridLayout_8.addWidget(self.pushButton_volver_inicio, 1, 0, 1, 1)
+        self.gridLayout_8.addWidget(self.pushButton_registro_volver_inicio, 1, 0, 1, 1)
 
         self.tabWidget_registro.addTab(self.tab_inicio, "")
         self.tab_dataset = QWidget()
@@ -425,9 +425,9 @@ class Ui_MainWindow(object):
 
         self.retranslateUi(MainWindow)
 
-        self.stackedWidget.setCurrentIndex(0)
+        self.stackedWidget.setCurrentIndex(1)
         self.tabWidget_inicio.setCurrentIndex(3)
-        self.tabWidget_registro.setCurrentIndex(3)
+        self.tabWidget_registro.setCurrentIndex(0)
         self.tabWidget_observacional.setCurrentIndex(2)
         self.tabWidget_clinico.setCurrentIndex(2)
 
@@ -488,7 +488,7 @@ class Ui_MainWindow(object):
 "li.checked::marker { content: \"\\2612\"; }\n"
 "</style></head><body style=\" font-family:'Sans Serif'; font-size:9pt; font-weight:400; font-style:normal;\">\n"
 "<p align=\"center\" style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-size:12pt;\">Volver a la pantalla de inicio</span></p></body></html>", None))
-        self.pushButton_volver_inicio.setText(QCoreApplication.translate("MainWindow", u"Volver a inicio", None))
+        self.pushButton_registro_volver_inicio.setText(QCoreApplication.translate("MainWindow", u"Volver a inicio", None))
         self.tabWidget_registro.setTabText(self.tabWidget_registro.indexOf(self.tab_inicio), QCoreApplication.translate("MainWindow", u"Inicio", None))
         self.textEdit_dataset.setHtml(QCoreApplication.translate("MainWindow", u"<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0//EN\" \"http://www.w3.org/TR/REC-html40/strict.dtd\">\n"
 "<html><head><meta name=\"qrichtext\" content=\"1\" /><meta charset=\"utf-8\" /><style type=\"text/css\">\n"

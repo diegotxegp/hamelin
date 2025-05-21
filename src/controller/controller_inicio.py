@@ -2,8 +2,8 @@
 
 from PySide6.QtWidgets import QPushButton, QComboBox
 
-class InicioController:
-    def __init__(self, ui, model, app_controller):
+class ControllerInicio:
+    def __init__(self, ui, model, controller):
         """
         Controller for the 'Inicio' (Start) page.
 
@@ -13,7 +13,7 @@ class InicioController:
         """
         self.ui = ui
         self.model = model
-        self.controller = app_controller
+        self.controller = controller
 
         self.pushButton_adjuntar = self.ui.findChild(QPushButton, "pushButton_adjuntar")
         self.pushButton_opciones = self.ui.findChild(QPushButton, "pushButton_opciones")
@@ -32,5 +32,12 @@ class InicioController:
         """
         Reads the selected option from the combo box and tells the main controller to switch pages.
         """
+        pages = {
+            "Inicio": 0,
+            "Registro de pacientes": 1,
+            "Estudio observacional": 2,
+            "Estudio clínico": 3,
+        }
         option = self.comboBox_opciones.currentText()
-        self.controller.change_page(option)
+        index = pages.get(option, 0)
+        self.controller.change_page(index)

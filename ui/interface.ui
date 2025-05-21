@@ -18,7 +18,7 @@
     <item row="0" column="0">
      <widget class="QStackedWidget" name="stackedWidget">
       <property name="currentIndex">
-       <number>0</number>
+       <number>1</number>
       </property>
       <widget class="QWidget" name="page_inicio">
        <layout class="QGridLayout" name="gridLayout_2">
@@ -162,7 +162,7 @@ li.checked::marker { content: &quot;\2612&quot;; }
         <item row="0" column="0">
          <widget class="QTabWidget" name="tabWidget_registro">
           <property name="currentIndex">
-           <number>3</number>
+           <number>0</number>
           </property>
           <widget class="QWidget" name="tab_inicio">
            <attribute name="title">
@@ -184,7 +184,7 @@ li.checked::marker { content: &quot;\2612&quot;; }
              </widget>
             </item>
             <item row="1" column="0">
-             <widget class="QPushButton" name="pushButton_volver_inicio">
+             <widget class="QPushButton" name="pushButton_registro_volver_inicio">
               <property name="text">
                <string>Volver a inicio</string>
               </property>
