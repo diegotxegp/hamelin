@@ -1,5 +1,7 @@
 # controller/controller_observacional.py
 
+from PySide6.QtWidgets import QPushButton, QTabWidget
+
 class ControllerObservacional:
     def __init__(self, ui, model, controller):
         """
@@ -11,11 +13,18 @@ class ControllerObservacional:
         self.model = model
         self.controller = controller
 
+        self.tabWidget_observacional = self.ui.findChild(QTabWidget, "tabWidget_observacional")
+        self.pushButton_observacional_inicio = self.ui.findChild(QPushButton, "pushButton_observacional_inicio")
+
         self._setup_signals()
+
+        self.tabWidget_observacional.setCurrentIndex(1)
 
     def _setup_signals(self):
         """
         Connect UI elements (buttons, etc.) to their respective slots.
         """
-        self.pushButton_adjuntar.clicked.connect(self.model.attach_csv)
-        self.pushButton_opciones.clicked.connect(self._select_option)
+        self.pushButton_observacional_inicio.clicked.connect(self._back_to_init)
+
+    def _back_to_init(self):
+        self.controller.change_page(0)

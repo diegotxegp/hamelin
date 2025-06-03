@@ -31,21 +31,27 @@ class Controller:
         self.window.ui.tabWidget_inicio.setCurrentIndex(self.tab)
 
         # Instantiate subcontrollers
-        self.inicio_controller = ControllerInicio(
+        self.controller_inicio = ControllerInicio(
             self.window.ui.page_inicio, self.model, self
         )
-        """self.inicio_controller = ControllerRegistro(
-            self.window.ui.page_inicio, self.model, self
+        self.controller_registro = ControllerRegistro(
+            self.window.ui.page_registro, self.model, self
         )
-        self.inicio_controller = ControllerObservacional(
-            self.window.ui.page_inicio, self.model, self
+        
+        self.controller_observacional = ControllerObservacional(
+            self.window.ui.page_observacional, self.model, self
         )
-        self.inicio_controller = ControllerClinico(
-            self.window.ui.page_inicio, self.model, self
-        )"""
+        
+        self.controller_clinico = ControllerClinico(
+            self.window.ui.page_clinico, self.model, self
+        )
 
     def show(self):
         self.window.showMaximized()
 
     def change_page(self, index: int):
         self.window.ui.stackedWidget.setCurrentIndex(index)
+
+        # Set initial tab
+        if index == 0:
+            self.window.ui.tabWidget_inicio.setCurrentIndex(0)
