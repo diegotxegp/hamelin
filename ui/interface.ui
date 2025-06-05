@@ -55,7 +55,7 @@ li.checked::marker { content: &quot;\2612&quot;; }
             <item row="1" column="0">
              <widget class="QPushButton" name="pushButton_start_welcome_accept">
               <property name="text">
-               <string>Accept</string>
+               <string>Ok</string>
               </property>
              </widget>
             </item>
@@ -111,7 +111,7 @@ li.checked::marker { content: &quot;\2612&quot;; }
              </widget>
             </item>
             <item row="0" column="0">
-             <widget class="QTextEdit" name="textEdit_data">
+             <widget class="QTextEdit" name="textEdit_start_data">
               <property name="enabled">
                <bool>true</bool>
               </property>
@@ -141,9 +141,9 @@ li.checked::marker { content: &quot;\2612&quot;; }
            </attribute>
            <layout class="QGridLayout" name="gridLayout_5">
             <item row="2" column="0">
-             <widget class="QPushButton" name="pushButton_inicio_estado_aceptar">
+             <widget class="QPushButton" name="pushButton_start_status_accept">
               <property name="text">
-               <string>Aceptar</string>
+               <string>Accept</string>
               </property>
              </widget>
             </item>

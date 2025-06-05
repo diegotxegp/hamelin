@@ -41,19 +41,19 @@ class Controller:
 
         # Instantiate subcontrollers
         self.controller_start = ControllerStart(
-            self.window.ui.page_start, self.model, self
+            self.window.ui.page_start, self
         )
         """
         self.controller_patient_registry = ControllerPatientRegistry(
-            self.window.ui.page_registry, self.model, self
+            self.window.ui.page_registry, self
         )
         
         self.controller_observational_study = ControllerObservationalStudy(
-            self.window.ui.page_observational, self.model, self
+            self.window.ui.page_observational, self
         )
         
         self.controller_clinical_trial = ControllerClinicalTrial(
-            self.window.ui.page_clinical, self.model, self
+            self.window.ui.page_clinical, self
         )
         """
 
@@ -74,3 +74,15 @@ class Controller:
         # Set initial tab
         if index == 0:
             self.window.ui.tabWidget_start.setCurrentIndex(0)
+
+    def new_project(self, project_name):
+        return self.model.new_project(project_name)
+
+    def project_list(self):
+        return self.model.project_list()
+
+    def set_project(self, project_name):
+        return self.model.set_project(project_name)
+
+    def dataset_list(self):
+        return self.model.dataset_list()

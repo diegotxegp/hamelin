@@ -88,12 +88,12 @@ class Ui_MainWindow(object):
 
         self.gridLayout_4.addWidget(self.pushButton_start_data_select, 2, 0, 1, 1)
 
-        self.textEdit_data = QTextEdit(self.tab_start_data)
-        self.textEdit_data.setObjectName(u"textEdit_data")
-        self.textEdit_data.setEnabled(True)
-        self.textEdit_data.setReadOnly(True)
+        self.textEdit_start_data = QTextEdit(self.tab_start_data)
+        self.textEdit_start_data.setObjectName(u"textEdit_start_data")
+        self.textEdit_start_data.setEnabled(True)
+        self.textEdit_start_data.setReadOnly(True)
 
-        self.gridLayout_4.addWidget(self.textEdit_data, 0, 0, 1, 1)
+        self.gridLayout_4.addWidget(self.textEdit_start_data, 0, 0, 1, 1)
 
         self.listWidget_start_data = QListWidget(self.tab_start_data)
         self.listWidget_start_data.setObjectName(u"listWidget_start_data")
@@ -105,10 +105,10 @@ class Ui_MainWindow(object):
         self.tab_start_status.setObjectName(u"tab_start_status")
         self.gridLayout_5 = QGridLayout(self.tab_start_status)
         self.gridLayout_5.setObjectName(u"gridLayout_5")
-        self.pushButton_inicio_estado_aceptar = QPushButton(self.tab_start_status)
-        self.pushButton_inicio_estado_aceptar.setObjectName(u"pushButton_inicio_estado_aceptar")
+        self.pushButton_start_status_accept = QPushButton(self.tab_start_status)
+        self.pushButton_start_status_accept.setObjectName(u"pushButton_start_status_accept")
 
-        self.gridLayout_5.addWidget(self.pushButton_inicio_estado_aceptar, 2, 0, 1, 1)
+        self.gridLayout_5.addWidget(self.pushButton_start_status_accept, 2, 0, 1, 1)
 
         self.textEdit_start_status = QTextEdit(self.tab_start_status)
         self.textEdit_start_status.setObjectName(u"textEdit_start_status")
@@ -581,7 +581,7 @@ class Ui_MainWindow(object):
 "li.checked::marker { content: \"\\2612\"; }\n"
 "</style></head><body style=\" font-family:'Sans Serif'; font-size:9pt; font-weight:400; font-style:normal;\">\n"
 "<p align=\"center\" style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-size:12pt;\">Hamelin is an application that empowers Clinical Research Professionals (CRPs) to build their own predictive Machine Learning (ML) models</span></p></body></html>", None))
-        self.pushButton_start_welcome_accept.setText(QCoreApplication.translate("MainWindow", u"Accept", None))
+        self.pushButton_start_welcome_accept.setText(QCoreApplication.translate("MainWindow", u"Ok", None))
         self.tabWidget_start.setTabText(self.tabWidget_start.indexOf(self.tab_start_welcome), QCoreApplication.translate("MainWindow", u"Welcome", None))
         self.textEdit_start_project.setHtml(QCoreApplication.translate("MainWindow", u"<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0//EN\" \"http://www.w3.org/TR/REC-html40/strict.dtd\">\n"
 "<html><head><meta name=\"qrichtext\" content=\"1\" /><meta charset=\"utf-8\" /><style type=\"text/css\">\n"
@@ -594,7 +594,7 @@ class Ui_MainWindow(object):
         self.pushButton_start_project_select.setText(QCoreApplication.translate("MainWindow", u"Select", None))
         self.tabWidget_start.setTabText(self.tabWidget_start.indexOf(self.tab_start_project), QCoreApplication.translate("MainWindow", u"Project", None))
         self.pushButton_start_data_select.setText(QCoreApplication.translate("MainWindow", u"Select", None))
-        self.textEdit_data.setHtml(QCoreApplication.translate("MainWindow", u"<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0//EN\" \"http://www.w3.org/TR/REC-html40/strict.dtd\">\n"
+        self.textEdit_start_data.setHtml(QCoreApplication.translate("MainWindow", u"<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0//EN\" \"http://www.w3.org/TR/REC-html40/strict.dtd\">\n"
 "<html><head><meta name=\"qrichtext\" content=\"1\" /><meta charset=\"utf-8\" /><style type=\"text/css\">\n"
 "p, li { white-space: pre-wrap; }\n"
 "hr { height: 1px; border-width: 0; }\n"
@@ -603,7 +603,7 @@ class Ui_MainWindow(object):
 "</style></head><body style=\" font-family:'Sans Serif'; font-size:9pt; font-weight:400; font-style:normal;\">\n"
 "<p align=\"center\" style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-size:12pt;\">Attach a CSV file to analyze</span></p></body></html>", None))
         self.tabWidget_start.setTabText(self.tabWidget_start.indexOf(self.tab_start_data), QCoreApplication.translate("MainWindow", u"Data", None))
-        self.pushButton_inicio_estado_aceptar.setText(QCoreApplication.translate("MainWindow", u"Aceptar", None))
+        self.pushButton_start_status_accept.setText(QCoreApplication.translate("MainWindow", u"Accept", None))
         self.textEdit_start_status.setHtml(QCoreApplication.translate("MainWindow", u"<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0//EN\" \"http://www.w3.org/TR/REC-html40/strict.dtd\">\n"
 "<html><head><meta name=\"qrichtext\" content=\"1\" /><meta charset=\"utf-8\" /><style type=\"text/css\">\n"
 "p, li { white-space: pre-wrap; }\n"
