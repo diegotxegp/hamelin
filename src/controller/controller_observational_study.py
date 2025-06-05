@@ -1,8 +1,8 @@
-# controller/controller_observacional.py
+# controller/controller_observational_study.py
 
 from PySide6.QtWidgets import QPushButton, QTabWidget
 
-class ControllerObservacional:
+class ControllerObservationalStudy:
     def __init__(self, ui, model, controller):
         """
         :param ui: QWidget corresponding to the page in the QStackedWidget.

@@ -20,23 +20,23 @@
       <property name="currentIndex">
        <number>0</number>
       </property>
-      <widget class="QWidget" name="page_start">
+      <widget class="QWidget" name="page_inicio">
        <layout class="QGridLayout" name="gridLayout_2">
         <item row="1" column="0">
-         <widget class="QTabWidget" name="tabWidget_start">
+         <widget class="QTabWidget" name="tabWidget_inicio">
           <property name="enabled">
            <bool>true</bool>
           </property>
           <property name="currentIndex">
-           <number>1</number>
+           <number>0</number>
           </property>
-          <widget class="QWidget" name="tab_start_welcome">
+          <widget class="QWidget" name="tab_inicio_bienvenida">
            <attribute name="title">
-            <string>Welcome</string>
+            <string>Bienvenida</string>
            </attribute>
            <layout class="QGridLayout" name="gridLayout_3">
             <item row="0" column="0">
-             <widget class="QTextEdit" name="textEdit_start_welcome">
+             <widget class="QTextEdit" name="textEdit_inicio_bienvenida">
               <property name="readOnly">
                <bool>true</bool>
               </property>
@@ -48,70 +48,29 @@ hr { height: 1px; border-width: 0; }
 li.unchecked::marker { content: &quot;\2610&quot;; }
 li.checked::marker { content: &quot;\2612&quot;; }
 &lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; font-family:'Sans Serif'; font-size:9pt; font-weight:400; font-style:normal;&quot;&gt;
-&lt;p align=&quot;center&quot; style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;span style=&quot; font-size:12pt;&quot;&gt;Hamelin is an application that empowers Clinical Research Professionals (CRPs) to build their own predictive Machine Learning (ML) models&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+&lt;p align=&quot;center&quot; style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;span style=&quot; font-size:12pt;&quot;&gt;Hamelin es una aplicación que capacita a los Profesionales de Investigación Clínica (CRPs) para crear sus propios modelos predictivos de Aprendizaje Automático (ML)&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
               </property>
              </widget>
             </item>
             <item row="1" column="0">
-             <widget class="QPushButton" name="pushButton_start_welcome_accept">
+             <widget class="QPushButton" name="pushButton_inicio_bienvenida_aceptar">
               <property name="text">
-               <string>Accept</string>
+               <string>Aceptar</string>
               </property>
              </widget>
             </item>
            </layout>
           </widget>
-          <widget class="QWidget" name="tab_start_project">
-           <attribute name="title">
-            <string>Project</string>
-           </attribute>
-           <layout class="QGridLayout" name="gridLayout_29">
-            <item row="0" column="0">
-             <widget class="QTextEdit" name="textEdit_start_project">
-              <property name="readOnly">
-               <bool>true</bool>
-              </property>
-              <property name="html">
-               <string>&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;
-&lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;meta charset=&quot;utf-8&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
-p, li { white-space: pre-wrap; }
-hr { height: 1px; border-width: 0; }
-li.unchecked::marker { content: &quot;\2610&quot;; }
-li.checked::marker { content: &quot;\2612&quot;; }
-&lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; font-family:'Sans Serif'; font-size:9pt; font-weight:400; font-style:normal;&quot;&gt;
-&lt;p align=&quot;center&quot; style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;span style=&quot; font-size:12pt;&quot;&gt;Select a saved project or create a new one&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-              </property>
-             </widget>
-            </item>
-            <item row="2" column="0">
-             <widget class="QPushButton" name="pushButton_start_project_select">
-              <property name="text">
-               <string>Select</string>
-              </property>
-             </widget>
-            </item>
-            <item row="1" column="0">
-             <widget class="QListWidget" name="listWidget_start_project"/>
-            </item>
-           </layout>
-          </widget>
-          <widget class="QWidget" name="tab_start_data">
+          <widget class="QWidget" name="tab_inicio_datos">
            <property name="enabled">
             <bool>true</bool>
            </property>
            <attribute name="title">
-            <string>Data</string>
+            <string>Datos</string>
            </attribute>
            <layout class="QGridLayout" name="gridLayout_4">
-            <item row="2" column="0">
-             <widget class="QPushButton" name="pushButton_start_data_select">
-              <property name="text">
-               <string>Select</string>
-              </property>
-             </widget>
-            </item>
             <item row="0" column="0">
-             <widget class="QTextEdit" name="textEdit_data">
+             <widget class="QTextEdit" name="textEdit_datos">
               <property name="enabled">
                <bool>true</bool>
               </property>
@@ -126,56 +85,57 @@ hr { height: 1px; border-width: 0; }
 li.unchecked::marker { content: &quot;\2610&quot;; }
 li.checked::marker { content: &quot;\2612&quot;; }
 &lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; font-family:'Sans Serif'; font-size:9pt; font-weight:400; font-style:normal;&quot;&gt;
-&lt;p align=&quot;center&quot; style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;span style=&quot; font-size:12pt;&quot;&gt;Attach a CSV file to analyze&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+&lt;p align=&quot;center&quot; style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;span style=&quot; font-size:12pt;&quot;&gt;Adjunta un fichero CSV para analizar los datos&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
               </property>
              </widget>
             </item>
             <item row="1" column="0">
-             <widget class="QListWidget" name="listWidget_start_data"/>
+             <widget class="QPushButton" name="pushButton_inicio_datos_adjuntar">
+              <property name="text">
+               <string>Adjuntar</string>
+              </property>
+             </widget>
             </item>
            </layout>
           </widget>
-          <widget class="QWidget" name="tab_start_status">
+          <widget class="QWidget" name="tab_inicio_estado">
            <attribute name="title">
-            <string>Status</string>
+            <string>Estado</string>
            </attribute>
            <layout class="QGridLayout" name="gridLayout_5">
-            <item row="2" column="0">
+            <item row="0" column="0">
+             <widget class="QTextEdit" name="textEdit_2">
+              <property name="readOnly">
+               <bool>true</bool>
+              </property>
+              <property name="html">
+               <string>&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;
+&lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;meta charset=&quot;utf-8&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
+p, li { white-space: pre-wrap; }
+hr { height: 1px; border-width: 0; }
+li.unchecked::marker { content: &quot;\2610&quot;; }
+li.checked::marker { content: &quot;\2612&quot;; }
+&lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; font-family:'Sans Serif'; font-size:9pt; font-weight:400; font-style:normal;&quot;&gt;
+&lt;p align=&quot;center&quot; style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;span style=&quot; font-size:12pt;&quot;&gt;Estado&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+              </property>
+             </widget>
+            </item>
+            <item row="1" column="0">
              <widget class="QPushButton" name="pushButton_inicio_estado_aceptar">
               <property name="text">
                <string>Aceptar</string>
               </property>
              </widget>
             </item>
-            <item row="0" column="0">
-             <widget class="QTextEdit" name="textEdit_start_status">
-              <property name="readOnly">
-               <bool>true</bool>
-              </property>
-              <property name="html">
-               <string>&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;
-&lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;meta charset=&quot;utf-8&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
-p, li { white-space: pre-wrap; }
-hr { height: 1px; border-width: 0; }
-li.unchecked::marker { content: &quot;\2610&quot;; }
-li.checked::marker { content: &quot;\2612&quot;; }
-&lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; font-family:'Sans Serif'; font-size:9pt; font-weight:400; font-style:normal;&quot;&gt;
-&lt;p align=&quot;center&quot; style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;span style=&quot; font-size:12pt;&quot;&gt;Current status of the project&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-              </property>
-             </widget>
-            </item>
-            <item row="1" column="0">
-             <widget class="QTextEdit" name="textEdit_inicio_estado_lista"/>
-            </item>
            </layout>
           </widget>
-          <widget class="QWidget" name="tab_start_options">
+          <widget class="QWidget" name="tab_inicio_opciones">
            <attribute name="title">
-            <string>Options</string>
+            <string>Opciones</string>
            </attribute>
            <layout class="QGridLayout" name="gridLayout_6">
             <item row="0" column="0">
-             <widget class="QTextEdit" name="textEdit_start_options">
+             <widget class="QTextEdit" name="textEdit_3">
               <property name="readOnly">
                <bool>true</bool>
               </property>
@@ -187,33 +147,33 @@ hr { height: 1px; border-width: 0; }
 li.unchecked::marker { content: &quot;\2610&quot;; }
 li.checked::marker { content: &quot;\2612&quot;; }
 &lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; font-family:'Sans Serif'; font-size:9pt; font-weight:400; font-style:normal;&quot;&gt;
-&lt;p align=&quot;center&quot; style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;span style=&quot; font-size:12pt;&quot;&gt;Select a procedure to follow&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+&lt;p align=&quot;center&quot; style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;span style=&quot; font-size:12pt;&quot;&gt;Selecciona un procedimiento a seguir&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
               </property>
              </widget>
             </item>
             <item row="1" column="0">
-             <widget class="QComboBox" name="comboBox_start_options">
+             <widget class="QComboBox" name="comboBox_inicio_opciones">
               <item>
                <property name="text">
-                <string>Patient registry</string>
+                <string>Registro de pacientes</string>
                </property>
               </item>
               <item>
                <property name="text">
-                <string>Observational study</string>
+                <string>Estudio observacional</string>
                </property>
               </item>
               <item>
                <property name="text">
-                <string>Clinical trial</string>
+                <string>Estudio clínico</string>
                </property>
               </item>
              </widget>
             </item>
             <item row="2" column="0">
-             <widget class="QPushButton" name="pushButton_start_options_select">
+             <widget class="QPushButton" name="pushButton_inicio_opciones_aceptar">
               <property name="text">
-               <string>Select</string>
+               <string>Aceptar</string>
               </property>
              </widget>
             </item>
@@ -222,9 +182,9 @@ li.checked::marker { content: &quot;\2612&quot;; }
          </widget>
         </item>
         <item row="0" column="0">
-         <widget class="QLineEdit" name="lineEdit_start_title">
+         <widget class="QLineEdit" name="lineEdit_inicio_titulo">
           <property name="text">
-           <string>Start</string>
+           <string>Inicio</string>
           </property>
           <property name="readOnly">
            <bool>true</bool>
@@ -233,12 +193,12 @@ li.checked::marker { content: &quot;\2612&quot;; }
         </item>
        </layout>
       </widget>
-      <widget class="QWidget" name="page_registry">
+      <widget class="QWidget" name="page_registro">
        <layout class="QGridLayout" name="gridLayout_7">
         <item row="0" column="0">
-         <widget class="QLineEdit" name="lineEdit_registry_title">
+         <widget class="QLineEdit" name="lineEdit_registro_titulo">
           <property name="text">
-           <string>Patient registry</string>
+           <string>Registro de pacientes</string>
           </property>
           <property name="readOnly">
            <bool>true</bool>
@@ -246,17 +206,17 @@ li.checked::marker { content: &quot;\2612&quot;; }
          </widget>
         </item>
         <item row="1" column="0">
-         <widget class="QTabWidget" name="tabWidget_registry">
+         <widget class="QTabWidget" name="tabWidget_registro">
           <property name="currentIndex">
-           <number>3</number>
+           <number>0</number>
           </property>
-          <widget class="QWidget" name="tab_registry_start">
+          <widget class="QWidget" name="tab_registro_inicio">
            <attribute name="title">
-            <string>Start</string>
+            <string>Inicio</string>
            </attribute>
            <layout class="QGridLayout" name="gridLayout_8">
             <item row="0" column="0">
-             <widget class="QTextEdit" name="textEdit_registry_start">
+             <widget class="QTextEdit" name="textEdit_registro_inicio">
               <property name="readOnly">
                <bool>true</bool>
               </property>
@@ -268,26 +228,26 @@ hr { height: 1px; border-width: 0; }
 li.unchecked::marker { content: &quot;\2610&quot;; }
 li.checked::marker { content: &quot;\2612&quot;; }
 &lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; font-family:'Sans Serif'; font-size:9pt; font-weight:400; font-style:normal;&quot;&gt;
-&lt;p align=&quot;center&quot; style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;span style=&quot; font-size:12pt;&quot;&gt;Back to start&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+&lt;p align=&quot;center&quot; style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;span style=&quot; font-size:12pt;&quot;&gt;Volver a la pantalla de inicio&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
               </property>
              </widget>
             </item>
             <item row="1" column="0">
-             <widget class="QPushButton" name="pushButton_registry_start">
+             <widget class="QPushButton" name="pushButton_registro_inicio">
               <property name="text">
-               <string>Back to start</string>
+               <string>Volver a inicio</string>
               </property>
              </widget>
             </item>
            </layout>
           </widget>
-          <widget class="QWidget" name="tab_registry_dataset">
+          <widget class="QWidget" name="tab_regisro_dataset">
            <attribute name="title">
             <string>Dataset</string>
            </attribute>
            <layout class="QGridLayout" name="gridLayout_9">
             <item row="0" column="0">
-             <widget class="QTextEdit" name="textEdit_registry_dataset">
+             <widget class="QTextEdit" name="textEdit_registro_dataset">
               <property name="readOnly">
                <bool>true</bool>
               </property>
@@ -299,29 +259,29 @@ hr { height: 1px; border-width: 0; }
 li.unchecked::marker { content: &quot;\2610&quot;; }
 li.checked::marker { content: &quot;\2612&quot;; }
 &lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; font-family:'Sans Serif'; font-size:9pt; font-weight:400; font-style:normal;&quot;&gt;
-&lt;p align=&quot;center&quot; style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;span style=&quot; font-size:12pt;&quot;&gt;Modify the dataset&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+&lt;p align=&quot;center&quot; style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;span style=&quot; font-size:12pt;&quot;&gt;Modificar dataset&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
               </property>
              </widget>
             </item>
             <item row="1" column="0">
-             <widget class="QPushButton" name="pushButton_registry_dataset_accept">
+             <widget class="QPushButton" name="pushButton_registro_dataset_aceptar">
               <property name="text">
-               <string>Accept</string>
+               <string>Aceptar</string>
               </property>
              </widget>
             </item>
            </layout>
           </widget>
-          <widget class="QWidget" name="tab_registry_criteria">
+          <widget class="QWidget" name="tab_registro_criterios">
            <attribute name="title">
-            <string>Inclusion/Exclusion criteria</string>
+            <string>Criterios de inclusión/exclusión</string>
            </attribute>
            <layout class="QGridLayout" name="gridLayout_10">
             <item row="1" column="0">
-             <widget class="QTextEdit" name="textEdit_registry_criteria_list"/>
+             <widget class="QTextEdit" name="textEdit_registro_criterios_nuevos"/>
             </item>
             <item row="0" column="0">
-             <widget class="QTextEdit" name="textEdit_registry_criteria">
+             <widget class="QTextEdit" name="textEdit_registro_criterios">
               <property name="readOnly">
                <bool>true</bool>
               </property>
@@ -333,26 +293,26 @@ hr { height: 1px; border-width: 0; }
 li.unchecked::marker { content: &quot;\2610&quot;; }
 li.checked::marker { content: &quot;\2612&quot;; }
 &lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; font-family:'Sans Serif'; font-size:9pt; font-weight:400; font-style:normal;&quot;&gt;
-&lt;p align=&quot;center&quot; style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;span style=&quot; font-size:12pt;&quot;&gt;Indicate the inclusion and exclusion criteria&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+&lt;p align=&quot;center&quot; style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;span style=&quot; font-size:12pt;&quot;&gt;Indica los criterios de inclusión y exclusión&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
               </property>
              </widget>
             </item>
             <item row="2" column="0">
-             <widget class="QPushButton" name="pushButton_registry_criteria_add">
+             <widget class="QPushButton" name="pushButton_registro_criterios_annadir">
               <property name="text">
-               <string>Add</string>
+               <string>Añadir</string>
               </property>
              </widget>
             </item>
            </layout>
           </widget>
-          <widget class="QWidget" name="tab_registry_variable">
+          <widget class="QWidget" name="tab_registro_variable">
            <attribute name="title">
-            <string>Primary variable</string>
+            <string>Variable principal</string>
            </attribute>
            <layout class="QGridLayout" name="gridLayout_11">
             <item row="0" column="0">
-             <widget class="QTextEdit" name="textEdit_registry_variable">
+             <widget class="QTextEdit" name="textEdit_registro_variable">
               <property name="readOnly">
                <bool>true</bool>
               </property>
@@ -364,194 +324,29 @@ hr { height: 1px; border-width: 0; }
 li.unchecked::marker { content: &quot;\2610&quot;; }
 li.checked::marker { content: &quot;\2612&quot;; }
 &lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; font-family:'Sans Serif'; font-size:9pt; font-weight:400; font-style:normal;&quot;&gt;
-&lt;p align=&quot;center&quot; style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;span style=&quot; font-size:12pt;&quot;&gt;Indicate a primary variable&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+&lt;p align=&quot;center&quot; style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;span style=&quot; font-size:12pt;&quot;&gt;Selecciona la variable principal&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
               </property>
              </widget>
             </item>
             <item row="1" column="0">
-             <widget class="QTextEdit" name="textEdit_registry_variable_new"/>
+             <widget class="QTextEdit" name="textEdit_registro_variable_nuevo"/>
             </item>
             <item row="2" column="0">
-             <widget class="QPushButton" name="pushButton_registry_variable_add">
+             <widget class="QPushButton" name="pushButton_registro_variable_annadir">
               <property name="text">
-               <string>Add</string>
+               <string>Añadir</string>
               </property>
              </widget>
             </item>
            </layout>
           </widget>
-          <widget class="QWidget" name="tab_registry_process">
+          <widget class="QWidget" name="tab_registro_procesar">
            <attribute name="title">
-            <string>Process</string>
+            <string>Procesar</string>
            </attribute>
            <layout class="QGridLayout" name="gridLayout_12">
             <item row="0" column="0">
-             <widget class="QTextEdit" name="textEdit_registry_process">
-              <property name="readOnly">
-               <bool>true</bool>
-              </property>
-              <property name="html">
-               <string>&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;
-&lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;meta charset=&quot;utf-8&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
-p, li { white-space: pre-wrap; }
-hr { height: 1px; border-width: 0; }
-li.unchecked::marker { content: &quot;\2610&quot;; }
-li.checked::marker { content: &quot;\2612&quot;; }
-&lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; font-family:'Sans Serif'; font-size:9pt; font-weight:400; font-style:normal;&quot;&gt;
-&lt;p align=&quot;center&quot; style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;span style=&quot; font-size:12pt;&quot;&gt;Process the dataset&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-              </property>
-             </widget>
-            </item>
-            <item row="1" column="0">
-             <widget class="QPushButton" name="pushButton_registry_process">
-              <property name="text">
-               <string>Process</string>
-              </property>
-             </widget>
-            </item>
-           </layout>
-          </widget>
-          <widget class="QWidget" name="tab_registry_outcome">
-           <attribute name="title">
-            <string>Outcome</string>
-           </attribute>
-           <layout class="QGridLayout" name="gridLayout_14">
-            <item row="0" column="0">
-             <widget class="QTextEdit" name="textEdit_registry_outcome">
-              <property name="readOnly">
-               <bool>true</bool>
-              </property>
-              <property name="html">
-               <string>&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;
-&lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;meta charset=&quot;utf-8&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
-p, li { white-space: pre-wrap; }
-hr { height: 1px; border-width: 0; }
-li.unchecked::marker { content: &quot;\2610&quot;; }
-li.checked::marker { content: &quot;\2612&quot;; }
-&lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; font-family:'Sans Serif'; font-size:9pt; font-weight:400; font-style:normal;&quot;&gt;
-&lt;p align=&quot;center&quot; style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;span style=&quot; font-size:12pt;&quot;&gt;Outcome&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-              </property>
-             </widget>
-            </item>
-           </layout>
-          </widget>
-         </widget>
-        </item>
-       </layout>
-      </widget>
-      <widget class="QWidget" name="page_observational">
-       <layout class="QGridLayout" name="gridLayout_13">
-        <item row="1" column="0">
-         <widget class="QTabWidget" name="tabWidget_observational">
-          <property name="currentIndex">
-           <number>0</number>
-          </property>
-          <widget class="QWidget" name="tab_observational_start">
-           <attribute name="title">
-            <string>Start</string>
-           </attribute>
-           <layout class="QGridLayout" name="gridLayout_15">
-            <item row="0" column="0">
-             <widget class="QTextEdit" name="textEdit_observational_start">
-              <property name="readOnly">
-               <bool>true</bool>
-              </property>
-              <property name="html">
-               <string>&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;
-&lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;meta charset=&quot;utf-8&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
-p, li { white-space: pre-wrap; }
-hr { height: 1px; border-width: 0; }
-li.unchecked::marker { content: &quot;\2610&quot;; }
-li.checked::marker { content: &quot;\2612&quot;; }
-&lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; font-family:'Sans Serif'; font-size:9pt; font-weight:400; font-style:normal;&quot;&gt;
-&lt;p align=&quot;center&quot; style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;span style=&quot; font-size:12pt;&quot;&gt;Back to start&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-              </property>
-             </widget>
-            </item>
-            <item row="1" column="0">
-             <widget class="QPushButton" name="pushButton_observational_start">
-              <property name="text">
-               <string>Back to start</string>
-              </property>
-             </widget>
-            </item>
-           </layout>
-          </widget>
-          <widget class="QWidget" name="tab_observational_criteria">
-           <attribute name="title">
-            <string>Inclusion/Exclusion criteria</string>
-           </attribute>
-           <layout class="QGridLayout" name="gridLayout_16">
-            <item row="1" column="0">
-             <widget class="QTextEdit" name="textEdit_observational_criteria_new"/>
-            </item>
-            <item row="0" column="0">
-             <widget class="QTextEdit" name="textEdit_observational_criteria">
-              <property name="readOnly">
-               <bool>true</bool>
-              </property>
-              <property name="html">
-               <string>&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;
-&lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;meta charset=&quot;utf-8&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
-p, li { white-space: pre-wrap; }
-hr { height: 1px; border-width: 0; }
-li.unchecked::marker { content: &quot;\2610&quot;; }
-li.checked::marker { content: &quot;\2612&quot;; }
-&lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; font-family:'Sans Serif'; font-size:9pt; font-weight:400; font-style:normal;&quot;&gt;
-&lt;p align=&quot;center&quot; style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;span style=&quot; font-size:12pt;&quot;&gt;Indicate inclusion/exclusion criteria&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-              </property>
-             </widget>
-            </item>
-            <item row="2" column="0">
-             <widget class="QPushButton" name="pushButton_observational_criteria_add">
-              <property name="text">
-               <string>Add</string>
-              </property>
-             </widget>
-            </item>
-           </layout>
-          </widget>
-          <widget class="QWidget" name="tab_observational_variable">
-           <attribute name="title">
-            <string>Primary variable</string>
-           </attribute>
-           <layout class="QGridLayout" name="gridLayout_17">
-            <item row="1" column="0">
-             <widget class="QTextEdit" name="textEdit_observational_variable_new"/>
-            </item>
-            <item row="0" column="0">
-             <widget class="QTextEdit" name="textEdit_observational_variable">
-              <property name="readOnly">
-               <bool>true</bool>
-              </property>
-              <property name="html">
-               <string>&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;
-&lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;meta charset=&quot;utf-8&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
-p, li { white-space: pre-wrap; }
-hr { height: 1px; border-width: 0; }
-li.unchecked::marker { content: &quot;\2610&quot;; }
-li.checked::marker { content: &quot;\2612&quot;; }
-&lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; font-family:'Sans Serif'; font-size:9pt; font-weight:400; font-style:normal;&quot;&gt;
-&lt;p align=&quot;center&quot; style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;span style=&quot; font-size:12pt;&quot;&gt;Select a primary variable&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-              </property>
-             </widget>
-            </item>
-            <item row="2" column="0">
-             <widget class="QPushButton" name="pushButton_observational_variable_add">
-              <property name="text">
-               <string>Add</string>
-              </property>
-             </widget>
-            </item>
-           </layout>
-          </widget>
-          <widget class="QWidget" name="tab_observational_process">
-           <attribute name="title">
-            <string>Process</string>
-           </attribute>
-           <layout class="QGridLayout" name="gridLayout_18">
-            <item row="0" column="0">
-             <widget class="QTextEdit" name="textEdit_observational_process">
+             <widget class="QTextEdit" name="textEdit_registro_procesar">
               <property name="readOnly">
                <bool>true</bool>
               </property>
@@ -568,21 +363,186 @@ li.checked::marker { content: &quot;\2612&quot;; }
              </widget>
             </item>
             <item row="1" column="0">
-             <widget class="QPushButton" name="pushButton_observational_process">
+             <widget class="QPushButton" name="pushButton_registro_procesar">
               <property name="text">
-               <string>Process</string>
+               <string>Procesar</string>
               </property>
              </widget>
             </item>
            </layout>
           </widget>
-          <widget class="QWidget" name="tab_observational_outcome">
+          <widget class="QWidget" name="tab_registro_resultados">
            <attribute name="title">
-            <string>Outcome</string>
+            <string>Resultados</string>
+           </attribute>
+           <layout class="QGridLayout" name="gridLayout_14">
+            <item row="0" column="0">
+             <widget class="QTextEdit" name="textEdit_registro_resultados">
+              <property name="readOnly">
+               <bool>true</bool>
+              </property>
+              <property name="html">
+               <string>&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;
+&lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;meta charset=&quot;utf-8&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
+p, li { white-space: pre-wrap; }
+hr { height: 1px; border-width: 0; }
+li.unchecked::marker { content: &quot;\2610&quot;; }
+li.checked::marker { content: &quot;\2612&quot;; }
+&lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; font-family:'Sans Serif'; font-size:9pt; font-weight:400; font-style:normal;&quot;&gt;
+&lt;p align=&quot;center&quot; style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;span style=&quot; font-size:12pt;&quot;&gt;Resultados del procesamiento del dataset&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </widget>
+         </widget>
+        </item>
+       </layout>
+      </widget>
+      <widget class="QWidget" name="page_observacional">
+       <layout class="QGridLayout" name="gridLayout_13">
+        <item row="1" column="0">
+         <widget class="QTabWidget" name="tabWidget_observacional">
+          <property name="currentIndex">
+           <number>0</number>
+          </property>
+          <widget class="QWidget" name="tab_observacional_inicio">
+           <attribute name="title">
+            <string>Inicio</string>
+           </attribute>
+           <layout class="QGridLayout" name="gridLayout_15">
+            <item row="0" column="0">
+             <widget class="QTextEdit" name="textEdit_observacional_inicio">
+              <property name="readOnly">
+               <bool>true</bool>
+              </property>
+              <property name="html">
+               <string>&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;
+&lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;meta charset=&quot;utf-8&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
+p, li { white-space: pre-wrap; }
+hr { height: 1px; border-width: 0; }
+li.unchecked::marker { content: &quot;\2610&quot;; }
+li.checked::marker { content: &quot;\2612&quot;; }
+&lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; font-family:'Sans Serif'; font-size:9pt; font-weight:400; font-style:normal;&quot;&gt;
+&lt;p align=&quot;center&quot; style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;span style=&quot; font-size:12pt;&quot;&gt;Volver a la pantalla de inicio&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+              </property>
+             </widget>
+            </item>
+            <item row="1" column="0">
+             <widget class="QPushButton" name="pushButton_observacional_inicio">
+              <property name="text">
+               <string>Volver a inicio</string>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </widget>
+          <widget class="QWidget" name="tab_observacional_criterios">
+           <attribute name="title">
+            <string>Criterios de inclusión/exclusión</string>
+           </attribute>
+           <layout class="QGridLayout" name="gridLayout_16">
+            <item row="1" column="0">
+             <widget class="QTextEdit" name="textEdit_observacional_criterios_nuevos"/>
+            </item>
+            <item row="0" column="0">
+             <widget class="QTextEdit" name="textEdit_observacional_criterios">
+              <property name="readOnly">
+               <bool>true</bool>
+              </property>
+              <property name="html">
+               <string>&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;
+&lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;meta charset=&quot;utf-8&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
+p, li { white-space: pre-wrap; }
+hr { height: 1px; border-width: 0; }
+li.unchecked::marker { content: &quot;\2610&quot;; }
+li.checked::marker { content: &quot;\2612&quot;; }
+&lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; font-family:'Sans Serif'; font-size:9pt; font-weight:400; font-style:normal;&quot;&gt;
+&lt;p align=&quot;center&quot; style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;span style=&quot; font-size:12pt;&quot;&gt;Indica los criterios de inclusión y exclusión&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+              </property>
+             </widget>
+            </item>
+            <item row="2" column="0">
+             <widget class="QPushButton" name="pushButton_observacional_criterios_annadir">
+              <property name="text">
+               <string>Añadir</string>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </widget>
+          <widget class="QWidget" name="tab_observacional_variable">
+           <attribute name="title">
+            <string>Variable principal</string>
+           </attribute>
+           <layout class="QGridLayout" name="gridLayout_17">
+            <item row="1" column="0">
+             <widget class="QTextEdit" name="textEdit_observacional_variable_nuevo"/>
+            </item>
+            <item row="0" column="0">
+             <widget class="QTextEdit" name="textEdit_observacional_variable">
+              <property name="readOnly">
+               <bool>true</bool>
+              </property>
+              <property name="html">
+               <string>&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;
+&lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;meta charset=&quot;utf-8&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
+p, li { white-space: pre-wrap; }
+hr { height: 1px; border-width: 0; }
+li.unchecked::marker { content: &quot;\2610&quot;; }
+li.checked::marker { content: &quot;\2612&quot;; }
+&lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; font-family:'Sans Serif'; font-size:9pt; font-weight:400; font-style:normal;&quot;&gt;
+&lt;p align=&quot;center&quot; style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;span style=&quot; font-size:12pt;&quot;&gt;Selecciona la variable principal&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+              </property>
+             </widget>
+            </item>
+            <item row="2" column="0">
+             <widget class="QPushButton" name="pushButton_observacional_variable_annadir">
+              <property name="text">
+               <string>Añadir</string>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </widget>
+          <widget class="QWidget" name="tab_observacional_procesar">
+           <attribute name="title">
+            <string>Procesar</string>
+           </attribute>
+           <layout class="QGridLayout" name="gridLayout_18">
+            <item row="0" column="0">
+             <widget class="QTextEdit" name="textEdit_observacional_procesar">
+              <property name="readOnly">
+               <bool>true</bool>
+              </property>
+              <property name="html">
+               <string>&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;
+&lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;meta charset=&quot;utf-8&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
+p, li { white-space: pre-wrap; }
+hr { height: 1px; border-width: 0; }
+li.unchecked::marker { content: &quot;\2610&quot;; }
+li.checked::marker { content: &quot;\2612&quot;; }
+&lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; font-family:'Sans Serif'; font-size:9pt; font-weight:400; font-style:normal;&quot;&gt;
+&lt;p align=&quot;center&quot; style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;span style=&quot; font-size:12pt;&quot;&gt;Procesar el dataset&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+              </property>
+             </widget>
+            </item>
+            <item row="1" column="0">
+             <widget class="QPushButton" name="pushButton_observacional_procesar">
+              <property name="text">
+               <string>Procesar</string>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </widget>
+          <widget class="QWidget" name="tab_observacional_resultados">
+           <attribute name="title">
+            <string>Resultados</string>
            </attribute>
            <layout class="QGridLayout" name="gridLayout_19">
             <item row="0" column="0">
-             <widget class="QTextEdit" name="textEdit_observational_outcome">
+             <widget class="QTextEdit" name="textEdit_observacional_resultados">
               <property name="readOnly">
                <bool>true</bool>
               </property>
@@ -603,9 +563,9 @@ li.checked::marker { content: &quot;\2612&quot;; }
          </widget>
         </item>
         <item row="0" column="0">
-         <widget class="QLineEdit" name="lineEdit_observational_title">
+         <widget class="QLineEdit" name="lineEdit_observacional_titulo">
           <property name="text">
-           <string>Observational study</string>
+           <string>Estudio observacional</string>
           </property>
           <property name="readOnly">
            <bool>true</bool>
@@ -614,20 +574,20 @@ li.checked::marker { content: &quot;\2612&quot;; }
         </item>
        </layout>
       </widget>
-      <widget class="QWidget" name="page_clinical">
+      <widget class="QWidget" name="page_clinico">
        <layout class="QGridLayout" name="gridLayout_20">
         <item row="1" column="0">
-         <widget class="QTabWidget" name="tabWidget_clinical">
+         <widget class="QTabWidget" name="tabWidget_clinico">
           <property name="currentIndex">
            <number>0</number>
           </property>
-          <widget class="QWidget" name="tab_clinical_start">
+          <widget class="QWidget" name="tab_clinico_inicio">
            <attribute name="title">
-            <string>Start</string>
+            <string>Inicio</string>
            </attribute>
            <layout class="QGridLayout" name="gridLayout_21">
             <item row="0" column="0">
-             <widget class="QTextEdit" name="textEdit_clinical_start">
+             <widget class="QTextEdit" name="textEdit_clinico_inicio">
               <property name="readOnly">
                <bool>true</bool>
               </property>
@@ -644,24 +604,24 @@ li.checked::marker { content: &quot;\2612&quot;; }
              </widget>
             </item>
             <item row="1" column="0">
-             <widget class="QPushButton" name="pushButton_clinical_start">
+             <widget class="QPushButton" name="pushButton_clinico_inicio">
               <property name="text">
-               <string>Back to start</string>
+               <string>Volver a inicio</string>
               </property>
              </widget>
             </item>
            </layout>
           </widget>
-          <widget class="QWidget" name="tab_clinical_criteria">
+          <widget class="QWidget" name="tab_clinico_criterios">
            <attribute name="title">
-            <string>Inclusion/Exclusion criteria</string>
+            <string>Criterios de inclusión/exclusión</string>
            </attribute>
            <layout class="QGridLayout" name="gridLayout_22">
             <item row="1" column="0">
-             <widget class="QTextEdit" name="textEdit_clinico_criteria_new"/>
+             <widget class="QTextEdit" name="textEdit_clinico_criterios_nuevos"/>
             </item>
             <item row="0" column="0">
-             <widget class="QTextEdit" name="textEdit_clinical_criteria">
+             <widget class="QTextEdit" name="textEdit_clinico_criterios">
               <property name="readOnly">
                <bool>true</bool>
               </property>
@@ -673,26 +633,26 @@ hr { height: 1px; border-width: 0; }
 li.unchecked::marker { content: &quot;\2610&quot;; }
 li.checked::marker { content: &quot;\2612&quot;; }
 &lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; font-family:'Sans Serif'; font-size:9pt; font-weight:400; font-style:normal;&quot;&gt;
-&lt;p align=&quot;center&quot; style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;span style=&quot; font-size:12pt;&quot;&gt;Indicate the inclusion/exclusion criteria&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+&lt;p align=&quot;center&quot; style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;span style=&quot; font-size:12pt;&quot;&gt;Indica los criterios de inclusión y exclusión&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
               </property>
              </widget>
             </item>
             <item row="2" column="0">
-             <widget class="QPushButton" name="pushButton_clinical_criteria_add">
+             <widget class="QPushButton" name="pushButton_clinico_criterios_annadir">
               <property name="text">
-               <string>Add</string>
+               <string>Añadir</string>
               </property>
              </widget>
             </item>
            </layout>
           </widget>
-          <widget class="QWidget" name="tab_clinical_investigational">
+          <widget class="QWidget" name="tab_clinico_farmaco_experimental">
            <attribute name="title">
-            <string>Investigational drug</string>
+            <string>Fármaco experimental</string>
            </attribute>
            <layout class="QGridLayout" name="gridLayout_28">
             <item row="0" column="0">
-             <widget class="QTextEdit" name="textEdit_clinical_investigational">
+             <widget class="QTextEdit" name="textEdit_clinico_experimental">
               <property name="readOnly">
                <bool>true</bool>
               </property>
@@ -704,29 +664,29 @@ hr { height: 1px; border-width: 0; }
 li.unchecked::marker { content: &quot;\2610&quot;; }
 li.checked::marker { content: &quot;\2612&quot;; }
 &lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; font-family:'Sans Serif'; font-size:9pt; font-weight:400; font-style:normal;&quot;&gt;
-&lt;p align=&quot;center&quot; style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;span style=&quot; font-size:12pt;&quot;&gt;Indicate the investigational drug&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+&lt;p align=&quot;center&quot; style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;span style=&quot; font-size:12pt;&quot;&gt;Indica el fármaco experimental&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
               </property>
              </widget>
             </item>
             <item row="1" column="0">
-             <widget class="QTextEdit" name="textEdit_clinical_investigational_new"/>
+             <widget class="QTextEdit" name="textEdit_clinico_experimental_nuevo"/>
             </item>
             <item row="2" column="0">
-             <widget class="QPushButton" name="pushButton_clinical_investigational_add">
+             <widget class="QPushButton" name="pushButton_clinico_experimental_annadir">
               <property name="text">
-               <string>Add</string>
+               <string>Añadir</string>
               </property>
              </widget>
             </item>
            </layout>
           </widget>
-          <widget class="QWidget" name="tab_clinical_control_drug">
+          <widget class="QWidget" name="tab_clinico_farmaco_control">
            <attribute name="title">
-            <string>Control drug</string>
+            <string>Fármaco de control</string>
            </attribute>
            <layout class="QGridLayout" name="gridLayout_26">
             <item row="0" column="0">
-             <widget class="QTextEdit" name="textEdit_clinical_control">
+             <widget class="QTextEdit" name="textEdit_clinico_control">
               <property name="readOnly">
                <bool>true</bool>
               </property>
@@ -738,29 +698,29 @@ hr { height: 1px; border-width: 0; }
 li.unchecked::marker { content: &quot;\2610&quot;; }
 li.checked::marker { content: &quot;\2612&quot;; }
 &lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; font-family:'Sans Serif'; font-size:9pt; font-weight:400; font-style:normal;&quot;&gt;
-&lt;p align=&quot;center&quot; style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;span style=&quot; font-size:12pt;&quot;&gt;Indicate the control drug&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+&lt;p align=&quot;center&quot; style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;span style=&quot; font-size:12pt;&quot;&gt;Indica el fármaco de control&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
               </property>
              </widget>
             </item>
             <item row="1" column="0">
-             <widget class="QTextEdit" name="textEdit_clinical_control_new"/>
+             <widget class="QTextEdit" name="textEdit_clinico_control_nuevo"/>
             </item>
             <item row="2" column="0">
-             <widget class="QPushButton" name="pushButton_clinical_control_add">
+             <widget class="QPushButton" name="pushButton_clinico_control_annadir">
               <property name="text">
-               <string>Add</string>
+               <string>Añadir</string>
               </property>
              </widget>
             </item>
            </layout>
           </widget>
-          <widget class="QWidget" name="tab_clinical_disease">
+          <widget class="QWidget" name="tab_clinico_enfermedad">
            <attribute name="title">
-            <string>Disease/Disorder</string>
+            <string>Enfermedad/Trastorno</string>
            </attribute>
            <layout class="QGridLayout" name="gridLayout_27">
             <item row="0" column="0">
-             <widget class="QTextEdit" name="textEdit_clinical_disease">
+             <widget class="QTextEdit" name="textEdit_clinico_enfermedad">
               <property name="readOnly">
                <bool>true</bool>
               </property>
@@ -772,29 +732,29 @@ hr { height: 1px; border-width: 0; }
 li.unchecked::marker { content: &quot;\2610&quot;; }
 li.checked::marker { content: &quot;\2612&quot;; }
 &lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; font-family:'Sans Serif'; font-size:9pt; font-weight:400; font-style:normal;&quot;&gt;
-&lt;p align=&quot;center&quot; style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;span style=&quot; font-size:12pt;&quot;&gt;Indicate the disease or disorder&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+&lt;p align=&quot;center&quot; style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;span style=&quot; font-size:12pt;&quot;&gt;Indica la enfermedad o trastorno&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
               </property>
              </widget>
             </item>
             <item row="1" column="0">
-             <widget class="QTextEdit" name="textEdit_clinical_disease_new"/>
+             <widget class="QTextEdit" name="textEdit_clinico_enfermedad_nuevo"/>
             </item>
             <item row="2" column="0">
-             <widget class="QPushButton" name="pushButton_clinical_disease_add">
+             <widget class="QPushButton" name="pushButton_clinico_enfermedad_annadir">
               <property name="text">
-               <string>Add</string>
+               <string>Añadir</string>
               </property>
              </widget>
             </item>
            </layout>
           </widget>
-          <widget class="QWidget" name="tab_clinical_variable">
+          <widget class="QWidget" name="tab_clinico_variable">
            <attribute name="title">
-            <string>Primary variable</string>
+            <string>Variable principal</string>
            </attribute>
            <layout class="QGridLayout" name="gridLayout_23">
             <item row="0" column="0">
-             <widget class="QTextEdit" name="textEdit_clinical_variable">
+             <widget class="QTextEdit" name="textEdit_clinico_variable">
               <property name="readOnly">
                <bool>true</bool>
               </property>
@@ -806,29 +766,29 @@ hr { height: 1px; border-width: 0; }
 li.unchecked::marker { content: &quot;\2610&quot;; }
 li.checked::marker { content: &quot;\2612&quot;; }
 &lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; font-family:'Sans Serif'; font-size:9pt; font-weight:400; font-style:normal;&quot;&gt;
-&lt;p align=&quot;center&quot; style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;span style=&quot; font-size:12pt;&quot;&gt;Indicate the primary variable&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+&lt;p align=&quot;center&quot; style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;span style=&quot; font-size:12pt;&quot;&gt;Selecciona la variable principal&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
               </property>
              </widget>
             </item>
             <item row="1" column="0">
-             <widget class="QTextEdit" name="textEdit_clinical_variable_new"/>
+             <widget class="QTextEdit" name="textEdit_clinico_variable_nuevo"/>
             </item>
             <item row="2" column="0">
-             <widget class="QPushButton" name="pushButton_clinical_variable_add">
+             <widget class="QPushButton" name="pushButton_clinico_variable_annadir">
               <property name="text">
-               <string>Add</string>
+               <string>Añadir</string>
               </property>
              </widget>
             </item>
            </layout>
           </widget>
-          <widget class="QWidget" name="tab_clinical_process">
+          <widget class="QWidget" name="tab_clinico_procesar">
            <attribute name="title">
-            <string>Process</string>
+            <string>Procesar</string>
            </attribute>
            <layout class="QGridLayout" name="gridLayout_24">
             <item row="0" column="0">
-             <widget class="QTextEdit" name="textEdit_clinical_process">
+             <widget class="QTextEdit" name="textEdit_clinico_procesar">
               <property name="readOnly">
                <bool>true</bool>
               </property>
@@ -840,26 +800,26 @@ hr { height: 1px; border-width: 0; }
 li.unchecked::marker { content: &quot;\2610&quot;; }
 li.checked::marker { content: &quot;\2612&quot;; }
 &lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; font-family:'Sans Serif'; font-size:9pt; font-weight:400; font-style:normal;&quot;&gt;
-&lt;p align=&quot;center&quot; style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;span style=&quot; font-size:12pt;&quot;&gt;Process&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+&lt;p align=&quot;center&quot; style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;span style=&quot; font-size:12pt;&quot;&gt;Procesar&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
               </property>
              </widget>
             </item>
             <item row="1" column="0">
-             <widget class="QPushButton" name="pushButton_clinical_process">
+             <widget class="QPushButton" name="pushButton_clinico_procesar">
               <property name="text">
-               <string>Process</string>
+               <string>Procesar</string>
               </property>
              </widget>
             </item>
            </layout>
           </widget>
-          <widget class="QWidget" name="tab_clinical_outcome">
+          <widget class="QWidget" name="tab_clinico_resultados">
            <attribute name="title">
-            <string>Outcome</string>
+            <string>Resultados</string>
            </attribute>
            <layout class="QGridLayout" name="gridLayout_25">
             <item row="0" column="0">
-             <widget class="QTextEdit" name="textEdit_clinical_outcome">
+             <widget class="QTextEdit" name="textEdit_clinico_resultados">
               <property name="readOnly">
                <bool>true</bool>
               </property>
@@ -871,7 +831,7 @@ hr { height: 1px; border-width: 0; }
 li.unchecked::marker { content: &quot;\2610&quot;; }
 li.checked::marker { content: &quot;\2612&quot;; }
 &lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; font-family:'Sans Serif'; font-size:9pt; font-weight:400; font-style:normal;&quot;&gt;
-&lt;p align=&quot;center&quot; style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;span style=&quot; font-size:12pt;&quot;&gt;Outcome&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+&lt;p align=&quot;center&quot; style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;span style=&quot; font-size:12pt;&quot;&gt;Resultados del procesado del dataset&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
               </property>
              </widget>
             </item>
@@ -880,9 +840,9 @@ li.checked::marker { content: &quot;\2612&quot;; }
          </widget>
         </item>
         <item row="0" column="0">
-         <widget class="QLineEdit" name="lineEdit_clinical_title">
+         <widget class="QLineEdit" name="lineEdit_clinico_titulo">
           <property name="text">
-           <string>Clinical trial</string>
+           <string>Estudio clínico</string>
           </property>
           <property name="readOnly">
            <bool>true</bool>
@@ -904,24 +864,30 @@ li.checked::marker { content: &quot;\2612&quot;; }
      <height>19</height>
     </rect>
    </property>
-   <widget class="QMenu" name="menuFile">
+   <widget class="QMenu" name="menuArchivo">
     <property name="title">
-     <string>File</string>
+     <string>Archivo</string>
     </property>
    </widget>
-   <widget class="QMenu" name="menuHelp">
+   <widget class="QMenu" name="menuOpciones">
     <property name="title">
-     <string>Help</string>
+     <string>Opciones</string>
     </property>
-    <addaction name="actionAbout"/>
    </widget>
-   <addaction name="menuFile"/>
-   <addaction name="menuHelp"/>
+   <widget class="QMenu" name="menuAyuda">
+    <property name="title">
+     <string>Ayuda</string>
+    </property>
+    <addaction name="actionAcerca_de"/>
+   </widget>
+   <addaction name="menuArchivo"/>
+   <addaction name="menuOpciones"/>
+   <addaction name="menuAyuda"/>
   </widget>
   <widget class="QStatusBar" name="statusbar"/>
-  <action name="actionAbout">
+  <action name="actionAcerca_de">
    <property name="text">
-    <string>About</string>
+    <string>Acerca de...</string>
    </property>
   </action>
  </widget>

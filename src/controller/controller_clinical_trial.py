@@ -1,8 +1,8 @@
-# controller/controller_registro.py
+# controller/controller_clinical_trial.py
 
 from PySide6.QtWidgets import QPushButton, QTabWidget
 
-class ControllerRegistro:
+class ControllerClinicalTrial:
     def __init__(self, ui, model, controller):
         """
         :param ui: QWidget corresponding to the page in the QStackedWidget.
@@ -13,17 +13,18 @@ class ControllerRegistro:
         self.model = model
         self.controller = controller
 
-        self.tabWidget_registro = self.ui.findChild(QTabWidget, "tabWidget_registro")
-        self.pushButton_registro_inicio = self.ui.findChild(QPushButton, "pushButton_registro_inicio")
+        self.tabWidget_clinico = self.ui.findChild(QTabWidget, "tabWidget_clinico")
+        self.pushButton_clinico_inicio = self.ui.findChild(QPushButton, "pushButton_clinico_inicio")
+
         self._setup_signals()
 
-        self.tabWidget_registro.setCurrentIndex(1)
+        self.tabWidget_clinico.setCurrentIndex(1)
 
     def _setup_signals(self):
         """
         Connect UI elements (buttons, etc.) to their respective slots.
         """
-        self.pushButton_registro_inicio.clicked.connect(self._back_to_init)
+        self.pushButton_clinico_inicio.clicked.connect(self._back_to_init)
 
     def _back_to_init(self):
         self.controller.change_page(0)

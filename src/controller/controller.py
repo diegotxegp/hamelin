@@ -3,15 +3,18 @@
 from PySide6.QtWidgets import QMainWindow
 from view.interface_ui import Ui_MainWindow
 
-from controller.controller_inicio import ControllerInicio
-from controller.controller_registro import ControllerRegistro
-from controller.controller_observacional import ControllerObservacional
-from controller.controller_clinico import ControllerClinico
+from controller.controller_start import ControllerStart
+from controller.controller_patient_registry import ControllerPatientRegistry
+from controller.controller_observational_study import ControllerObservationalStudy
+from controller.controller_clinical_trial import ControllerClinicalTrial
 
 from model.model import Model
 
 
 class MainWindow(QMainWindow):
+    """
+    Main window of the application.
+    """
     def __init__(self):
         super().__init__()
         self.ui = Ui_MainWindow()
@@ -19,7 +22,13 @@ class MainWindow(QMainWindow):
 
 
 class Controller:
+    """
+    Controller for the main window.
+    """
     def __init__(self):
+        """
+        Controller for the main window.
+        """
         self.model = Model()
         self.window = MainWindow()
 
@@ -28,30 +37,40 @@ class Controller:
 
         # Set initial page and tab
         self.window.ui.stackedWidget.setCurrentIndex(self.page)
-        self.window.ui.tabWidget_inicio.setCurrentIndex(self.tab)
+        self.window.ui.tabWidget_start.setCurrentIndex(self.tab)
 
         # Instantiate subcontrollers
-        self.controller_inicio = ControllerInicio(
-            self.window.ui.page_inicio, self.model, self
+        self.controller_start = ControllerStart(
+            self.window.ui.page_start, self.model, self
         )
-        self.controller_registro = ControllerRegistro(
-            self.window.ui.page_registro, self.model, self
-        )
-        
-        self.controller_observacional = ControllerObservacional(
-            self.window.ui.page_observacional, self.model, self
+        """
+        self.controller_patient_registry = ControllerPatientRegistry(
+            self.window.ui.page_registry, self.model, self
         )
         
-        self.controller_clinico = ControllerClinico(
-            self.window.ui.page_clinico, self.model, self
+        self.controller_observational_study = ControllerObservationalStudy(
+            self.window.ui.page_observational, self.model, self
         )
+        
+        self.controller_clinical_trial = ControllerClinicalTrial(
+            self.window.ui.page_clinical, self.model, self
+        )
+        """
 
     def show(self):
+        """
+        Show the main window.
+        """
         self.window.showMaximized()
 
     def change_page(self, index: int):
+        """
+        Change the current page.
+
+        :param index: Index of the page to be displayed.
+        """
         self.window.ui.stackedWidget.setCurrentIndex(index)
 
         # Set initial tab
         if index == 0:
-            self.window.ui.tabWidget_inicio.setCurrentIndex(0)
+            self.window.ui.tabWidget_start.setCurrentIndex(0)

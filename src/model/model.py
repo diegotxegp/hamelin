@@ -7,6 +7,23 @@ import pandas as pd
 class Model:
     def __init__(self):
         self.df = None
+        self.projects_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "../..", "Projects")
+
+    def project_list(self):
+        """
+        Returns a list of projects.
+        """
+        return os.listdir(self.projects_dir)
+
+    def new_project(self, project_name):
+        # Create Projects folder if it doesn't exist
+        if not os.path.exists(self.projects_dir):
+            os.makedirs(self.projects_dir)
+    
+        # Create the new project folder inside Projects
+        project_dir = os.path.join(self.projects_dir, project_name)
+        if not os.path.exists(project_dir):
+            os.makedirs(project_dir)
 
     def attach_csv(self):
         # Open file dialog to select the CSV file
@@ -33,7 +50,7 @@ class Model:
 
     def load_csv(self, file_path):
         try:
-            self.dataframe = pd.read_csv(file_path)
-            return f"✅ Successfully loaded {len(self.dataframe)} rows."
+            self.df = pd.read_csv(file_path)
+            return f"✅ Successfully loaded {len(self.df)} rows."
         except Exception as e:
             return f"❌ Failed to load the file: {str(e)}"
