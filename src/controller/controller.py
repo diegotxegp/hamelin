@@ -1,6 +1,6 @@
 # controller/controller.py
 
-from PySide6.QtWidgets import QMainWindow
+from PySide6.QtWidgets import QMainWindow, QMessageBox
 from view.interface_ui import Ui_MainWindow
 
 from controller.controller_start import ControllerStart
@@ -39,10 +39,9 @@ class Controller:
         self.window.ui.stackedWidget.setCurrentIndex(self.page)
         self.window.ui.tabWidget_start.setCurrentIndex(self.tab)
 
-        # Instantiate subcontrollers
-        self.controller_start = ControllerStart(
-            self.window.ui.page_start, self
-        )
+        # Set up controllers
+        model_start = self.model.get_model_start()
+        self.controller_start = ControllerStart(self.window.ui.page_start, model_start, self)
         """
         self.controller_patient_registry = ControllerPatientRegistry(
             self.window.ui.page_registry, self
@@ -70,19 +69,13 @@ class Controller:
         :param index: Index of the page to be displayed.
         """
         self.window.ui.stackedWidget.setCurrentIndex(index)
-
-        # Set initial tab
-        if index == 0:
-            self.window.ui.tabWidget_start.setCurrentIndex(0)
-
-    def new_project(self, project_name):
-        return self.model.new_project(project_name)
-
-    def project_list(self):
-        return self.model.project_list()
-
-    def set_project(self, project_name):
-        return self.model.set_project(project_name)
-
-    def dataset_list(self):
-        return self.model.dataset_list()
+    
+    def emerging_message(self, parent, title, text):
+        """
+        Displays a message box with the given title and text.
+        """
+        msg = QMessageBox(parent)
+        msg.setIcon(QMessageBox.Warning)
+        msg.setWindowTitle(title)
+        msg.setText(text)
+        msg.exec()

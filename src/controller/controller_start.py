@@ -1,9 +1,9 @@
 # controller/controller_start.py
 
-from PySide6.QtWidgets import QPushButton, QComboBox, QTabWidget, QInputDialog, QListWidget
+from PySide6.QtWidgets import QPushButton, QComboBox, QTabWidget, QInputDialog, QListWidget, QTextEdit, QFileDialog
 
 class ControllerStart:
-    def __init__(self, ui, controller):
+    def __init__(self, ui, model_start, controller):
         """
         Controller for the 'Start' page.
 
@@ -11,6 +11,7 @@ class ControllerStart:
         :param controller: Main application controller that handles navigation and coordination.
         """
         self.ui = ui
+        self.model_start = model_start
         self.controller = controller
 
         self.tab = 0 # Initial tab. Default: Welcome
@@ -19,19 +20,23 @@ class ControllerStart:
         self.tabWidget_start.setCurrentIndex(self.tab)
 
         # Tab: Welcome
-        self.pushButton_start_welcome_accept = self.ui.findChild(QPushButton, "pushButton_start_welcome_accept")
+        self.pushButton_start_welcome_ok = self.ui.findChild(QPushButton, "pushButton_start_welcome_ok")
 
         # Tab: Project
         self.listWidget_start_project = self.ui.findChild(QListWidget, "listWidget_start_project")
-        self.pushButton_start_project_select = self.ui.findChild(QPushButton, "pushButton_start_project_select")
+        self.pushButton_start_project_ok = self.ui.findChild(QPushButton, "pushButton_start_project_ok")
 
         # Tab: Data
         self.listWidget_start_data = self.ui.findChild(QListWidget, "listWidget_start_data")
-        self.pushButton_start_data_select = self.ui.findChild(QPushButton, "pushButton_start_data_select")
+        self.pushButton_start_data_ok = self.ui.findChild(QPushButton, "pushButton_start_data_ok")
+
+        # Tab: Status
+        self.textEdit_start_status = self.ui.findChild(QTextEdit, "textEdit_start_status")
+        self.pushButton_start_status_ok = self.ui.findChild(QPushButton, "pushButton_start_status_ok")
 
         # Tab: Options
         self.comboBox_start_options = self.ui.findChild(QComboBox, "comboBox_start_options")
-        self.pushButton_start_options_select = self.ui.findChild(QPushButton, "pushButton_start_options_select")
+        self.pushButton_start_options_ok = self.ui.findChild(QPushButton, "pushButton_start_options_ok")
         
         self._setup_signals()
         self._set_tabs_disabled()
@@ -41,24 +46,32 @@ class ControllerStart:
         Connect UI elements (buttons, etc.) to their respective slots.
         """
         # Tab: Welcome
-        self.pushButton_start_welcome_accept.clicked.connect(self._ok)
+        self.pushButton_start_welcome_ok.clicked.connect(self._ok)
 
         # Tab: Project
-        self.pushButton_start_project_select.clicked.connect(self._ok)
+        self.pushButton_start_project_ok.clicked.connect(self._ok)
 
         # Tab: Datos
-        self.pushButton_start_data_select.clicked.connect(self._ok)
+        self.pushButton_start_data_ok.clicked.connect(self._ok)
+
+        # Tab: Status
+        self.pushButton_start_status_ok.clicked.connect(self._ok)
 
         # Tab: Opciones
-        self.pushButton_start_options_select.clicked.connect(self._ok)
+        self.pushButton_start_options_ok.clicked.connect(self._ok)
 
     def _set_tabs_disabled(self):
-        self.tabs = self.tabWidget_start.count()
+        """
+        Disables all tabs except the first one.
+        """
+        tabs = self.tabWidget_start.count()
 
-        for i in range(1, self.tabs):
+        for i in range(1, tabs):
             self.tabWidget_start.setTabEnabled(i, False)
 
     def _ok(self):
+        self.tab = self.tabWidget_start.currentIndex()
+        
         # Tab 0: Welcome
         if self.tab == 0:
             self._initialize_tab_project()
@@ -77,24 +90,33 @@ class ControllerStart:
 
         # Tab 2: Data
         if self.tab == 2:
-            dataset_list = self.controller.dataset_list()
-            if dataset_list is not None:
-                for dataset in dataset_list:
-                    self.listWidget_start_data.addItem(dataset)
+            if self.listWidget_start_data.currentItem().text() == "[New dataset]":
+                self._new_dataset()
+            else:
+                self._select_dataset()
+                self._next_tab()
+                return
+
+        # Tab 3: Status
+        # Tab 4: Options
+
 
     def _next_tab(self):
         """
         Increments the tab index and enables the next tab.
         """
         self.tab = self.tabWidget_start.currentIndex() + 1
-        self.tabWidget_start.setCurrentIndex(self.tab)
         self.tabWidget_start.setTabEnabled(self.tab, True)
+        self.tabWidget_start.setCurrentIndex(self.tab)
 
-    # Tab: Project
     def _initialize_tab_project(self):
-        self.listWidget_start_project.addItem("[New project]")
+        """
+        Initializes the project tab.
+        """
+        self.listWidget_start_project.addItem("[New project]") # Writes "[New project]" in the list widget
 
-        project_list = self.controller.project_list()
+        project_list = self.model_start.project_list() # Gets the list of projects
+        # If the list is not empty, add each project to the list widget
         if project_list is not None:
             for project in project_list:
                 self.listWidget_start_project.addItem(project)
@@ -105,23 +127,63 @@ class ControllerStart:
         """
         name, ok = QInputDialog.getText(self.ui, "New project", "Enter the project name:")
         if ok and name:
-            self.controller.new_project(name)
-            self._initialize_tab_project()
+            np = self.model_start.new_project(name)
+            if np == None:
+                self.controller.emerging_message(self.ui, "Project name exists", "This project name already exists. Please choose a different name.")
+            else:
+                self._initialize_tab_project()
 
     def _select_project(self):
         """
         Reads the selected project from the list widget.
         """
         selected_project = self.listWidget_start_project.currentItem().text()
-        self.controller.set_project(selected_project)
+        self.model_start.select_project(selected_project)
 
     def _initialize_tab_data(self):
         self.listWidget_start_data.addItem("[New dataset]")
 
-        dataset_list = self.controller.dataset_list()
+        dataset_list = self.model_start.dataset_list()
         if dataset_list is not None:
             for dataset in dataset_list:
                 self.listWidget_start_data.addItem(dataset)
+
+    def _new_dataset(self):
+        # Open file dialog to select the CSV file
+        origin_path, _ = QFileDialog.getOpenFileName(None, "Open CSV File", "", "CSV Files (*.csv)")
+        if origin_path:
+            self.model_start.new_dataset(origin_path)
+
+
+
+
+
+
+            # Define the target directory (e.g., 'data' folder inside your project)
+            target_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "../..", "data")
+            if not os.path.exists(target_dir):
+                os.makedirs(target_dir)  # Create the 'data' folder if it doesn't exist
+
+            # Define the target file path where the CSV will be saved
+            target_file = os.path.join(target_dir, os.path.basename(path))
+
+            # Copy the CSV file to the target folder
+            shutil.copy(path, target_file)
+
+            # Update the model (if necessary)
+            message = self.model.load_csv(target_file)
+
+            # Update UI with a success message
+            self.ui.textEdit_2.setPlainText(message)
+            self.ui.textEdit_3.setPlainText(f"📊 CSV loaded and saved to {target_file}. You may proceed with the analysis.")
+
+
+    def load_csv(self, file_path):
+        try:
+            self.df = pd.read_csv(file_path)
+            return f"✅ Successfully loaded {len(self.df)} rows."
+        except Exception as e:
+            return f"❌ Failed to load the file: {str(e)}"
 
     def _select_option(self):
         """
