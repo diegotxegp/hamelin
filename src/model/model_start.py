@@ -28,6 +28,11 @@ class ModelStart:
         if not os.path.exists(project_dir):
             os.makedirs(project_dir)
             self.model.project_dir = project_dir
+            print(f"✅ Project '{project_name}' created.")
+            return self.model.project_dir
+        else:
+            print(f"❌ Project '{project_name}' already exists.")
+            return None
 
     def select_project(self, project_name):
         """
@@ -37,7 +42,19 @@ class ModelStart:
         self.model.project_dir = project_dir
     
     def new_dataset(self, origin_path):
-        pass
+        # Copy the CSV file to the target folder
+        self.model.dataset_dir = os.path.join(self.model.project_dir, os.path.basename(origin_path))
+
+        if not self.model.dataset_dir in os.listdir(self.model.project_dir):
+            shutil.copy(origin_path, self.model.dataset_dir)
+            self._load_csv(self.model.dataset_dir)
+
+    def _load_csv(self, file_path):
+        try:
+            self.model.df = pd.read_csv(file_path)
+            return f"✅ Successfully loaded {len(self.model.df)} rows."
+        except Exception as e:
+            return f"❌ Failed to load the file: {str(e)}"
 
     def dataset_list(self):
         """

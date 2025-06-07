@@ -561,7 +561,7 @@ class Ui_MainWindow(object):
         self.retranslateUi(MainWindow)
 
         self.stackedWidget.setCurrentIndex(0)
-        self.tabWidget_start.setCurrentIndex(0)
+        self.tabWidget_start.setCurrentIndex(2)
         self.tabWidget_registry.setCurrentIndex(3)
         self.tabWidget_observational.setCurrentIndex(0)
         self.tabWidget_clinical.setCurrentIndex(0)

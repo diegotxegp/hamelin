@@ -71,11 +71,11 @@ class ControllerStart:
 
     def _ok(self):
         self.tab = self.tabWidget_start.currentIndex()
-        
+
         # Tab 0: Welcome
         if self.tab == 0:
-            self._initialize_tab_project()
-            self._next_tab()
+            self._initialize_tab_project() # Initializes the project tab
+            self._next_tab() # Switches to the next tab
             return
 
         # Tab 1: Project
@@ -83,9 +83,9 @@ class ControllerStart:
             if self.listWidget_start_project.currentItem().text() == "[New project]":
                 self._new_project()
             else:
-                self._select_project()
-                self._initialize_tab_data()
-                self._next_tab()
+                self._select_project() # Selects the project
+                self._initialize_tab_data() # Initializes the data tab
+                self._next_tab() # Switches to the next tab
                 return
 
         # Tab 2: Data
@@ -93,8 +93,9 @@ class ControllerStart:
             if self.listWidget_start_data.currentItem().text() == "[New dataset]":
                 self._new_dataset()
             else:
-                self._select_dataset()
-                self._next_tab()
+                self._select_dataset() # Selects the dataset
+                self._initialize_tab_status() # Initializes the status tab
+                self._next_tab() # Switches to the next tab
                 return
 
         # Tab 3: Status
@@ -113,6 +114,8 @@ class ControllerStart:
         """
         Initializes the project tab.
         """
+        self.listWidget_start_project.clear()
+
         self.listWidget_start_project.addItem("[New project]") # Writes "[New project]" in the list widget
 
         project_list = self.model_start.project_list() # Gets the list of projects
@@ -141,6 +144,8 @@ class ControllerStart:
         self.model_start.select_project(selected_project)
 
     def _initialize_tab_data(self):
+        self.listWidget_start_data.clear()
+        
         self.listWidget_start_data.addItem("[New dataset]")
 
         dataset_list = self.model_start.dataset_list()
@@ -153,37 +158,6 @@ class ControllerStart:
         origin_path, _ = QFileDialog.getOpenFileName(None, "Open CSV File", "", "CSV Files (*.csv)")
         if origin_path:
             self.model_start.new_dataset(origin_path)
-
-
-
-
-
-
-            # Define the target directory (e.g., 'data' folder inside your project)
-            target_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "../..", "data")
-            if not os.path.exists(target_dir):
-                os.makedirs(target_dir)  # Create the 'data' folder if it doesn't exist
-
-            # Define the target file path where the CSV will be saved
-            target_file = os.path.join(target_dir, os.path.basename(path))
-
-            # Copy the CSV file to the target folder
-            shutil.copy(path, target_file)
-
-            # Update the model (if necessary)
-            message = self.model.load_csv(target_file)
-
-            # Update UI with a success message
-            self.ui.textEdit_2.setPlainText(message)
-            self.ui.textEdit_3.setPlainText(f"📊 CSV loaded and saved to {target_file}. You may proceed with the analysis.")
-
-
-    def load_csv(self, file_path):
-        try:
-            self.df = pd.read_csv(file_path)
-            return f"✅ Successfully loaded {len(self.df)} rows."
-        except Exception as e:
-            return f"❌ Failed to load the file: {str(e)}"
 
     def _select_option(self):
         """

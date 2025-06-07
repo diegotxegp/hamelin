@@ -10,6 +10,8 @@ class Model:
         self.project_dir = None
         self.dataset_dir = None
         self.df = None
+        self.status = None
+        self.option = None
 
         self.model_start = ModelStart(self)
 
