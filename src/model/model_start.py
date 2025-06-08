@@ -40,6 +40,14 @@ class ModelStart:
         """
         project_dir = os.path.join(self.model.base_projects_dir, project_name)
         self.model.project_dir = project_dir
+
+    def dataset_list(self):
+        """
+        Returns a list of datasets if the directory exists.
+        """
+        if self.model.project_dir == None or not os.path.isdir(self.model.project_dir):
+            return None
+        return os.listdir(self.model.project_dir)
     
     def new_dataset(self, origin_path):
         # Copy the CSV file to the target folder
@@ -55,11 +63,10 @@ class ModelStart:
             return f"✅ Successfully loaded {len(self.model.df)} rows."
         except Exception as e:
             return f"❌ Failed to load the file: {str(e)}"
-
-    def dataset_list(self):
+        
+    def select_dataset(self, dataset_name):
         """
-        Returns a list of datasets if the directory exists.
+        Sets the dataset directory to the given dataset name.
         """
-        if self.model.project_dir == None or not os.path.isdir(self.model.project_dir):
-            return None
-        return os.listdir(self.model.project_dir)
+        self.model.dataset_dir = os.path.join(self.model.project_dir, dataset_name)
+        self._load_csv(self.model.dataset_dir)

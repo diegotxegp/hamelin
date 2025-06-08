@@ -194,10 +194,10 @@ class Ui_MainWindow(object):
 
         self.gridLayout_9.addWidget(self.textEdit_registry_dataset, 0, 0, 1, 1)
 
-        self.pushButton_registry_dataset_accept = QPushButton(self.tab_registry_dataset)
-        self.pushButton_registry_dataset_accept.setObjectName(u"pushButton_registry_dataset_accept")
+        self.pushButton_registry_dataset_ok = QPushButton(self.tab_registry_dataset)
+        self.pushButton_registry_dataset_ok.setObjectName(u"pushButton_registry_dataset_ok")
 
-        self.gridLayout_9.addWidget(self.pushButton_registry_dataset_accept, 1, 0, 1, 1)
+        self.gridLayout_9.addWidget(self.pushButton_registry_dataset_ok, 1, 0, 1, 1)
 
         self.tabWidget_registry.addTab(self.tab_registry_dataset, "")
         self.tab_registry_criteria = QWidget()
@@ -560,11 +560,11 @@ class Ui_MainWindow(object):
 
         self.retranslateUi(MainWindow)
 
-        self.stackedWidget.setCurrentIndex(0)
-        self.tabWidget_start.setCurrentIndex(2)
-        self.tabWidget_registry.setCurrentIndex(3)
-        self.tabWidget_observational.setCurrentIndex(0)
-        self.tabWidget_clinical.setCurrentIndex(0)
+        self.stackedWidget.setCurrentIndex(3)
+        self.tabWidget_start.setCurrentIndex(3)
+        self.tabWidget_registry.setCurrentIndex(2)
+        self.tabWidget_observational.setCurrentIndex(2)
+        self.tabWidget_clinical.setCurrentIndex(4)
 
 
         QMetaObject.connectSlotsByName(MainWindow)
@@ -647,7 +647,7 @@ class Ui_MainWindow(object):
 "li.checked::marker { content: \"\\2612\"; }\n"
 "</style></head><body style=\" font-family:'Sans Serif'; font-size:9pt; font-weight:400; font-style:normal;\">\n"
 "<p align=\"center\" style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-size:12pt;\">Modify the dataset</span></p></body></html>", None))
-        self.pushButton_registry_dataset_accept.setText(QCoreApplication.translate("MainWindow", u"Accept", None))
+        self.pushButton_registry_dataset_ok.setText(QCoreApplication.translate("MainWindow", u"Ok", None))
         self.tabWidget_registry.setTabText(self.tabWidget_registry.indexOf(self.tab_registry_dataset), QCoreApplication.translate("MainWindow", u"Dataset", None))
         self.textEdit_registry_criteria.setHtml(QCoreApplication.translate("MainWindow", u"<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0//EN\" \"http://www.w3.org/TR/REC-html40/strict.dtd\">\n"
 "<html><head><meta name=\"qrichtext\" content=\"1\" /><meta charset=\"utf-8\" /><style type=\"text/css\">\n"
@@ -656,7 +656,8 @@ class Ui_MainWindow(object):
 "li.unchecked::marker { content: \"\\2610\"; }\n"
 "li.checked::marker { content: \"\\2612\"; }\n"
 "</style></head><body style=\" font-family:'Sans Serif'; font-size:9pt; font-weight:400; font-style:normal;\">\n"
-"<p align=\"center\" style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-size:12pt;\">Indicate the inclusion and exclusion criteria</span></p></body></html>", None))
+"<p align=\"center\" style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-size:12pt;\">Indicate the inclusion and exclusion criteria</span></p>\n"
+"<p align=\"center\" style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-size:12pt;\">One criterion per line</span></p></body></html>", None))
         self.pushButton_registry_criteria_add.setText(QCoreApplication.translate("MainWindow", u"Add", None))
         self.tabWidget_registry.setTabText(self.tabWidget_registry.indexOf(self.tab_registry_criteria), QCoreApplication.translate("MainWindow", u"Inclusion/Exclusion criteria", None))
         self.textEdit_registry_variable.setHtml(QCoreApplication.translate("MainWindow", u"<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0//EN\" \"http://www.w3.org/TR/REC-html40/strict.dtd\">\n"

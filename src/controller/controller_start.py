@@ -94,12 +94,19 @@ class ControllerStart:
                 self._new_dataset()
             else:
                 self._select_dataset() # Selects the dataset
-                self._initialize_tab_status() # Initializes the status tab
+                #self._initialize_tab_status() # Initializes the status tab
                 self._next_tab() # Switches to the next tab
                 return
 
         # Tab 3: Status
+        if self.tab == 3:
+            self._next_tab() # Switches to the next tab
+            return
+        
         # Tab 4: Options
+        if self.tab == 4:
+            self._select_option() # Selects the option
+            return
 
 
     def _next_tab(self):
@@ -158,6 +165,13 @@ class ControllerStart:
         origin_path, _ = QFileDialog.getOpenFileName(None, "Open CSV File", "", "CSV Files (*.csv)")
         if origin_path:
             self.model_start.new_dataset(origin_path)
+
+    def _select_dataset(self):
+        """
+        Reads the selected dataset from the list widget.
+        """
+        selected_dataset = self.listWidget_start_data.currentItem().text()
+        self.model_start.select_dataset(selected_dataset)
 
     def _select_option(self):
         """

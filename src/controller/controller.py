@@ -42,15 +42,14 @@ class Controller:
         # Set up controllers
         model_start = self.model.get_model_start()
         self.controller_start = ControllerStart(self.window.ui.page_start, model_start, self)
+        
+        model_registry = self.model.get_model_registry()
+        self.controller_patient_registry = ControllerPatientRegistry(self.window.ui.page_registry, model_registry, self)
+
+        model_observational = self.model.get_model_observational()
+        self.controller_observational_study = ControllerObservationalStudy(self.window.ui.page_observational, model_observational, self
+        )
         """
-        self.controller_patient_registry = ControllerPatientRegistry(
-            self.window.ui.page_registry, self
-        )
-        
-        self.controller_observational_study = ControllerObservationalStudy(
-            self.window.ui.page_observational, self
-        )
-        
         self.controller_clinical_trial = ControllerClinicalTrial(
             self.window.ui.page_clinical, self
         )
