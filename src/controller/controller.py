@@ -47,13 +47,12 @@ class Controller:
         self.controller_patient_registry = ControllerPatientRegistry(self.window.ui.page_registry, model_registry, self)
 
         model_observational = self.model.get_model_observational()
-        self.controller_observational_study = ControllerObservationalStudy(self.window.ui.page_observational, model_observational, self
-        )
-        """
-        self.controller_clinical_trial = ControllerClinicalTrial(
-            self.window.ui.page_clinical, self
-        )
-        """
+        self.controller_observational_study = ControllerObservationalStudy(self.window.ui.page_observational, model_observational, self)
+        
+        model_clinical = self.model.get_model_clinical()
+        self.controller_clinical_trial = ControllerClinicalTrial(self.window.ui.page_clinical, model_clinical, self)
+
+        self.window.ui.stackedWidget.currentChanged.connect(self.on_page_changed)
 
     def show(self):
         """
@@ -68,8 +67,20 @@ class Controller:
         :param index: Index of the page to be displayed.
         """
         self.window.ui.stackedWidget.setCurrentIndex(index)
+
+    def on_page_changed(self, index: int):
+        """
+        Triggered when the stackedWidget page changes.
+        Used to update data dynamically when showing a page.
+        """
+        if index == 1 and self.controller_patient_registry:
+            self.controller_patient_registry.update_data()
+        elif index == 2 and self.controller_observational_study:
+            self.controller_observational_study.update_data()
+        elif index == 3 and self.controller_clinical_trial:
+            self.controller_clinical_trial.update_data()
     
-    def emerging_message(self, parent, title, text):
+    def popup_message(self, parent, title, text):
         """
         Displays a message box with the given title and text.
         """

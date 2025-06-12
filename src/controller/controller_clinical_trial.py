@@ -13,7 +13,7 @@ class ControllerClinicalTrial:
         self.model = model_clinical
         self.controller = controller
 
-        self.tab = 0 # Initial tab. Default: Welcome
+        self.tab = 1 # Initial tab. Default: Inclusion/Exclusion criteria
 
         self.tabWidget_clinical = self.ui.findChild(QTabWidget, "tabWidget_clinical")
         self.tabWidget_clinical.setCurrentIndex(self.tab)
@@ -33,10 +33,10 @@ class ControllerClinicalTrial:
         """
         Disables all tabs except the first one.
         """
-        tabs = self.tabWidget_start.count()
+        tabs = self.tabWidget_clinical.count()
 
-        for i in range(1, tabs):
-            self.tabWidget_start.setTabEnabled(i, False)
+        for i in range(2, tabs):
+            self.tabWidget_clinical.setTabEnabled(i, False)
 
     def _back_to_init(self):
         self.controller.change_page(0)

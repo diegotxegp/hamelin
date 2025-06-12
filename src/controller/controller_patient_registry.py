@@ -1,6 +1,6 @@
 # controller/controller_registro.py
 
-from PySide6.QtWidgets import QPushButton, QTabWidget
+from PySide6.QtWidgets import QPushButton, QTabWidget, QListWidget
 
 class ControllerPatientRegistry:
     def __init__(self, ui, model_registry, controller):
@@ -13,15 +13,16 @@ class ControllerPatientRegistry:
         self.model_registry = model_registry
         self.controller = controller
 
-        self.tab = 1 # Initial tab. Default: Dataset
+        self.tab = 1 # Initial tab. Default: Variable
 
         self.tabWidget_registry = self.ui.findChild(QTabWidget, "tabWidget_registry")
         self.tabWidget_registry.setCurrentIndex(self.tab)
 
         self.pushButton_registry_start = self.ui.findChild(QPushButton, "pushButton_registry_start")
-        self.pushButton_registry_dataset_ok = self.ui.findChild(QPushButton, "pushButton_registry_dataset_ok")
-        self.pushButton_registry_criteria_add = self.ui.findChild(QPushButton, "pushButton_registry_criteria_add")
+        self.listWidget_registry_variable = self.ui.findChild(QListWidget, "listWidget_registry_variable")
         self.pushButton_registry_variable_add = self.ui.findChild(QPushButton, "pushButton_registry_variable_add")
+        self.pushButton_registry_criteria_add = self.ui.findChild(QPushButton, "pushButton_registry_criteria_add")
+        self.pushButton_registry_details_ok = self.ui.findChild(QPushButton, "pushButton_registry_details_ok")
         self.pushButton_registry_process = self.ui.findChild(QPushButton, "pushButton_registry_process")
 
         self._setup_signals()
@@ -32,9 +33,9 @@ class ControllerPatientRegistry:
         Connect UI elements (buttons, etc.) to their respective slots.
         """
         self.pushButton_registry_start.clicked.connect(self._back_to_start)
-        self.pushButton_registry_dataset_ok.clicked.connect(self._ok)
-        self.pushButton_registry_criteria_add.clicked.connect(self._ok)
         self.pushButton_registry_variable_add.clicked.connect(self._ok)
+        self.pushButton_registry_criteria_add.clicked.connect(self._ok)
+        self.pushButton_registry_details_ok.clicked.connect(self._ok)
         self.pushButton_registry_process.clicked.connect(self._ok)
 
     def _set_tabs_disabled(self):
@@ -59,13 +60,8 @@ class ControllerPatientRegistry:
 
     def _ok(self):
         self.tab = self.tabWidget_registry.currentIndex()
-
-        # Tab 0: Start
-        if self.tab == 0:
-            self._next_tab() # Switches to the next tab
-            return
-
-        # Tab 1: Dataset
+        
+        # Tab 1: Primary variable
         if self.tab == 1:
             self._next_tab() # Switches to the next tab
             return
@@ -74,8 +70,8 @@ class ControllerPatientRegistry:
         if self.tab == 2:
             self._next_tab() # Switches to the next tab
             return
-
-        # Tab 3: Primary variable
+        
+        # Tab 3: Details
         if self.tab == 3:
             self._next_tab() # Switches to the next tab
             return
@@ -84,3 +80,18 @@ class ControllerPatientRegistry:
         if self.tab == 4:
             self._next_tab() # Switches to the next tab
             return
+        
+    def update_data(self):
+        """
+        Initializes the variable tab.
+        """
+        self._show_variables()
+        
+    def _show_variables(self):
+        """
+        Shows the variables in the dataset.
+        """
+        variables = self.model_registry.all_variables()
+        self.listWidget_registry_variable.clear()
+        for variable in variables:
+            self.listWidget_registry_variable.addItem(variable)

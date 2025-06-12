@@ -139,7 +139,7 @@ class ControllerStart:
         if ok and name:
             np = self.model_start.new_project(name)
             if np == None:
-                self.controller.emerging_message(self.ui, "Project name exists", "This project name already exists. Please choose a different name.")
+                self.controller.popup_message(self.ui, "Project name exists", "This project name already exists. Please choose a different name.")
             else:
                 self._initialize_tab_project()
 
