@@ -1,6 +1,6 @@
 # controller/controller_registro.py
 
-from PySide6.QtWidgets import QPushButton, QTabWidget, QListWidget
+from PySide6.QtWidgets import QPushButton, QTabWidget, QListWidget, QLabel, QComboBox, QWidget, QHBoxLayout, QScrollArea
 
 class ControllerPatientRegistry:
     def __init__(self, ui, model_registry, controller):
@@ -20,10 +20,14 @@ class ControllerPatientRegistry:
 
         self.pushButton_registry_start = self.ui.findChild(QPushButton, "pushButton_registry_start")
         self.listWidget_registry_variable = self.ui.findChild(QListWidget, "listWidget_registry_variable")
-        self.pushButton_registry_variable_add = self.ui.findChild(QPushButton, "pushButton_registry_variable_add")
+        self.pushButton_registry_variable_ok = self.ui.findChild(QPushButton, "pushButton_registry_variable_ok")
         self.pushButton_registry_criteria_add = self.ui.findChild(QPushButton, "pushButton_registry_criteria_add")
         self.pushButton_registry_details_ok = self.ui.findChild(QPushButton, "pushButton_registry_details_ok")
         self.pushButton_registry_process = self.ui.findChild(QPushButton, "pushButton_registry_process")
+
+        scroll_area = self.ui.findChild(QScrollArea, "scrollArea_registry_criteria")
+        contenedor = scroll_area.widget()
+        self.layout_registry_criteria = contenedor.layout()
 
         self._setup_signals()
         self._set_tabs_disabled()
@@ -33,7 +37,7 @@ class ControllerPatientRegistry:
         Connect UI elements (buttons, etc.) to their respective slots.
         """
         self.pushButton_registry_start.clicked.connect(self._back_to_start)
-        self.pushButton_registry_variable_add.clicked.connect(self._ok)
+        self.pushButton_registry_variable_ok.clicked.connect(self._ok)
         self.pushButton_registry_criteria_add.clicked.connect(self._ok)
         self.pushButton_registry_details_ok.clicked.connect(self._ok)
         self.pushButton_registry_process.clicked.connect(self._ok)
@@ -63,6 +67,8 @@ class ControllerPatientRegistry:
         
         # Tab 1: Primary variable
         if self.tab == 1:
+            self._select_primary_variable()
+            self._update_tab_criteria()
             self._next_tab() # Switches to the next tab
             return
 
@@ -81,13 +87,13 @@ class ControllerPatientRegistry:
             self._next_tab() # Switches to the next tab
             return
         
-    def update_data(self):
+    def update_page(self):
         """
         Initializes the variable tab.
         """
-        self._show_variables()
+        self._update_tab_variable()
         
-    def _show_variables(self):
+    def _update_tab_variable(self):
         """
         Shows the variables in the dataset.
         """
@@ -95,3 +101,42 @@ class ControllerPatientRegistry:
         self.listWidget_registry_variable.clear()
         for variable in variables:
             self.listWidget_registry_variable.addItem(variable)
+
+    def _select_primary_variable(self):
+        """
+        Reads the selected project from the list widget.
+        """
+        selected_primary_variable = self.listWidget_registry_variable.currentItem().text()
+        self.model_registry.select_primary_variable(selected_primary_variable)
+
+    def _update_tab_criteria(self):
+        """
+        Updates the criteria tab.
+        """        
+        criterios = {
+            "Edad": "Numérico",
+            "Sexo": "Categórico",
+            "Diagnóstico": "Texto libre"
+        }
+
+        tipos = ["Numérico", "Categórico", "Texto libre"]
+
+        # Clear the layout
+        while self.layout_registry_criteria.count():
+            item = self.layout_registry_criteria.takeAt(0)
+            if item.widget():
+                item.widget().deleteLater()
+
+        # Add rows to the layout
+        for name, type in criterios.items():
+            row = QWidget()
+            row_layout = QHBoxLayout(row)
+
+            label = QLabel(name)
+            combo = QComboBox()
+            combo.addItems(tipos)
+            combo.setCurrentText(type)
+
+            row_layout.addWidget(label)
+            row_layout.addWidget(combo)
+            self.layout_registry_criteria.addWidget(row)

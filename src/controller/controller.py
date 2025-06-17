@@ -74,11 +74,11 @@ class Controller:
         Used to update data dynamically when showing a page.
         """
         if index == 1 and self.controller_patient_registry:
-            self.controller_patient_registry.update_data()
+            self.controller_patient_registry.update_page()
         elif index == 2 and self.controller_observational_study:
-            self.controller_observational_study.update_data()
+            self.controller_observational_study.update_page()
         elif index == 3 and self.controller_clinical_trial:
-            self.controller_clinical_trial.update_data()
+            self.controller_clinical_trial.update_page()
     
     def popup_message(self, parent, title, text):
         """

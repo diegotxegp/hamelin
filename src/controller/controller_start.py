@@ -74,7 +74,7 @@ class ControllerStart:
 
         # Tab 0: Welcome
         if self.tab == 0:
-            self._initialize_tab_project() # Initializes the project tab
+            self._update_tab_project() # Updates the project tab
             self._next_tab() # Switches to the next tab
             return
 
@@ -84,7 +84,7 @@ class ControllerStart:
                 self._new_project()
             else:
                 self._select_project() # Selects the project
-                self._initialize_tab_data() # Initializes the data tab
+                self._update_tab_data() # Updates the data tab
                 self._next_tab() # Switches to the next tab
                 return
 
@@ -94,7 +94,7 @@ class ControllerStart:
                 self._new_dataset()
             else:
                 self._select_dataset() # Selects the dataset
-                #self._initialize_tab_status() # Initializes the status tab
+                #self._update_tab_status() # Updates the status tab
                 self._next_tab() # Switches to the next tab
                 return
 
@@ -117,9 +117,9 @@ class ControllerStart:
         self.tabWidget_start.setTabEnabled(self.tab, True)
         self.tabWidget_start.setCurrentIndex(self.tab)
 
-    def _initialize_tab_project(self):
+    def _update_tab_project(self):
         """
-        Initializes the project tab.
+        Updates the project tab.
         """
         self.listWidget_start_project.clear()
 
@@ -141,7 +141,7 @@ class ControllerStart:
             if np == None:
                 self.controller.popup_message(self.ui, "Project name exists", "This project name already exists. Please choose a different name.")
             else:
-                self._initialize_tab_project()
+                self._update_tab_project()
 
     def _select_project(self):
         """
@@ -150,7 +150,7 @@ class ControllerStart:
         selected_project = self.listWidget_start_project.currentItem().text()
         self.model_start.select_project(selected_project)
 
-    def _initialize_tab_data(self):
+    def _update_tab_data(self):
         self.listWidget_start_data.clear()
         
         self.listWidget_start_data.addItem("[New dataset]")

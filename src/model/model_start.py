@@ -2,7 +2,6 @@
 
 import os, shutil
 import pandas as pd
-from PySide6.QtWidgets import QFileDialog
 
 class ModelStart:
     def __init__(self, model):

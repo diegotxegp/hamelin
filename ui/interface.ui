@@ -248,7 +248,7 @@ li.checked::marker { content: &quot;\2612&quot;; }
         <item row="1" column="0">
          <widget class="QTabWidget" name="tabWidget_registry">
           <property name="currentIndex">
-           <number>1</number>
+           <number>2</number>
           </property>
           <widget class="QWidget" name="tab_registry_start">
            <attribute name="title">
@@ -304,9 +304,9 @@ li.checked::marker { content: &quot;\2612&quot;; }
              </widget>
             </item>
             <item row="2" column="0">
-             <widget class="QPushButton" name="pushButton_registry_variable_add">
+             <widget class="QPushButton" name="pushButton_registry_variable_ok">
               <property name="text">
-               <string>Add</string>
+               <string>Ok</string>
               </property>
              </widget>
             </item>
@@ -320,10 +320,14 @@ li.checked::marker { content: &quot;\2612&quot;; }
             <string>Inclusion/Exclusion criteria</string>
            </attribute>
            <layout class="QGridLayout" name="gridLayout_10">
-            <item row="1" column="0">
-             <widget class="QTextEdit" name="textEdit_registry_criteria_list"/>
+            <item row="2" column="0" colspan="2">
+             <widget class="QPushButton" name="pushButton_registry_criteria_add">
+              <property name="text">
+               <string>Add</string>
+              </property>
+             </widget>
             </item>
-            <item row="0" column="0">
+            <item row="0" column="0" colspan="2">
              <widget class="QTextEdit" name="textEdit_registry_criteria">
               <property name="readOnly">
                <bool>true</bool>
@@ -341,11 +345,26 @@ li.checked::marker { content: &quot;\2612&quot;; }
               </property>
              </widget>
             </item>
-            <item row="2" column="0">
-             <widget class="QPushButton" name="pushButton_registry_criteria_add">
-              <property name="text">
-               <string>Add</string>
+            <item row="1" column="0">
+             <widget class="QScrollArea" name="scrollArea_registry_criteria">
+              <property name="widgetResizable">
+               <bool>true</bool>
               </property>
+              <widget class="QWidget" name="scrollAreaWidgetContents_registry_criteria">
+               <property name="geometry">
+                <rect>
+                 <x>0</x>
+                 <y>0</y>
+                 <width>749</width>
+                 <height>220</height>
+                </rect>
+               </property>
+               <layout class="QGridLayout" name="gridLayout_30">
+                <item row="0" column="0">
+                 <widget class="QWidget" name="widget_registry_criteria" native="true"/>
+                </item>
+               </layout>
+              </widget>
              </widget>
             </item>
            </layout>
