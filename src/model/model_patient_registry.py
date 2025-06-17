@@ -1,7 +1,5 @@
 # model/model_patient_registry.py
 
-from ludwig.ludwig import LudwigModel
-
 class ModelPatientRegistry:
     def __init__(self, model):
         self.model = model
@@ -10,10 +8,9 @@ class ModelPatientRegistry:
         """
         Returns a list of all variables in the dataset.
         """
-        self.model.variables = self.model.df.columns.tolist()
-        return self.model.variables
+        return self.model.df.columns.tolist()
     
-    def select_primary_variable(self, primary_variable):
+    def set_primary_variable(self, primary_variable):
         """
         Sets the primary variable to the given variable name.
         """

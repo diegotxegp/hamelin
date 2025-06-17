@@ -67,7 +67,7 @@ class ControllerPatientRegistry:
         
         # Tab 1: Primary variable
         if self.tab == 1:
-            self._select_primary_variable()
+            self._set_primary_variable()
             self._update_tab_criteria()
             self._next_tab() # Switches to the next tab
             return
@@ -102,12 +102,12 @@ class ControllerPatientRegistry:
         for variable in variables:
             self.listWidget_registry_variable.addItem(variable)
 
-    def _select_primary_variable(self):
+    def _set_primary_variable(self):
         """
         Reads the selected project from the list widget.
         """
         selected_primary_variable = self.listWidget_registry_variable.currentItem().text()
-        self.model_registry.select_primary_variable(selected_primary_variable)
+        self.model_registry.set_primary_variable(selected_primary_variable)
 
     def _update_tab_criteria(self):
         """

@@ -33,12 +33,12 @@ class ModelStart:
             print(f"❌ Project '{project_name}' already exists.")
             return None
 
-    def select_project(self, project_name):
+    def set_project(self, project_name):
         """
         Sets the project directory to the given project name.
         """
-        project_dir = os.path.join(self.model.base_projects_dir, project_name)
-        self.model.project_dir = project_dir
+        self.model.project_dir = os.path.join(self.model.base_projects_dir, project_name)
+        self.model.project_name = project_name
 
     def dataset_list(self):
         """
@@ -48,7 +48,7 @@ class ModelStart:
             return None
         return os.listdir(self.model.project_dir)
     
-    def new_dataset(self, origin_path):
+    def load_dataset(self, origin_path):
         # Copy the CSV file to the target folder
         self.model.dataset_dir = os.path.join(self.model.project_dir, os.path.basename(origin_path))
 
@@ -63,9 +63,10 @@ class ModelStart:
         except Exception as e:
             return f"❌ Failed to load the file: {str(e)}"
         
-    def select_dataset(self, dataset_name):
+    def set_dataset(self, dataset_name):
         """
         Sets the dataset directory to the given dataset name.
         """
         self.model.dataset_dir = os.path.join(self.model.project_dir, dataset_name)
+        self.model.dataset_name = dataset_name
         self._load_csv(self.model.dataset_dir)

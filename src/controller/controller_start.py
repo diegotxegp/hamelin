@@ -83,7 +83,7 @@ class ControllerStart:
             if self.listWidget_start_project.currentItem().text() == "[New project]":
                 self._new_project()
             else:
-                self._select_project() # Selects the project
+                self._set_project() # Selects the project
                 self._update_tab_data() # Updates the data tab
                 self._next_tab() # Switches to the next tab
                 return
@@ -91,9 +91,9 @@ class ControllerStart:
         # Tab 2: Data
         if self.tab == 2:
             if self.listWidget_start_data.currentItem().text() == "[New dataset]":
-                self._new_dataset()
+                self._load_dataset()
             else:
-                self._select_dataset() # Selects the dataset
+                self._set_dataset() # Selects the dataset
                 #self._update_tab_status() # Updates the status tab
                 self._next_tab() # Switches to the next tab
                 return
@@ -143,12 +143,12 @@ class ControllerStart:
             else:
                 self._update_tab_project()
 
-    def _select_project(self):
+    def _set_project(self):
         """
         Reads the selected project from the list widget.
         """
         selected_project = self.listWidget_start_project.currentItem().text()
-        self.model_start.select_project(selected_project)
+        self.model_start.set_project(selected_project)
 
     def _update_tab_data(self):
         self.listWidget_start_data.clear()
@@ -160,18 +160,18 @@ class ControllerStart:
             for dataset in dataset_list:
                 self.listWidget_start_data.addItem(dataset)
 
-    def _new_dataset(self):
+    def _load_dataset(self):
         # Open file dialog to select the CSV file
         origin_path, _ = QFileDialog.getOpenFileName(None, "Open CSV File", "", "CSV Files (*.csv)")
         if origin_path:
-            self.model_start.new_dataset(origin_path)
+            self.model_start.load_dataset(origin_path)
 
-    def _select_dataset(self):
+    def _set_dataset(self):
         """
         Reads the selected dataset from the list widget.
         """
         selected_dataset = self.listWidget_start_data.currentItem().text()
-        self.model_start.select_dataset(selected_dataset)
+        self.model_start.set_dataset(selected_dataset)
 
     def _select_option(self):
         """
