@@ -32,25 +32,15 @@ class Controller:
         self.model = Model()
         self.window = MainWindow()
 
-        self.page = 0
-        self.tab = 0
-
         # Set initial page and tab
-        self.window.ui.stackedWidget.setCurrentIndex(self.page)
-        self.window.ui.tabWidget_start.setCurrentIndex(self.tab)
+        self.window.ui.stackedWidget.setCurrentIndex(0)
+        self.window.ui.tabWidget_start.setCurrentIndex(0)
 
         # Set up controllers
-        model_start = self.model.get_model_start()
-        self.controller_start = ControllerStart(self.window.ui.page_start, model_start, self)
-        
-        model_registry = self.model.get_model_registry()
-        self.controller_patient_registry = ControllerPatientRegistry(self.window.ui.page_registry, model_registry, self)
-
-        model_observational = self.model.get_model_observational()
-        self.controller_observational_study = ControllerObservationalStudy(self.window.ui.page_observational, model_observational, self)
-        
-        model_clinical = self.model.get_model_clinical()
-        self.controller_clinical_trial = ControllerClinicalTrial(self.window.ui.page_clinical, model_clinical, self)
+        self.controller_start = ControllerStart(self.window.ui.page_start, self.model.model_start, self)
+        self.controller_patient_registry = ControllerPatientRegistry(self.window.ui.page_registry, self.model.model_registry, self)
+        self.controller_observational_study = ControllerObservationalStudy(self.window.ui.page_observational, self.model.model_observational, self)
+        self.controller_clinical_trial = ControllerClinicalTrial(self.window.ui.page_clinical, self.model.model_clinical, self)
 
         self.window.ui.stackedWidget.currentChanged.connect(self.on_page_changed)
 

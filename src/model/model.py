@@ -7,6 +7,8 @@ from model.model_patient_registry import ModelPatientRegistry
 from model.model_observational_study import ModelObservationalStudy
 from model.model_clinical_trial import ModelClinicalTrial
 
+from my_ludwig.ludwig import Ludwig
+
 class Model:
     def __init__(self):
         self.base_projects_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "../..", "Projects")
@@ -26,14 +28,11 @@ class Model:
         self.model_observational = ModelObservationalStudy(self)
         self.model_clinical = ModelClinicalTrial(self)
 
-    def get_model_start(self):
-        return self.model_start
+        self.ludwig = Ludwig()
     
-    def get_model_registry(self):
-        return self.model_registry
-    
-    def get_model_observational(self):
-        return self.model_observational
-    
-    def get_model_clinical(self):
-        return self.model_clinical
+    def update(self):
+        self.df = self.ludwig.read_file(self.dataset_dir)
+
+    def autoconfig(self):
+        """ Automatically generates a configuration file. """
+        return self.ludwig.autoconfig(self.primary_variable)

@@ -9,51 +9,50 @@ from ludwig.visualize import compare_performance
 from ludwig.visualize import confusion_matrix
 
 class Ludwig:
-    def __init__(self, configuration):
-        self.configuration = configuration
-        self.df = self.read_file(configuration.dataset.path) # Dataframe from dataset file path
-
-        columns = self.df.columns.tolist()
-        self.target = columns[-1] # Last feature is commonly the target
+    def __init__(self):
+        self.df = None
+        self.target = None
+        self.input_features = None
+        self.samples = None
+        self.separator = None
+        self.missing_data = None
+        self.runtime = None
+        self.metric = None
+        self.timedependable = None
 
         self.config = None
         self.model = None
 
     def read_file(self, dataset_path):
         """
-        Read the dataframe of a file
+        Read the dataframe of a file.
         """
-        try:
-            if dataset_path.endswith((".csv", ".fwf", ".tsv")):
-                    return pd.read_csv(dataset_path)
-            elif dataset_path.endswith((".xlsx", ".xls")):
-                return pd.read_excel(dataset_path)
-            elif dataset_path.endswith((".feather")):
-                return pd.read_feather(dataset_path)
-            elif dataset_path.endswith((".h5", ".hdf5")):
-                return pd.read_hdf(dataset_path)
-            elif dataset_path.endswith((".html", ".htm")):
-                return pd.read_html(dataset_path)[0]
-            elif dataset_path.endswith((".json", ".jsonl")):
-                return pd.read_json(dataset_path)
-            elif dataset_path.endswith((".parquet")):
-                return pd.read_parquet(dataset_path)
-            elif dataset_path.endswith((".pkl", ".pickle")):
-                return pd.read_pickle(dataset_path)
-            elif dataset_path.endswith((".sas7bdat", ".xpt")):
-                return pd.read_sas(dataset_path)
-            elif dataset_path.endswith((".sav")):
-                return pd.read_spss(dataset_path)
-            elif dataset_path.endswith((".dta")):
-                return pd.read_stata(dataset_path)
-            else:
-                messagebox.showwarning("Warning", "File format not compatible.")
-                return
-
-        except Exception as e:
-            messagebox.showerror("Error", f"File cannot be loaded: {e}")
-
-        print("Dataset loaded successfully")
+        if dataset_path.endswith((".csv", ".fwf", ".tsv")):
+            self.df = pd.read_csv(dataset_path)
+        elif dataset_path.endswith((".xlsx", ".xls")):
+            self.df =pd.read_excel(dataset_path)
+        elif dataset_path.endswith((".feather")):
+            self.df = pd.read_feather(dataset_path)
+        elif dataset_path.endswith((".h5", ".hdf5")):
+            self.df = pd.read_hdf(dataset_path)
+        elif dataset_path.endswith((".html", ".htm")):
+            self.df = pd.read_html(dataset_path)[0]
+        elif dataset_path.endswith((".json", ".jsonl")):
+            self.df = pd.read_json(dataset_path)
+        elif dataset_path.endswith((".parquet")):
+            self.df = pd.read_parquet(dataset_path)
+        elif dataset_path.endswith((".pkl", ".pickle")):
+            self.df = pd.read_pickle(dataset_path)
+        elif dataset_path.endswith((".sas7bdat", ".xpt")):
+            self.df = pd.read_sas(dataset_path)
+        elif dataset_path.endswith((".sav")):
+            self.df = pd.read_spss(dataset_path)
+        elif dataset_path.endswith((".dta")):
+            self.df = pd.read_stata(dataset_path)
+        else:
+            return
+        
+        return self.df
 
     def auto_train(self):
         """
@@ -83,10 +82,12 @@ class Ludwig:
         for metric_name, value in eval_stats.items():
             print(f"{metric_name}: {value}")
 
-    def autoconfig(self):
+    def autoconfig(self, target):
         """
         Automatically generates a configuration file.
         """
+        self.target = target
+
         self.split_df = get_repeatable_train_val_test_split(self.df, self.target, random_seed=42)
 
         self.config = create_auto_config(
@@ -94,16 +95,16 @@ class Ludwig:
             target=self.target,
             time_limit_s=7200,
             tune_for_memory=False,
-            user_config={'hyperopt': {'goal': 'maximize', 'metric': 'accuracy', 'output_feature': f"{self.target}"}},
+            #user_config={'hyperopt': {'goal': 'maximize', 'metric': 'accuracy', 'output_feature': f"{self.target}"}},
         )
 
         print("Config generated successfully")
 
-        self.input_features()
-        self.output_features()
-        self.metric()
-        self.runtime()
-        self.samples()
+        self.input_features_from_config()
+        self.target_from_config()
+        self.metric_from_config()
+        self.runtime_from_config()
+        self.samples_from_config()
 
     def train(self):
         """
@@ -160,28 +161,28 @@ class Ludwig:
             file_format='pdf'
         )
 
-    def input_features(self):
-        self.configuration.input_features = {i_f["column"]: i_f['type'] for i_f in self.config["input_features"]}
+    def input_features_from_config(self):
+        self.input_features = {i_f["column"]: i_f['type'] for i_f in self.config["input_features"]}
     
-    def output_features(self):
-        self.configuration.target = {o_f["column"]: o_f['type'] for o_f in self.config["output_features"]}
+    def target_from_config(self):
+        self.target = {o_f["column"]: o_f['type'] for o_f in self.config["output_features"]}
     
-    def metric(self):
-        self.configuration.metric = {self.config["hyperopt"]["metric"]:self.config["hyperopt"]["goal"]}
+    def metric_from_config(self):
+        self.metric = {self.config["hyperopt"]["metric"]:self.config["hyperopt"]["goal"]}
     
-    def runtime(self):
-        self.configuration.runtime = self.config["hyperopt"]["executor"]["time_budget_s"]
+    def runtime_from_config(self):
+        self.runtime = self.config["hyperopt"]["executor"]["time_budget_s"]
     
-    def samples(self):
-        self.configuration.samples = self.config["hyperopt"]["executor"]["num_samples"]
+    def samples_from_config(self):
+        self.samples = self.config["hyperopt"]["executor"]["num_samples"]
 
     def configuration_to_config(self):
-        self.set_features()
-        self.set_missing_data()
-        self.set_runtime()
-        self.set_metric()
+        self.features_to_config()
+        self.missing_data_to_config()
+        self.runtime_to_config()
+        self.metric_to_config()
     
-    def set_features(self):
+    def features_to_config(self):
         """Set selected features into the config"""
         input_features = []
         output_features = []
@@ -210,13 +211,13 @@ class Ludwig:
 
         self.target = self.config["output_features"][0]["name"]
 
-    def set_missing_data(self):
+    def missing_data_to_config(self):
         self.config["preprocessing"]["missing_value_strategy"] = self.configuration.missing_data
 
-    def set_runtime(self):
+    def runtime_to_config(self):
         self.config["hyperopt"]["executor"]["time_budget_s"] = self.configuration.runtime
         self.config["hyperopt"]["executor"]["scheduler"]["max_t"] = self.configuration.runtime
 
-    def set_metric(self):
+    def metric_to_config(self):
         self.config["hyperopt"]["metric"] = self.configuration.metric
         self.config["hyperopt"]["goal"] = self.configuration.goal

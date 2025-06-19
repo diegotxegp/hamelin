@@ -2,6 +2,8 @@
 
 from PySide6.QtWidgets import QPushButton, QTabWidget, QListWidget, QLabel, QComboBox, QWidget, QHBoxLayout, QScrollArea
 
+from my_ludwig.ludwig_data import input_feature_types, output_feature_types
+
 class ControllerPatientRegistry:
     def __init__(self, ui, model_registry, controller):
         """
@@ -88,38 +90,25 @@ class ControllerPatientRegistry:
             return
         
     def update_page(self):
-        """
-        Initializes the variable tab.
-        """
+        """ Initializes the variable tab. """
         self._update_tab_variable()
         
     def _update_tab_variable(self):
-        """
-        Shows the variables in the dataset.
-        """
-        variables = self.model_registry.all_variables()
+        """ Shows the variables in the dataset."""
+        variables = self.model_registry.acceptable_stratify_variables()
         self.listWidget_registry_variable.clear()
         for variable in variables:
             self.listWidget_registry_variable.addItem(variable)
 
     def _set_primary_variable(self):
-        """
-        Reads the selected project from the list widget.
-        """
+        """ Reads the selected project from the list widget. """
         selected_primary_variable = self.listWidget_registry_variable.currentItem().text()
-        self.model_registry.set_primary_variable(selected_primary_variable)
+        self.model_registry.model.primary_variable = selected_primary_variable
 
     def _update_tab_criteria(self):
-        """
-        Updates the criteria tab.
-        """        
-        criterios = {
-            "Edad": "Numérico",
-            "Sexo": "Categórico",
-            "Diagnóstico": "Texto libre"
-        }
-
-        tipos = ["Numérico", "Categórico", "Texto libre"]
+        """ Updates the criteria tab."""
+        self.model_registry.model.autoconfig()
+        criteria = self.model_registry.model.ludwig.input_features | self.model_registry.model.ludwig.target
 
         # Clear the layout
         while self.layout_registry_criteria.count():
@@ -128,13 +117,18 @@ class ControllerPatientRegistry:
                 item.widget().deleteLater()
 
         # Add rows to the layout
-        for name, type in criterios.items():
+        for name, type in criteria.items():
             row = QWidget()
             row_layout = QHBoxLayout(row)
 
             label = QLabel(name)
             combo = QComboBox()
-            combo.addItems(tipos)
+            ift = [""] + input_feature_types # Empty string for the first item
+            if name is not self.model_registry.model.primary_variable:
+                combo.addItems(ift)
+            else:
+                combo.addItems(output_feature_types)
+                
             combo.setCurrentText(type)
 
             row_layout.addWidget(label)
