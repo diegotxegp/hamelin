@@ -195,10 +195,10 @@ class Ui_MainWindow(object):
 
         self.gridLayout_11.addWidget(self.textEdit_registry_variable, 0, 0, 1, 1)
 
-        self.pushButton_registry_variable_ok = QPushButton(self.tab_registry_variable)
-        self.pushButton_registry_variable_ok.setObjectName(u"pushButton_registry_variable_ok")
+        self.pushButton_registry_variable = QPushButton(self.tab_registry_variable)
+        self.pushButton_registry_variable.setObjectName(u"pushButton_registry_variable")
 
-        self.gridLayout_11.addWidget(self.pushButton_registry_variable_ok, 2, 0, 1, 1)
+        self.gridLayout_11.addWidget(self.pushButton_registry_variable, 2, 0, 1, 1)
 
         self.listWidget_registry_variable = QListWidget(self.tab_registry_variable)
         self.listWidget_registry_variable.setObjectName(u"listWidget_registry_variable")
@@ -210,10 +210,10 @@ class Ui_MainWindow(object):
         self.tab_registry_criteria.setObjectName(u"tab_registry_criteria")
         self.gridLayout_10 = QGridLayout(self.tab_registry_criteria)
         self.gridLayout_10.setObjectName(u"gridLayout_10")
-        self.pushButton_registry_criteria_add = QPushButton(self.tab_registry_criteria)
-        self.pushButton_registry_criteria_add.setObjectName(u"pushButton_registry_criteria_add")
+        self.pushButton_registry_criteria = QPushButton(self.tab_registry_criteria)
+        self.pushButton_registry_criteria.setObjectName(u"pushButton_registry_criteria")
 
-        self.gridLayout_10.addWidget(self.pushButton_registry_criteria_add, 2, 0, 1, 2)
+        self.gridLayout_10.addWidget(self.pushButton_registry_criteria, 2, 0, 1, 2)
 
         self.textEdit_registry_criteria = QTextEdit(self.tab_registry_criteria)
         self.textEdit_registry_criteria.setObjectName(u"textEdit_registry_criteria")
@@ -226,7 +226,7 @@ class Ui_MainWindow(object):
         self.scrollArea_registry_criteria.setWidgetResizable(True)
         self.scrollAreaWidgetContents_registry_criteria = QWidget()
         self.scrollAreaWidgetContents_registry_criteria.setObjectName(u"scrollAreaWidgetContents_registry_criteria")
-        self.scrollAreaWidgetContents_registry_criteria.setGeometry(QRect(0, 0, 749, 220))
+        self.scrollAreaWidgetContents_registry_criteria.setGeometry(QRect(0, 0, 755, 220))
         self.gridLayout_30 = QGridLayout(self.scrollAreaWidgetContents_registry_criteria)
         self.gridLayout_30.setObjectName(u"gridLayout_30")
         self.widget_registry_criteria = QWidget(self.scrollAreaWidgetContents_registry_criteria)
@@ -236,7 +236,7 @@ class Ui_MainWindow(object):
 
         self.scrollArea_registry_criteria.setWidget(self.scrollAreaWidgetContents_registry_criteria)
 
-        self.gridLayout_10.addWidget(self.scrollArea_registry_criteria, 1, 0, 1, 1)
+        self.gridLayout_10.addWidget(self.scrollArea_registry_criteria, 1, 0, 1, 2)
 
         self.tabWidget_registry.addTab(self.tab_registry_criteria, "")
         self.tab_registry_details = QWidget()
@@ -249,17 +249,49 @@ class Ui_MainWindow(object):
 
         self.gridLayout_9.addWidget(self.textEdit_registry_dataset, 0, 0, 1, 1)
 
-        self.pushButton_registry_details_ok = QPushButton(self.tab_registry_details)
-        self.pushButton_registry_details_ok.setObjectName(u"pushButton_registry_details_ok")
+        self.pushButton_registry_details = QPushButton(self.tab_registry_details)
+        self.pushButton_registry_details.setObjectName(u"pushButton_registry_details")
 
-        self.gridLayout_9.addWidget(self.pushButton_registry_details_ok, 2, 0, 1, 1)
+        self.gridLayout_9.addWidget(self.pushButton_registry_details, 2, 0, 1, 1)
 
-        self.textEdit = QTextEdit(self.tab_registry_details)
-        self.textEdit.setObjectName(u"textEdit")
+        self.scrollArea_registry_details = QScrollArea(self.tab_registry_details)
+        self.scrollArea_registry_details.setObjectName(u"scrollArea_registry_details")
+        self.scrollArea_registry_details.setWidgetResizable(True)
+        self.scrollAreaWidgetContents_registry_details = QWidget()
+        self.scrollAreaWidgetContents_registry_details.setObjectName(u"scrollAreaWidgetContents_registry_details")
+        self.scrollAreaWidgetContents_registry_details.setGeometry(QRect(0, 0, 755, 220))
+        self.gridLayout_32 = QGridLayout(self.scrollAreaWidgetContents_registry_details)
+        self.gridLayout_32.setObjectName(u"gridLayout_32")
+        self.widget_registry_details = QWidget(self.scrollAreaWidgetContents_registry_details)
+        self.widget_registry_details.setObjectName(u"widget_registry_details")
 
-        self.gridLayout_9.addWidget(self.textEdit, 1, 0, 1, 1)
+        self.gridLayout_32.addWidget(self.widget_registry_details, 0, 0, 1, 1)
+
+        self.scrollArea_registry_details.setWidget(self.scrollAreaWidgetContents_registry_details)
+
+        self.gridLayout_9.addWidget(self.scrollArea_registry_details, 1, 0, 1, 1)
 
         self.tabWidget_registry.addTab(self.tab_registry_details, "")
+        self.tab_registry_summary = QWidget()
+        self.tab_registry_summary.setObjectName(u"tab_registry_summary")
+        self.gridLayout_31 = QGridLayout(self.tab_registry_summary)
+        self.gridLayout_31.setObjectName(u"gridLayout_31")
+        self.textEdit_registry_summary = QTextEdit(self.tab_registry_summary)
+        self.textEdit_registry_summary.setObjectName(u"textEdit_registry_summary")
+
+        self.gridLayout_31.addWidget(self.textEdit_registry_summary, 0, 0, 1, 1)
+
+        self.textEdit_registry_summary_config = QTextEdit(self.tab_registry_summary)
+        self.textEdit_registry_summary_config.setObjectName(u"textEdit_registry_summary_config")
+
+        self.gridLayout_31.addWidget(self.textEdit_registry_summary_config, 1, 0, 1, 1)
+
+        self.pushButton_registry_summary = QPushButton(self.tab_registry_summary)
+        self.pushButton_registry_summary.setObjectName(u"pushButton_registry_summary")
+
+        self.gridLayout_31.addWidget(self.pushButton_registry_summary, 2, 0, 1, 1)
+
+        self.tabWidget_registry.addTab(self.tab_registry_summary, "")
         self.tab_registry_process = QWidget()
         self.tab_registry_process.setObjectName(u"tab_registry_process")
         self.gridLayout_12 = QGridLayout(self.tab_registry_process)
@@ -595,7 +627,7 @@ class Ui_MainWindow(object):
 
         self.stackedWidget.setCurrentIndex(1)
         self.tabWidget_start.setCurrentIndex(1)
-        self.tabWidget_registry.setCurrentIndex(2)
+        self.tabWidget_registry.setCurrentIndex(0)
         self.tabWidget_observational.setCurrentIndex(3)
         self.tabWidget_clinical.setCurrentIndex(6)
 
@@ -680,9 +712,9 @@ class Ui_MainWindow(object):
 "li.checked::marker { content: \"\\2612\"; }\n"
 "</style></head><body style=\" font-family:'Sans Serif'; font-size:9pt; font-weight:400; font-style:normal;\">\n"
 "<p align=\"center\" style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-size:12pt;\">Indicate a primary variable (target)</span></p></body></html>", None))
-        self.pushButton_registry_variable_ok.setText(QCoreApplication.translate("MainWindow", u"Ok", None))
+        self.pushButton_registry_variable.setText(QCoreApplication.translate("MainWindow", u"Ok", None))
         self.tabWidget_registry.setTabText(self.tabWidget_registry.indexOf(self.tab_registry_variable), QCoreApplication.translate("MainWindow", u"Primary variable", None))
-        self.pushButton_registry_criteria_add.setText(QCoreApplication.translate("MainWindow", u"Add", None))
+        self.pushButton_registry_criteria.setText(QCoreApplication.translate("MainWindow", u"Ok", None))
         self.textEdit_registry_criteria.setHtml(QCoreApplication.translate("MainWindow", u"<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0//EN\" \"http://www.w3.org/TR/REC-html40/strict.dtd\">\n"
 "<html><head><meta name=\"qrichtext\" content=\"1\" /><meta charset=\"utf-8\" /><style type=\"text/css\">\n"
 "p, li { white-space: pre-wrap; }\n"
@@ -690,8 +722,7 @@ class Ui_MainWindow(object):
 "li.unchecked::marker { content: \"\\2610\"; }\n"
 "li.checked::marker { content: \"\\2612\"; }\n"
 "</style></head><body style=\" font-family:'Sans Serif'; font-size:9pt; font-weight:400; font-style:normal;\">\n"
-"<p align=\"center\" style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-size:12pt;\">Indicate the inclusion and exclusion criteria</span></p>\n"
-"<p align=\"center\" style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-size:12pt;\">One criterion per line</span></p></body></html>", None))
+"<p align=\"center\" style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-size:12pt;\">Indicate the inclusion and exclusion criteria</span></p></body></html>", None))
         self.tabWidget_registry.setTabText(self.tabWidget_registry.indexOf(self.tab_registry_criteria), QCoreApplication.translate("MainWindow", u"Inclusion/Exclusion criteria", None))
         self.textEdit_registry_dataset.setHtml(QCoreApplication.translate("MainWindow", u"<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0//EN\" \"http://www.w3.org/TR/REC-html40/strict.dtd\">\n"
 "<html><head><meta name=\"qrichtext\" content=\"1\" /><meta charset=\"utf-8\" /><style type=\"text/css\">\n"
@@ -701,8 +732,18 @@ class Ui_MainWindow(object):
 "li.checked::marker { content: \"\\2612\"; }\n"
 "</style></head><body style=\" font-family:'Sans Serif'; font-size:9pt; font-weight:400; font-style:normal;\">\n"
 "<p align=\"center\" style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-size:12pt;\">Modify the dataset</span></p></body></html>", None))
-        self.pushButton_registry_details_ok.setText(QCoreApplication.translate("MainWindow", u"Ok", None))
+        self.pushButton_registry_details.setText(QCoreApplication.translate("MainWindow", u"Ok", None))
         self.tabWidget_registry.setTabText(self.tabWidget_registry.indexOf(self.tab_registry_details), QCoreApplication.translate("MainWindow", u"Details", None))
+        self.textEdit_registry_summary.setHtml(QCoreApplication.translate("MainWindow", u"<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0//EN\" \"http://www.w3.org/TR/REC-html40/strict.dtd\">\n"
+"<html><head><meta name=\"qrichtext\" content=\"1\" /><meta charset=\"utf-8\" /><style type=\"text/css\">\n"
+"p, li { white-space: pre-wrap; }\n"
+"hr { height: 1px; border-width: 0; }\n"
+"li.unchecked::marker { content: \"\\2610\"; }\n"
+"li.checked::marker { content: \"\\2612\"; }\n"
+"</style></head><body style=\" font-family:'Sans Serif'; font-size:9pt; font-weight:400; font-style:normal;\">\n"
+"<p align=\"center\" style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-size:12pt;\">Summary of your choices</span></p></body></html>", None))
+        self.pushButton_registry_summary.setText(QCoreApplication.translate("MainWindow", u"Ok", None))
+        self.tabWidget_registry.setTabText(self.tabWidget_registry.indexOf(self.tab_registry_summary), QCoreApplication.translate("MainWindow", u"Summary", None))
         self.pushButton_registry_process.setText(QCoreApplication.translate("MainWindow", u"Process", None))
         self.textEdit_registry_process.setHtml(QCoreApplication.translate("MainWindow", u"<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0//EN\" \"http://www.w3.org/TR/REC-html40/strict.dtd\">\n"
 "<html><head><meta name=\"qrichtext\" content=\"1\" /><meta charset=\"utf-8\" /><style type=\"text/css\">\n"

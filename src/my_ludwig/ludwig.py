@@ -187,7 +187,7 @@ class Ludwig:
         input_features = []
         output_features = []
 
-        for feature_name, feature_type in self.configuration.input_features.items():
+        for feature_name, feature_type in self.input_features.items():
                 feature = {
                     "name": feature_name,
                     "column": feature_name,
@@ -195,7 +195,7 @@ class Ludwig:
                 }
                 input_features.append(feature)
 
-        for feature_name, feature_type in self.configuration.target.items():
+        for feature_name, feature_type in self.target.items():
                 feature = {
                     "name": feature_name,
                     "column": feature_name,
@@ -212,12 +212,12 @@ class Ludwig:
         self.target = self.config["output_features"][0]["name"]
 
     def missing_data_to_config(self):
-        self.config["preprocessing"]["missing_value_strategy"] = self.configuration.missing_data
+        self.config["preprocessing"]["missing_value_strategy"] = self.missing_data
 
     def runtime_to_config(self):
-        self.config["hyperopt"]["executor"]["time_budget_s"] = self.configuration.runtime
-        self.config["hyperopt"]["executor"]["scheduler"]["max_t"] = self.configuration.runtime
+        self.config["hyperopt"]["executor"]["time_budget_s"] = self.runtime
+        self.config["hyperopt"]["executor"]["scheduler"]["max_t"] = self.runtime
 
     def metric_to_config(self):
-        self.config["hyperopt"]["metric"] = self.configuration.metric
-        self.config["hyperopt"]["goal"] = self.configuration.goal
+        self.config["hyperopt"]["metric"] = self.metric
+        self.config["hyperopt"]["goal"] = self.target
