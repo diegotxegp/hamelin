@@ -25,8 +25,7 @@ class ControllerPatientRegistry:
         self.pushButton_registry_variable = self.ui.findChild(QPushButton, "pushButton_registry_variable")
         self.pushButton_registry_criteria = self.ui.findChild(QPushButton, "pushButton_registry_criteria")
         self.pushButton_registry_details = self.ui.findChild(QPushButton, "pushButton_registry_details")
-        self.textEdit_registry_summary_config = self.ui.findChild(QTextEdit, "textEdit_registry_summary_config")
-        self.pushButton_registry_summary = self.ui.findChild(QPushButton, "pushButton_registry_summary")
+        self.textEdit_registry_process_config = self.ui.findChild(QTextEdit, "textEdit_registry_process_config")
         self.pushButton_registry_process = self.ui.findChild(QPushButton, "pushButton_registry_process")
 
         scroll_area = self.ui.findChild(QScrollArea, "scrollArea_registry_criteria")
@@ -44,7 +43,6 @@ class ControllerPatientRegistry:
         self.pushButton_registry_variable.clicked.connect(self._ok)
         self.pushButton_registry_criteria.clicked.connect(self._ok)
         self.pushButton_registry_details.clicked.connect(self._ok)
-        self.pushButton_registry_summary.clicked.connect(self._ok)
         self.pushButton_registry_process.clicked.connect(self._ok)
 
     def _set_tabs_disabled(self):
@@ -86,17 +84,14 @@ class ControllerPatientRegistry:
         
         # Tab 3: Details
         if self.tab == 3:
-            self._update_tab_summary()
+            self._update_tab_process()
             self._next_tab() # Switches to the next tab
             return
         
-        # Tab 4: Summary
+        # Tab 4: Process
         if self.tab == 4:
-            self._next_tab() # Switches to the next tab
-            return
-        
-        # Tab 5: Process
-        if self.tab == 5:
+            self.model_registry.model.train_config() # Train the model
+            self._update_tab_outcome() # Update the outcome tab
             self._next_tab() # Switches to the next tab
             return
         
@@ -176,8 +171,8 @@ class ControllerPatientRegistry:
             else:
                 self.model_registry.model.ludwig.target[name] = type_value
 
-    def _update_tab_summary(self):
-        """ Updates the summary tab. """
+    def _update_tab_process(self):
+        """ Updates the process tab. """
         summary_text = (f"Project: {self.model_registry.model.project_dir}\n"
                 f"Dataset: {self.model_registry.model.dataset_dir}\n"
                 f"Samples: {self.model_registry.model.ludwig.samples}\n"
@@ -190,4 +185,20 @@ class ControllerPatientRegistry:
                 f"Time dependable: {self.model_registry.model.ludwig.timedependable}\n"
                 )
         
-        self.textEdit_registry_summary_config.setText(summary_text)
+        self.textEdit_registry_process_config.setText(summary_text)
+
+    def _update_tab_outcome(self):
+        """ Updates the outcome tab. """
+        outcome_text = (f"Project: {self.model_registry.model.project_dir}\n"
+                f"Dataset: {self.model_registry.model.dataset_dir}\n"
+                f"Samples: {self.model_registry.model.ludwig.samples}\n"
+                f"Input features: {self.model_registry.model.ludwig.input_features}\n"
+                f"Target: {self.model_registry.model.ludwig.target}\n"
+                f"Separator: {self.model_registry.model.ludwig.separator}\n"
+                f"Missing data: {self.model_registry.model.ludwig.missing_data}\n"
+                f"Runtime: {self.model_registry.model.ludwig.runtime}\n"
+                f"Metric: {self.model_registry.model.ludwig.metric}\n"
+                f"Time dependable: {self.model_registry.model.ludwig.timedependable}\n"
+                )
+        
+        self.textEdit_registry_outcome_config.setText(outcome_text)

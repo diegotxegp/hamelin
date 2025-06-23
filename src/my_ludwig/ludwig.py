@@ -28,7 +28,7 @@ class Ludwig:
         Read the dataframe of a file.
         """
         if dataset_path.endswith((".csv", ".fwf", ".tsv")):
-            self.df = pd.read_csv(dataset_path)
+            self.df = pd.read_csv(dataset_path, encoding="utf-8")
         elif dataset_path.endswith((".xlsx", ".xls")):
             self.df =pd.read_excel(dataset_path)
         elif dataset_path.endswith((".feather")):
@@ -54,18 +54,14 @@ class Ludwig:
         
         return self.df
 
-    def auto_train(self):
-        """
-        Automatically trains a model.
-        """
-        columns = self.df.columns.tolist()
-        self.target = columns[-1] # Last feature is commonly the target
+    def auto_train(self, primary_variable):
+        """ Automatically trains a model. """
 
         #split_df = get_repeatable_train_val_test_split(self.df, self.target, random_seed=42)
 
         auto_train_results = auto_train(
             dataset=self.df,
-            target=self.target,
+            target=primary_variable,
             time_limit_s=7200,
             tune_for_memory=False,
         )
@@ -219,5 +215,6 @@ class Ludwig:
         self.config["hyperopt"]["executor"]["scheduler"]["max_t"] = self.runtime
 
     def metric_to_config(self):
-        self.config["hyperopt"]["metric"] = self.metric
-        self.config["hyperopt"]["goal"] = self.target
+        metric, goal = self.metric.items()
+        self.config["hyperopt"]["metric"] = metric
+        self.config["hyperopt"]["goal"] = goal

@@ -36,3 +36,17 @@ class Model:
     def autoconfig(self):
         """ Automatically generates a configuration file. """
         return self.ludwig.autoconfig(self.primary_variable)
+    
+    def train_config(self):
+        """ Train the model. """
+        self.ludwig.configuration_to_config()
+        return self.ludwig.train()
+    
+    def auto_train(self):
+        """ Train the model. """
+        return self.ludwig.auto_train(self.primary_variable)
+    
+    def train(self):
+        """ Train the model. """
+        self.ludwig.train()
+    

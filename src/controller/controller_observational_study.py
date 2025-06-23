@@ -19,8 +19,8 @@ class ControllerObservationalStudy:
         self.tabWidget_observational.setCurrentIndex(self.tab)
 
         self.pushButton_observational_start = self.ui.findChild(QPushButton, "pushButton_observational_start")
-        self.pushButton_observational_criteria_add = self.ui.findChild(QPushButton, "pushButton_observational_criteria_add")
-        self.pushButton_observational_variable_add = self.ui.findChild(QPushButton, "pushButton_observational_variable_add")
+        self.pushButton_observational_criteria = self.ui.findChild(QPushButton, "pushButton_observational_criteria")
+        self.pushButton_observational_variable = self.ui.findChild(QPushButton, "pushButton_observational_variable")
         self.pushButton_observational_process = self.ui.findChild(QPushButton, "pushButton_observational_process")
 
         self._setup_signals()
@@ -33,8 +33,8 @@ class ControllerObservationalStudy:
         Connect UI elements (buttons, etc.) to their respective slots.
         """
         self.pushButton_observational_start.clicked.connect(self._back_to_init)
-        self.pushButton_observational_criteria_add.clicked.connect(self._ok)
-        self.pushButton_observational_variable_add.clicked.connect(self._ok)
+        self.pushButton_observational_variable.clicked.connect(self._ok)
+        self.pushButton_observational_criteria.clicked.connect(self._ok)
         self.pushButton_observational_process.clicked.connect(self._ok)
 
     def _set_tabs_disabled(self):
