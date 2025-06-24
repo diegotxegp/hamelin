@@ -18,7 +18,7 @@
     <item row="0" column="0">
      <widget class="QStackedWidget" name="stackedWidget">
       <property name="currentIndex">
-       <number>2</number>
+       <number>0</number>
       </property>
       <widget class="QWidget" name="page_start">
        <layout class="QGridLayout" name="gridLayout_2">
@@ -28,7 +28,7 @@
            <bool>true</bool>
           </property>
           <property name="currentIndex">
-           <number>1</number>
+           <number>3</number>
           </property>
           <widget class="QWidget" name="tab_start_welcome">
            <attribute name="title">
@@ -53,7 +53,7 @@ li.checked::marker { content: &quot;\2612&quot;; }
              </widget>
             </item>
             <item row="1" column="0">
-             <widget class="QPushButton" name="pushButton_start_welcome_ok">
+             <widget class="QPushButton" name="pushButton_start_welcome">
               <property name="text">
                <string>Ok</string>
               </property>
@@ -84,7 +84,7 @@ li.checked::marker { content: &quot;\2612&quot;; }
              </widget>
             </item>
             <item row="2" column="0">
-             <widget class="QPushButton" name="pushButton_start_project_ok">
+             <widget class="QPushButton" name="pushButton_start_project">
               <property name="text">
                <string>Ok</string>
               </property>
@@ -104,7 +104,7 @@ li.checked::marker { content: &quot;\2612&quot;; }
            </attribute>
            <layout class="QGridLayout" name="gridLayout_4">
             <item row="2" column="0">
-             <widget class="QPushButton" name="pushButton_start_data_ok">
+             <widget class="QPushButton" name="pushButton_start_data">
               <property name="text">
                <string>Ok</string>
               </property>
@@ -141,7 +141,7 @@ li.checked::marker { content: &quot;\2612&quot;; }
            </attribute>
            <layout class="QGridLayout" name="gridLayout_5">
             <item row="2" column="0">
-             <widget class="QPushButton" name="pushButton_start_status_ok">
+             <widget class="QPushButton" name="pushButton_start_status">
               <property name="text">
                <string>Ok</string>
               </property>
@@ -165,7 +165,7 @@ li.checked::marker { content: &quot;\2612&quot;; }
              </widget>
             </item>
             <item row="1" column="0">
-             <widget class="QTextEdit" name="textEdit_inicio_estado_lista"/>
+             <widget class="QTextEdit" name="textEdit_start_status_text"/>
             </item>
            </layout>
           </widget>
@@ -211,7 +211,7 @@ li.checked::marker { content: &quot;\2612&quot;; }
              </widget>
             </item>
             <item row="2" column="0">
-             <widget class="QPushButton" name="pushButton_start_options_ok">
+             <widget class="QPushButton" name="pushButton_start_options">
               <property name="text">
                <string>Ok</string>
               </property>
@@ -354,8 +354,8 @@ li.checked::marker { content: &quot;\2612&quot;; }
                 <rect>
                  <x>0</x>
                  <y>0</y>
-                 <width>755</width>
-                 <height>220</height>
+                 <width>98</width>
+                 <height>28</height>
                 </rect>
                </property>
                <layout class="QGridLayout" name="gridLayout_30">
@@ -407,8 +407,8 @@ li.checked::marker { content: &quot;\2612&quot;; }
                 <rect>
                  <x>0</x>
                  <y>0</y>
-                 <width>755</width>
-                 <height>220</height>
+                 <width>98</width>
+                 <height>28</height>
                 </rect>
                </property>
                <layout class="QGridLayout" name="gridLayout_32">
@@ -488,7 +488,7 @@ li.checked::marker { content: &quot;\2612&quot;; }
         <item row="1" column="0">
          <widget class="QTabWidget" name="tabWidget_observational">
           <property name="currentIndex">
-           <number>2</number>
+           <number>1</number>
           </property>
           <widget class="QWidget" name="tab_observational_start">
            <attribute name="title">

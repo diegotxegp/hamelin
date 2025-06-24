@@ -90,7 +90,7 @@ class ControllerPatientRegistry:
         
         # Tab 4: Process
         if self.tab == 4:
-            self.model_registry.model.train_config() # Train the model
+            self.model_registry.model.auto_train() # Train the model
             self._update_tab_outcome() # Update the outcome tab
             self._next_tab() # Switches to the next tab
             return

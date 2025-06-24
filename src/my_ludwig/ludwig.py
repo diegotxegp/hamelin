@@ -215,6 +215,6 @@ class Ludwig:
         self.config["hyperopt"]["executor"]["scheduler"]["max_t"] = self.runtime
 
     def metric_to_config(self):
-        metric, goal = self.metric.items()
-        self.config["hyperopt"]["metric"] = metric
-        self.config["hyperopt"]["goal"] = goal
+        for metric, goal in self.metric.items():
+            self.config["hyperopt"]["metric"] = metric
+            self.config["hyperopt"]["goal"] = goal

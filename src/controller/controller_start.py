@@ -20,23 +20,24 @@ class ControllerStart:
         self.tabWidget_start.setCurrentIndex(self.tab)
 
         # Tab: Welcome
-        self.pushButton_start_welcome_ok = self.ui.findChild(QPushButton, "pushButton_start_welcome_ok")
+        self.pushButton_start_welcome = self.ui.findChild(QPushButton, "pushButton_start_welcome")
 
         # Tab: Project
         self.listWidget_start_project = self.ui.findChild(QListWidget, "listWidget_start_project")
-        self.pushButton_start_project_ok = self.ui.findChild(QPushButton, "pushButton_start_project_ok")
+        self.pushButton_start_project = self.ui.findChild(QPushButton, "pushButton_start_project")
 
         # Tab: Data
         self.listWidget_start_data = self.ui.findChild(QListWidget, "listWidget_start_data")
-        self.pushButton_start_data_ok = self.ui.findChild(QPushButton, "pushButton_start_data_ok")
+        self.pushButton_start_data = self.ui.findChild(QPushButton, "pushButton_start_data")
 
         # Tab: Status
         self.textEdit_start_status = self.ui.findChild(QTextEdit, "textEdit_start_status")
-        self.pushButton_start_status_ok = self.ui.findChild(QPushButton, "pushButton_start_status_ok")
+        self.textEdit_start_status_text = self.ui.findChild(QTextEdit, "textEdit_start_status_text")
+        self.pushButton_start_status = self.ui.findChild(QPushButton, "pushButton_start_status")
 
         # Tab: Options
         self.comboBox_start_options = self.ui.findChild(QComboBox, "comboBox_start_options")
-        self.pushButton_start_options_ok = self.ui.findChild(QPushButton, "pushButton_start_options_ok")
+        self.pushButton_start_options = self.ui.findChild(QPushButton, "pushButton_start_options")
         
         self._setup_signals()
         self._set_tabs_disabled()
@@ -46,19 +47,19 @@ class ControllerStart:
         Connect UI elements (buttons, etc.) to their respective slots.
         """
         # Tab: Welcome
-        self.pushButton_start_welcome_ok.clicked.connect(self._ok)
+        self.pushButton_start_welcome.clicked.connect(self._ok)
 
         # Tab: Project
-        self.pushButton_start_project_ok.clicked.connect(self._ok)
+        self.pushButton_start_project.clicked.connect(self._ok)
 
         # Tab: Datos
-        self.pushButton_start_data_ok.clicked.connect(self._ok)
+        self.pushButton_start_data.clicked.connect(self._ok)
 
         # Tab: Status
-        self.pushButton_start_status_ok.clicked.connect(self._ok)
+        self.pushButton_start_status.clicked.connect(self._ok)
 
         # Tab: Opciones
-        self.pushButton_start_options_ok.clicked.connect(self._ok)
+        self.pushButton_start_options.clicked.connect(self._ok)
 
     def _set_tabs_disabled(self):
         """
@@ -94,12 +95,13 @@ class ControllerStart:
                 self._load_dataset()
             else:
                 self._set_dataset() # Selects the dataset
-                #self._update_tab_status() # Updates the status tab
+                self._update_tab_status() # Updates the status tab
                 self._next_tab() # Switches to the next tab
                 return
 
         # Tab 3: Status
         if self.tab == 3:
+            self._set_status() # Selects the status
             self._next_tab() # Switches to the next tab
             return
         
@@ -166,12 +168,41 @@ class ControllerStart:
         if origin_path:
             self.model_start.load_dataset(origin_path)
 
+        self._update_tab_data()
+
     def _set_dataset(self):
         """
         Reads the selected dataset from the list widget.
         """
         selected_dataset = self.listWidget_start_data.currentItem().text()
         self.model_start.set_dataset(selected_dataset)
+
+    def _update_tab_status(self):
+        self.textEdit_start_status_text.clear()
+
+        self.model_start.read_status_from_file()
+
+        if self.model_start.model.status is not None:
+            self.textEdit_start_status_text.setPlainText(self.model_start.model.status)
+
+    def _set_status(self):
+        """ Reads the selected status from the list widget. """
+        status = self.textEdit_start_status_text.toPlainText()
+
+        if status is not None:
+            self.model_start.set_status_in_file(status)
+
+    def _new_status(self):
+        """
+        Creates a new status.
+        """
+        name, ok = QInputDialog.getText(self.ui, "New status", "Enter the status name:")
+        if ok and name:
+            ns = self.model_start.new_status(name)
+            if ns == None:
+                self.controller.popup_message(self.ui, "Status name exists", "This status name already exists. Please choose a different name.")
+            else:
+                self._update_tab_status()
 
     def _select_option(self):
         """
