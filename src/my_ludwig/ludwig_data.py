@@ -51,3 +51,5 @@ metrics = {
         "loss"
     ]
 }
+
+goals = ["maximize", "minimize"]

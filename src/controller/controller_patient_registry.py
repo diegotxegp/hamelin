@@ -1,8 +1,8 @@
 # controller/controller_registro.py
 
-from PySide6.QtWidgets import QPushButton, QTabWidget, QListWidget, QLabel, QComboBox, QWidget, QHBoxLayout, QScrollArea, QTextEdit
+from PySide6.QtWidgets import QPushButton, QTabWidget, QListWidget, QLabel, QComboBox, QWidget, QHBoxLayout, QScrollArea, QTextEdit, QLineEdit, QSizePolicy
 
-from my_ludwig.ludwig_data import input_feature_types, output_feature_types
+from my_ludwig.ludwig_data import input_feature_types, output_feature_types, separators, missing_data_options, metrics, goals
 
 class ControllerPatientRegistry:
     def __init__(self, ui, model_registry, controller):
@@ -24,31 +24,33 @@ class ControllerPatientRegistry:
         self.listWidget_registry_variable = self.ui.findChild(QListWidget, "listWidget_registry_variable")
         self.pushButton_registry_variable = self.ui.findChild(QPushButton, "pushButton_registry_variable")
         self.pushButton_registry_criteria = self.ui.findChild(QPushButton, "pushButton_registry_criteria")
-        self.pushButton_registry_details = self.ui.findChild(QPushButton, "pushButton_registry_details")
+        self.pushButton_registry_settings = self.ui.findChild(QPushButton, "pushButton_registry_settings")
         self.textEdit_registry_process_config = self.ui.findChild(QTextEdit, "textEdit_registry_process_config")
         self.pushButton_registry_process = self.ui.findChild(QPushButton, "pushButton_registry_process")
 
         scroll_area = self.ui.findChild(QScrollArea, "scrollArea_registry_criteria")
-        contenedor = scroll_area.widget()
-        self.layout_registry_criteria = contenedor.layout()
+        container = scroll_area.widget()
+        self.layout_registry_criteria = container.layout()
+        
+        scroll_area = self.ui.findChild(QScrollArea, "scrollArea_registry_settings")
+        container = scroll_area.widget()
+        self.layout_registry_settings = container.layout()
+
 
         self._setup_signals()
         self._set_tabs_disabled()
 
     def _setup_signals(self):
-        """
-        Connect UI elements (buttons, etc.) to their respective slots.
-        """
+        """ Connect UI elements (buttons, etc.) to their respective slots. """
+
         self.pushButton_registry_start.clicked.connect(self._back_to_start)
         self.pushButton_registry_variable.clicked.connect(self._ok)
         self.pushButton_registry_criteria.clicked.connect(self._ok)
-        self.pushButton_registry_details.clicked.connect(self._ok)
+        self.pushButton_registry_settings.clicked.connect(self._ok)
         self.pushButton_registry_process.clicked.connect(self._ok)
 
     def _set_tabs_disabled(self):
-        """
-        Disables all tabs except the first two.
-        """
+        """ Disables all tabs except the first two."""
         tabs = self.tabWidget_registry.count()
 
         for i in range(2, tabs):
@@ -58,9 +60,7 @@ class ControllerPatientRegistry:
         self.controller.change_page(0)
 
     def _next_tab(self):
-        """
-        Increments the tab index and enables the next tab.
-        """
+        """ Increments the tab index and enables the next tab."""
         self.tab = self.tabWidget_registry.currentIndex() + 1
         self.tabWidget_registry.setTabEnabled(self.tab, True)
         self.tabWidget_registry.setCurrentIndex(self.tab)
@@ -79,11 +79,13 @@ class ControllerPatientRegistry:
         # Tab 2: Inclusion/Exclusion criteria
         if self.tab == 2:
             self._read_updated_criteria()
+            self._update_tab_settings()
             self._next_tab() # Switches to the next tab
             return
         
-        # Tab 3: Details
+        # Tab 3: Settings
         if self.tab == 3:
+            self._read_updated_settings()
             self._update_tab_process()
             self._next_tab() # Switches to the next tab
             return
@@ -170,6 +172,71 @@ class ControllerPatientRegistry:
                 self.model_registry.model.ludwig.input_features[name] = type_value
             else:
                 self.model_registry.model.ludwig.target[name] = type_value
+
+    def _update_tab_settings(self):
+        """Updates the settings tab with predefined configuration options depending on primary variable type."""
+        target_type = next(iter(self.model_registry.model.ludwig.target.values()))
+
+        settings = {
+            "separator": [""] + separators,
+            "missing_data": [""] + missing_data_options,
+            "metric": [""] + metrics.get(target_type, []),
+            "goal": [""] + goals
+        }
+
+        while self.layout_registry_settings.count():
+            item = self.layout_registry_settings.takeAt(0)
+            if item.widget():
+                item.widget().deleteLater()
+
+        for label_text, options in settings.items():
+            row = QWidget()
+            row_layout = QHBoxLayout(row)
+
+            label = QLabel(label_text)
+            combo = QComboBox()
+            combo.addItems(options)
+
+            row_layout.addWidget(label)
+            row_layout.addWidget(combo)
+            self.layout_registry_settings.addWidget(row)
+
+        row = QWidget()
+        row_layout = QHBoxLayout(row)
+
+        label = QLabel("runtime")
+        line_edit = QLineEdit()
+        line_edit.setPlaceholderText("Enter max runtime in seconds")
+        line_edit.setMaximumWidth(900)
+
+        row_layout.addWidget(label)
+        row_layout.addWidget(line_edit)
+        self.layout_registry_settings.addWidget(row)
+
+    def _read_updated_settings(self):
+        """Reads the user-modified settings from the layout."""
+
+        for i in range(self.layout_registry_settings.count()):
+            row_widget = self.layout_registry_settings.itemAt(i).widget()
+            if not row_widget:
+                continue
+            row_layout = row_widget.layout()
+            if not row_layout or row_layout.count() < 2:
+                continue
+
+            label = row_layout.itemAt(0).widget()
+            input_widget = row_layout.itemAt(1).widget()
+
+            key = label.text()
+
+            if isinstance(input_widget, QComboBox):
+                value = input_widget.currentText()
+            elif isinstance(input_widget, QLineEdit):
+                value = input_widget.text()
+            else:
+                continue  # Skip unknown widgets
+
+            setattr(self.model_registry.model.ludwig, key, value)
 
     def _update_tab_process(self):
         """ Updates the process tab. """
