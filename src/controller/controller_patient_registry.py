@@ -25,7 +25,7 @@ class ControllerPatientRegistry:
         self.pushButton_registry_variable = self.ui.findChild(QPushButton, "pushButton_registry_variable")
         self.pushButton_registry_criteria = self.ui.findChild(QPushButton, "pushButton_registry_criteria")
         self.pushButton_registry_settings = self.ui.findChild(QPushButton, "pushButton_registry_settings")
-        self.textEdit_registry_process_config = self.ui.findChild(QTextEdit, "textEdit_registry_process_config")
+        self.textEdit_registry_process_summary = self.ui.findChild(QTextEdit, "textEdit_registry_process_summary")
         self.pushButton_registry_process = self.ui.findChild(QPushButton, "pushButton_registry_process")
 
         scroll_area = self.ui.findChild(QScrollArea, "scrollArea_registry_criteria")
@@ -103,7 +103,7 @@ class ControllerPatientRegistry:
         
     def _update_tab_variable(self):
         """ Shows the variables in the dataset."""
-        variables = self.model_registry.acceptable_stratify_variables()
+        variables = self.model_registry.model.acceptable_stratify_variables()
         self.listWidget_registry_variable.clear()
         for variable in variables:
             self.listWidget_registry_variable.addItem(variable)
@@ -178,10 +178,11 @@ class ControllerPatientRegistry:
         target_type = next(iter(self.model_registry.model.ludwig.target.values()))
 
         settings = {
-            "separator": [""] + separators,
-            "missing_data": [""] + missing_data_options,
-            "metric": [""] + metrics.get(target_type, []),
-            "goal": [""] + goals
+            "Separator": [""] + separators,
+            "Missing-data": [""] + missing_data_options,
+            "Metric": metrics.get(target_type, []),
+            "Goal":  goals,
+            "Time-dependable": ["False", "True"]
         }
 
         while self.layout_registry_settings.count():
@@ -206,8 +207,8 @@ class ControllerPatientRegistry:
 
         label = QLabel("runtime")
         line_edit = QLineEdit()
-        line_edit.setPlaceholderText("Enter max runtime in seconds")
-        line_edit.setMaximumWidth(900)
+        line_edit.setPlaceholderText("Enter max runtime in seconds (Default: 7200)")
+        line_edit.setMaximumWidth(700)
 
         row_layout.addWidget(label)
         row_layout.addWidget(line_edit)
@@ -252,20 +253,4 @@ class ControllerPatientRegistry:
                 f"Time dependable: {self.model_registry.model.ludwig.timedependable}\n"
                 )
         
-        self.textEdit_registry_process_config.setText(summary_text)
-
-    def _update_tab_outcome(self):
-        """ Updates the outcome tab. """
-        outcome_text = (f"Project: {self.model_registry.model.project_dir}\n"
-                f"Dataset: {self.model_registry.model.dataset_dir}\n"
-                f"Samples: {self.model_registry.model.ludwig.samples}\n"
-                f"Input features: {self.model_registry.model.ludwig.input_features}\n"
-                f"Target: {self.model_registry.model.ludwig.target}\n"
-                f"Separator: {self.model_registry.model.ludwig.separator}\n"
-                f"Missing data: {self.model_registry.model.ludwig.missing_data}\n"
-                f"Runtime: {self.model_registry.model.ludwig.runtime}\n"
-                f"Metric: {self.model_registry.model.ludwig.metric}\n"
-                f"Time dependable: {self.model_registry.model.ludwig.timedependable}\n"
-                )
-        
-        self.textEdit_registry_outcome_config.setText(outcome_text)
+        self.textEdit_registry_process_summary.setText(summary_text)

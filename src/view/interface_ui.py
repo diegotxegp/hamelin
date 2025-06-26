@@ -287,10 +287,10 @@ class Ui_MainWindow(object):
 
         self.gridLayout_12.addWidget(self.textEdit_registry_process, 0, 0, 1, 1)
 
-        self.textEdit_registry_process_config = QTextEdit(self.tab_registry_process)
-        self.textEdit_registry_process_config.setObjectName(u"textEdit_registry_process_config")
+        self.textEdit_registry_process_summary = QTextEdit(self.tab_registry_process)
+        self.textEdit_registry_process_summary.setObjectName(u"textEdit_registry_process_summary")
 
-        self.gridLayout_12.addWidget(self.textEdit_registry_process_config, 1, 0, 1, 1)
+        self.gridLayout_12.addWidget(self.textEdit_registry_process_summary, 1, 0, 1, 1)
 
         self.tabWidget_registry.addTab(self.tab_registry_process, "")
         self.tab_registry_outcome = QWidget()
@@ -334,11 +334,6 @@ class Ui_MainWindow(object):
         self.tab_observational_variable.setObjectName(u"tab_observational_variable")
         self.gridLayout_17 = QGridLayout(self.tab_observational_variable)
         self.gridLayout_17.setObjectName(u"gridLayout_17")
-        self.textEdit_observational_variable_new = QTextEdit(self.tab_observational_variable)
-        self.textEdit_observational_variable_new.setObjectName(u"textEdit_observational_variable_new")
-
-        self.gridLayout_17.addWidget(self.textEdit_observational_variable_new, 1, 0, 1, 1)
-
         self.textEdit_observational_variable = QTextEdit(self.tab_observational_variable)
         self.textEdit_observational_variable.setObjectName(u"textEdit_observational_variable")
         self.textEdit_observational_variable.setReadOnly(True)
@@ -350,15 +345,20 @@ class Ui_MainWindow(object):
 
         self.gridLayout_17.addWidget(self.pushButton_observational_variable, 2, 0, 1, 1)
 
+        self.listWidget_observational_variable = QListWidget(self.tab_observational_variable)
+        self.listWidget_observational_variable.setObjectName(u"listWidget_observational_variable")
+
+        self.gridLayout_17.addWidget(self.listWidget_observational_variable, 1, 0, 1, 1)
+
         self.tabWidget_observational.addTab(self.tab_observational_variable, "")
         self.tab_observational_criteria = QWidget()
         self.tab_observational_criteria.setObjectName(u"tab_observational_criteria")
         self.gridLayout_16 = QGridLayout(self.tab_observational_criteria)
         self.gridLayout_16.setObjectName(u"gridLayout_16")
-        self.textEdit_observational_criteria_new = QTextEdit(self.tab_observational_criteria)
-        self.textEdit_observational_criteria_new.setObjectName(u"textEdit_observational_criteria_new")
+        self.pushButton_observational_criteria = QPushButton(self.tab_observational_criteria)
+        self.pushButton_observational_criteria.setObjectName(u"pushButton_observational_criteria")
 
-        self.gridLayout_16.addWidget(self.textEdit_observational_criteria_new, 1, 0, 1, 1)
+        self.gridLayout_16.addWidget(self.pushButton_observational_criteria, 2, 0, 1, 1)
 
         self.textEdit_observational_criteria = QTextEdit(self.tab_observational_criteria)
         self.textEdit_observational_criteria.setObjectName(u"textEdit_observational_criteria")
@@ -366,12 +366,56 @@ class Ui_MainWindow(object):
 
         self.gridLayout_16.addWidget(self.textEdit_observational_criteria, 0, 0, 1, 1)
 
-        self.pushButton_observational_criteria = QPushButton(self.tab_observational_criteria)
-        self.pushButton_observational_criteria.setObjectName(u"pushButton_observational_criteria")
+        self.scrollArea_observational_criteria = QScrollArea(self.tab_observational_criteria)
+        self.scrollArea_observational_criteria.setObjectName(u"scrollArea_observational_criteria")
+        self.scrollArea_observational_criteria.setWidgetResizable(True)
+        self.scrollAreaWidgetContents_observational_criteria = QWidget()
+        self.scrollAreaWidgetContents_observational_criteria.setObjectName(u"scrollAreaWidgetContents_observational_criteria")
+        self.scrollAreaWidgetContents_observational_criteria.setGeometry(QRect(0, 0, 755, 220))
+        self.gridLayout_33 = QGridLayout(self.scrollAreaWidgetContents_observational_criteria)
+        self.gridLayout_33.setObjectName(u"gridLayout_33")
+        self.widget_observational_criteria = QWidget(self.scrollAreaWidgetContents_observational_criteria)
+        self.widget_observational_criteria.setObjectName(u"widget_observational_criteria")
 
-        self.gridLayout_16.addWidget(self.pushButton_observational_criteria, 2, 0, 1, 1)
+        self.gridLayout_33.addWidget(self.widget_observational_criteria, 0, 0, 1, 1)
+
+        self.scrollArea_observational_criteria.setWidget(self.scrollAreaWidgetContents_observational_criteria)
+
+        self.gridLayout_16.addWidget(self.scrollArea_observational_criteria, 1, 0, 1, 1)
 
         self.tabWidget_observational.addTab(self.tab_observational_criteria, "")
+        self.tab_observational_settings = QWidget()
+        self.tab_observational_settings.setObjectName(u"tab_observational_settings")
+        self.gridLayout_31 = QGridLayout(self.tab_observational_settings)
+        self.gridLayout_31.setObjectName(u"gridLayout_31")
+        self.textEdit_observational_settings = QTextEdit(self.tab_observational_settings)
+        self.textEdit_observational_settings.setObjectName(u"textEdit_observational_settings")
+
+        self.gridLayout_31.addWidget(self.textEdit_observational_settings, 0, 0, 1, 1)
+
+        self.scrollArea_observational_settings = QScrollArea(self.tab_observational_settings)
+        self.scrollArea_observational_settings.setObjectName(u"scrollArea_observational_settings")
+        self.scrollArea_observational_settings.setWidgetResizable(True)
+        self.scrollAreaWidgetContents_observational_settings = QWidget()
+        self.scrollAreaWidgetContents_observational_settings.setObjectName(u"scrollAreaWidgetContents_observational_settings")
+        self.scrollAreaWidgetContents_observational_settings.setGeometry(QRect(0, 0, 755, 220))
+        self.gridLayout_34 = QGridLayout(self.scrollAreaWidgetContents_observational_settings)
+        self.gridLayout_34.setObjectName(u"gridLayout_34")
+        self.widget_observational_settings = QWidget(self.scrollAreaWidgetContents_observational_settings)
+        self.widget_observational_settings.setObjectName(u"widget_observational_settings")
+
+        self.gridLayout_34.addWidget(self.widget_observational_settings, 0, 0, 1, 1)
+
+        self.scrollArea_observational_settings.setWidget(self.scrollAreaWidgetContents_observational_settings)
+
+        self.gridLayout_31.addWidget(self.scrollArea_observational_settings, 1, 0, 1, 1)
+
+        self.pushButton_observational_settings = QPushButton(self.tab_observational_settings)
+        self.pushButton_observational_settings.setObjectName(u"pushButton_observational_settings")
+
+        self.gridLayout_31.addWidget(self.pushButton_observational_settings, 2, 0, 1, 1)
+
+        self.tabWidget_observational.addTab(self.tab_observational_settings, "")
         self.tab_observational_process = QWidget()
         self.tab_observational_process.setObjectName(u"tab_observational_process")
         self.gridLayout_18 = QGridLayout(self.tab_observational_process)
@@ -387,10 +431,10 @@ class Ui_MainWindow(object):
 
         self.gridLayout_18.addWidget(self.textEdit_observational_process, 0, 0, 1, 1)
 
-        self.textEdit_3 = QTextEdit(self.tab_observational_process)
-        self.textEdit_3.setObjectName(u"textEdit_3")
+        self.textEdit_observational_process_summary = QTextEdit(self.tab_observational_process)
+        self.textEdit_observational_process_summary.setObjectName(u"textEdit_observational_process_summary")
 
-        self.gridLayout_18.addWidget(self.textEdit_3, 1, 0, 1, 1)
+        self.gridLayout_18.addWidget(self.textEdit_observational_process_summary, 1, 0, 1, 1)
 
         self.tabWidget_observational.addTab(self.tab_observational_process, "")
         self.tab_observational_outcome = QWidget()
@@ -605,10 +649,10 @@ class Ui_MainWindow(object):
 
         self.retranslateUi(MainWindow)
 
-        self.stackedWidget.setCurrentIndex(1)
+        self.stackedWidget.setCurrentIndex(2)
         self.tabWidget_start.setCurrentIndex(3)
-        self.tabWidget_registry.setCurrentIndex(3)
-        self.tabWidget_observational.setCurrentIndex(1)
+        self.tabWidget_registry.setCurrentIndex(4)
+        self.tabWidget_observational.setCurrentIndex(5)
         self.tabWidget_clinical.setCurrentIndex(6)
 
 
@@ -712,7 +756,7 @@ class Ui_MainWindow(object):
 "li.checked::marker { content: \"\\2612\"; }\n"
 "</style></head><body style=\" font-family:'Sans Serif'; font-size:9pt; font-weight:400; font-style:normal;\">\n"
 "<p align=\"center\" style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-size:12pt;\">Indicate some settings:</span></p>\n"
-"<p align=\"center\" style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-size:12pt;\">Separator, missing data, samples, runtime, metric.</span></p></body></html>", None))
+"<p align=\"center\" style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-size:12pt;\">Separator, missing data, metric, goal, runtime.</span></p></body></html>", None))
         self.pushButton_registry_settings.setText(QCoreApplication.translate("MainWindow", u"Ok", None))
         self.tabWidget_registry.setTabText(self.tabWidget_registry.indexOf(self.tab_registry_settings), QCoreApplication.translate("MainWindow", u"Settings", None))
         self.pushButton_registry_process.setText(QCoreApplication.translate("MainWindow", u"Process", None))
@@ -751,9 +795,10 @@ class Ui_MainWindow(object):
 "li.unchecked::marker { content: \"\\2610\"; }\n"
 "li.checked::marker { content: \"\\2612\"; }\n"
 "</style></head><body style=\" font-family:'Sans Serif'; font-size:9pt; font-weight:400; font-style:normal;\">\n"
-"<p align=\"center\" style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-size:12pt;\">Select a primary variable</span></p></body></html>", None))
+"<p align=\"center\" style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-size:12pt;\">Indicate a primary variable (target)</span></p></body></html>", None))
         self.pushButton_observational_variable.setText(QCoreApplication.translate("MainWindow", u"Ok", None))
         self.tabWidget_observational.setTabText(self.tabWidget_observational.indexOf(self.tab_observational_variable), QCoreApplication.translate("MainWindow", u"Primary variable", None))
+        self.pushButton_observational_criteria.setText(QCoreApplication.translate("MainWindow", u"Ok", None))
         self.textEdit_observational_criteria.setHtml(QCoreApplication.translate("MainWindow", u"<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0//EN\" \"http://www.w3.org/TR/REC-html40/strict.dtd\">\n"
 "<html><head><meta name=\"qrichtext\" content=\"1\" /><meta charset=\"utf-8\" /><style type=\"text/css\">\n"
 "p, li { white-space: pre-wrap; }\n"
@@ -761,9 +806,19 @@ class Ui_MainWindow(object):
 "li.unchecked::marker { content: \"\\2610\"; }\n"
 "li.checked::marker { content: \"\\2612\"; }\n"
 "</style></head><body style=\" font-family:'Sans Serif'; font-size:9pt; font-weight:400; font-style:normal;\">\n"
-"<p align=\"center\" style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-size:12pt;\">Indicate inclusion/exclusion criteria</span></p></body></html>", None))
-        self.pushButton_observational_criteria.setText(QCoreApplication.translate("MainWindow", u"Ok", None))
+"<p align=\"center\" style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-size:12pt;\">Indicate the inclusion and exclusion criteria</span></p></body></html>", None))
         self.tabWidget_observational.setTabText(self.tabWidget_observational.indexOf(self.tab_observational_criteria), QCoreApplication.translate("MainWindow", u"Inclusion/Exclusion criteria", None))
+        self.textEdit_observational_settings.setHtml(QCoreApplication.translate("MainWindow", u"<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0//EN\" \"http://www.w3.org/TR/REC-html40/strict.dtd\">\n"
+"<html><head><meta name=\"qrichtext\" content=\"1\" /><meta charset=\"utf-8\" /><style type=\"text/css\">\n"
+"p, li { white-space: pre-wrap; }\n"
+"hr { height: 1px; border-width: 0; }\n"
+"li.unchecked::marker { content: \"\\2610\"; }\n"
+"li.checked::marker { content: \"\\2612\"; }\n"
+"</style></head><body style=\" font-family:'Sans Serif'; font-size:9pt; font-weight:400; font-style:normal;\">\n"
+"<p align=\"center\" style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-size:12pt;\">Indicate some settings:</span></p>\n"
+"<p align=\"center\" style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-size:12pt;\">Separator, missing data, metric, goal, runtime.</span></p></body></html>", None))
+        self.pushButton_observational_settings.setText(QCoreApplication.translate("MainWindow", u"Ok", None))
+        self.tabWidget_observational.setTabText(self.tabWidget_observational.indexOf(self.tab_observational_settings), QCoreApplication.translate("MainWindow", u"Settings", None))
         self.pushButton_observational_process.setText(QCoreApplication.translate("MainWindow", u"Process", None))
         self.textEdit_observational_process.setHtml(QCoreApplication.translate("MainWindow", u"<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0//EN\" \"http://www.w3.org/TR/REC-html40/strict.dtd\">\n"
 "<html><head><meta name=\"qrichtext\" content=\"1\" /><meta charset=\"utf-8\" /><style type=\"text/css\">\n"
@@ -772,7 +827,7 @@ class Ui_MainWindow(object):
 "li.unchecked::marker { content: \"\\2610\"; }\n"
 "li.checked::marker { content: \"\\2612\"; }\n"
 "</style></head><body style=\" font-family:'Sans Serif'; font-size:9pt; font-weight:400; font-style:normal;\">\n"
-"<p align=\"center\" style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-size:12pt;\">These are the data. Do you agree?</span></p></body></html>", None))
+"<p align=\"center\" style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-size:12pt;\">Before processing data, check the summary.</span></p></body></html>", None))
         self.tabWidget_observational.setTabText(self.tabWidget_observational.indexOf(self.tab_observational_process), QCoreApplication.translate("MainWindow", u"Process", None))
         self.textEdit_observational_outcome.setHtml(QCoreApplication.translate("MainWindow", u"<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0//EN\" \"http://www.w3.org/TR/REC-html40/strict.dtd\">\n"
 "<html><head><meta name=\"qrichtext\" content=\"1\" /><meta charset=\"utf-8\" /><style type=\"text/css\">\n"
@@ -781,7 +836,7 @@ class Ui_MainWindow(object):
 "li.unchecked::marker { content: \"\\2610\"; }\n"
 "li.checked::marker { content: \"\\2612\"; }\n"
 "</style></head><body style=\" font-family:'Sans Serif'; font-size:9pt; font-weight:400; font-style:normal;\">\n"
-"<p align=\"center\" style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-size:12pt;\">Resultados del procesado del dataset</span></p></body></html>", None))
+"<p align=\"center\" style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-size:12pt;\">Outcome</span></p></body></html>", None))
         self.tabWidget_observational.setTabText(self.tabWidget_observational.indexOf(self.tab_observational_outcome), QCoreApplication.translate("MainWindow", u"Outcome", None))
         self.lineEdit_observational_title.setText(QCoreApplication.translate("MainWindow", u"Observational study", None))
         self.textEdit_clinical_start.setHtml(QCoreApplication.translate("MainWindow", u"<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0//EN\" \"http://www.w3.org/TR/REC-html40/strict.dtd\">\n"
