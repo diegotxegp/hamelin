@@ -20,7 +20,7 @@ from PySide6.QtWidgets import (QApplication, QComboBox, QGridLayout, QLineEdit,
     QListWidget, QListWidgetItem, QMainWindow, QMenu,
     QMenuBar, QPushButton, QScrollArea, QSizePolicy,
     QStackedWidget, QStatusBar, QTabWidget, QTextEdit,
-    QWidget)
+    QVBoxLayout, QWidget)
 
 class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
@@ -490,10 +490,10 @@ class Ui_MainWindow(object):
 
         self.gridLayout_23.addWidget(self.textEdit_clinical_variable, 0, 0, 1, 1)
 
-        self.textEdit_clinical_variable_new = QTextEdit(self.tab_clinical_variable)
-        self.textEdit_clinical_variable_new.setObjectName(u"textEdit_clinical_variable_new")
+        self.listWidget_clinical_variable = QListWidget(self.tab_clinical_variable)
+        self.listWidget_clinical_variable.setObjectName(u"listWidget_clinical_variable")
 
-        self.gridLayout_23.addWidget(self.textEdit_clinical_variable_new, 1, 0, 1, 1)
+        self.gridLayout_23.addWidget(self.listWidget_clinical_variable, 1, 0, 1, 1)
 
         self.pushButton_clinical_variable_add = QPushButton(self.tab_clinical_variable)
         self.pushButton_clinical_variable_add.setObjectName(u"pushButton_clinical_variable_add")
@@ -505,16 +505,23 @@ class Ui_MainWindow(object):
         self.tab_clinical_criteria.setObjectName(u"tab_clinical_criteria")
         self.gridLayout_22 = QGridLayout(self.tab_clinical_criteria)
         self.gridLayout_22.setObjectName(u"gridLayout_22")
-        self.textEdit_clinico_criteria_new = QTextEdit(self.tab_clinical_criteria)
-        self.textEdit_clinico_criteria_new.setObjectName(u"textEdit_clinico_criteria_new")
-
-        self.gridLayout_22.addWidget(self.textEdit_clinico_criteria_new, 1, 0, 1, 1)
-
         self.textEdit_clinical_criteria = QTextEdit(self.tab_clinical_criteria)
         self.textEdit_clinical_criteria.setObjectName(u"textEdit_clinical_criteria")
         self.textEdit_clinical_criteria.setReadOnly(True)
 
         self.gridLayout_22.addWidget(self.textEdit_clinical_criteria, 0, 0, 1, 1)
+
+        self.scrollArea_clinical_criteria = QScrollArea(self.tab_clinical_criteria)
+        self.scrollArea_clinical_criteria.setObjectName(u"scrollArea_clinical_criteria")
+        self.scrollArea_clinical_criteria.setWidgetResizable(True)
+        self.scrollAreaWidgetContents_clinical_criteria = QWidget()
+        self.scrollAreaWidgetContents_clinical_criteria.setObjectName(u"scrollAreaWidgetContents_clinical_criteria")
+        self.scrollAreaWidgetContents_clinical_criteria.setGeometry(QRect(0, 0, 597, 69))
+        self.verticalLayout_clinical_criteria = QVBoxLayout(self.scrollAreaWidgetContents_clinical_criteria)
+        self.verticalLayout_clinical_criteria.setObjectName(u"verticalLayout_clinical_criteria")
+        self.scrollArea_clinical_criteria.setWidget(self.scrollAreaWidgetContents_clinical_criteria)
+
+        self.gridLayout_22.addWidget(self.scrollArea_clinical_criteria, 1, 0, 1, 1)
 
         self.pushButton_clinical_criteria_add = QPushButton(self.tab_clinical_criteria)
         self.pushButton_clinical_criteria_add.setObjectName(u"pushButton_clinical_criteria_add")
@@ -532,10 +539,17 @@ class Ui_MainWindow(object):
 
         self.gridLayout_28.addWidget(self.textEdit_clinical_investigational, 0, 0, 1, 1)
 
-        self.textEdit_clinical_investigational_new = QTextEdit(self.tab_clinical_investigational)
-        self.textEdit_clinical_investigational_new.setObjectName(u"textEdit_clinical_investigational_new")
+        self.scrollArea_clinical_investigational = QScrollArea(self.tab_clinical_investigational)
+        self.scrollArea_clinical_investigational.setObjectName(u"scrollArea_clinical_investigational")
+        self.scrollArea_clinical_investigational.setWidgetResizable(True)
+        self.scrollAreaWidgetContents_clinical_investigational = QWidget()
+        self.scrollAreaWidgetContents_clinical_investigational.setObjectName(u"scrollAreaWidgetContents_clinical_investigational")
+        self.scrollAreaWidgetContents_clinical_investigational.setGeometry(QRect(0, 0, 597, 69))
+        self.verticalLayout_clinical_investigational = QVBoxLayout(self.scrollAreaWidgetContents_clinical_investigational)
+        self.verticalLayout_clinical_investigational.setObjectName(u"verticalLayout_clinical_investigational")
+        self.scrollArea_clinical_investigational.setWidget(self.scrollAreaWidgetContents_clinical_investigational)
 
-        self.gridLayout_28.addWidget(self.textEdit_clinical_investigational_new, 1, 0, 1, 1)
+        self.gridLayout_28.addWidget(self.scrollArea_clinical_investigational, 1, 0, 1, 1)
 
         self.pushButton_clinical_investigational_add = QPushButton(self.tab_clinical_investigational)
         self.pushButton_clinical_investigational_add.setObjectName(u"pushButton_clinical_investigational_add")
@@ -553,10 +567,17 @@ class Ui_MainWindow(object):
 
         self.gridLayout_26.addWidget(self.textEdit_clinical_control, 0, 0, 1, 1)
 
-        self.textEdit_clinical_control_new = QTextEdit(self.tab_clinical_control_drug)
-        self.textEdit_clinical_control_new.setObjectName(u"textEdit_clinical_control_new")
+        self.scrollArea_clinical_control = QScrollArea(self.tab_clinical_control_drug)
+        self.scrollArea_clinical_control.setObjectName(u"scrollArea_clinical_control")
+        self.scrollArea_clinical_control.setWidgetResizable(True)
+        self.scrollAreaWidgetContents_clinical_control = QWidget()
+        self.scrollAreaWidgetContents_clinical_control.setObjectName(u"scrollAreaWidgetContents_clinical_control")
+        self.scrollAreaWidgetContents_clinical_control.setGeometry(QRect(0, 0, 597, 69))
+        self.verticalLayout_clinical_control = QVBoxLayout(self.scrollAreaWidgetContents_clinical_control)
+        self.verticalLayout_clinical_control.setObjectName(u"verticalLayout_clinical_control")
+        self.scrollArea_clinical_control.setWidget(self.scrollAreaWidgetContents_clinical_control)
 
-        self.gridLayout_26.addWidget(self.textEdit_clinical_control_new, 1, 0, 1, 1)
+        self.gridLayout_26.addWidget(self.scrollArea_clinical_control, 1, 0, 1, 1)
 
         self.pushButton_clinical_control_add = QPushButton(self.tab_clinical_control_drug)
         self.pushButton_clinical_control_add.setObjectName(u"pushButton_clinical_control_add")
@@ -574,10 +595,17 @@ class Ui_MainWindow(object):
 
         self.gridLayout_27.addWidget(self.textEdit_clinical_disease, 0, 0, 1, 1)
 
-        self.textEdit_clinical_disease_new = QTextEdit(self.tab_clinical_disease)
-        self.textEdit_clinical_disease_new.setObjectName(u"textEdit_clinical_disease_new")
+        self.scrollArea_clinical_disease = QScrollArea(self.tab_clinical_disease)
+        self.scrollArea_clinical_disease.setObjectName(u"scrollArea_clinical_disease")
+        self.scrollArea_clinical_disease.setWidgetResizable(True)
+        self.scrollAreaWidgetContents_clinical_disease = QWidget()
+        self.scrollAreaWidgetContents_clinical_disease.setObjectName(u"scrollAreaWidgetContents_clinical_disease")
+        self.scrollAreaWidgetContents_clinical_disease.setGeometry(QRect(0, 0, 597, 69))
+        self.verticalLayout_clinical_disease = QVBoxLayout(self.scrollAreaWidgetContents_clinical_disease)
+        self.verticalLayout_clinical_disease.setObjectName(u"verticalLayout_clinical_disease")
+        self.scrollArea_clinical_disease.setWidget(self.scrollAreaWidgetContents_clinical_disease)
 
-        self.gridLayout_27.addWidget(self.textEdit_clinical_disease_new, 1, 0, 1, 1)
+        self.gridLayout_27.addWidget(self.scrollArea_clinical_disease, 1, 0, 1, 1)
 
         self.pushButton_clinical_disease_add = QPushButton(self.tab_clinical_disease)
         self.pushButton_clinical_disease_add.setObjectName(u"pushButton_clinical_disease_add")
@@ -936,7 +964,18 @@ class Ui_MainWindow(object):
 "li.unchecked::marker { content: \"\\2610\"; }\n"
 "li.checked::marker { content: \"\\2612\"; }\n"
 "</style></head><body style=\" font-family:'Sans Serif'; font-size:9pt; font-weight:400; font-style:normal;\">\n"
-"<p align=\"center\" style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-size:12pt;\">Volver a la pantalla de inicio</span></p></body></html>", None))
+"<p style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-size:12pt; font-weight:600;\">Clinical Trial Data Analysis</span></p>\n"
+"<p style=\" margin-top:12px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\">You are now working with data from a completed Clinical Trial. This analysis will help you evaluate the effectiveness and safety of experimental treatments compared to control groups.</p"
+                        ">\n"
+"<p style=\" margin-top:12px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-weight:600;\">What makes clinical trial data special:</span></p>\n"
+"<ul style=\"margin-top: 0px; margin-bottom: 0px; margin-left: 0px; margin-right: 0px; -qt-list-indent: 1;\">\n"
+"<li style=\" margin-top:6px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-weight:600;\">Controlled environment:</span> Participants were randomly assigned to treatment groups</li>\n"
+"<li style=\" margin-top:6px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-weight:600;\">Standardized measurements:</span> Data was collected following strict protocols</li>\n"
+"<li style=\" margin-top:6px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-weight:600;\">Treatment comparison:</span> Direct compar"
+                        "ison between experimental and control treatments</li>\n"
+"<li style=\" margin-top:6px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-weight:600;\">Safety monitoring:</span> Systematic tracking of adverse events and side effects</li>\n"
+"</ul>\n"
+"<p style=\" margin-top:12px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-style:italic;\">Follow the next steps to configure your clinical trial data analysis and discover treatment efficacy patterns.</span></p></body></html>", None))
         self.pushButton_clinical_start.setText(QCoreApplication.translate("MainWindow", u"Back to start", None))
         self.tabWidget_clinical.setTabText(self.tabWidget_clinical.indexOf(self.tab_clinical_start), QCoreApplication.translate("MainWindow", u"Start", None))
         self.textEdit_clinical_variable.setHtml(QCoreApplication.translate("MainWindow", u"<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0//EN\" \"http://www.w3.org/TR/REC-html40/strict.dtd\">\n"
@@ -946,8 +985,19 @@ class Ui_MainWindow(object):
 "li.unchecked::marker { content: \"\\2610\"; }\n"
 "li.checked::marker { content: \"\\2612\"; }\n"
 "</style></head><body style=\" font-family:'Sans Serif'; font-size:9pt; font-weight:400; font-style:normal;\">\n"
-"<p align=\"center\" style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-size:12pt;\">Indicate the primary variable</span></p></body></html>", None))
-        self.pushButton_clinical_variable_add.setText(QCoreApplication.translate("MainWindow", u"Add", None))
+"<p style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-size:12pt; font-weight:600;\">Primary Endpoint Selection</span></p>\n"
+"<p style=\" margin-top:12px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\">Select the <span style=\" font-weight:600;\">primary endpoint</span> from your clinical trial dataset. This is the main outcome that was used to measure treatment effectiveness.</p>\n"
+"<p"
+                        " style=\" margin-top:12px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-weight:600;\">Common types of primary endpoints:</span></p>\n"
+"<ul style=\"margin-top: 0px; margin-bottom: 0px; margin-left: 0px; margin-right: 0px; -qt-list-indent: 1;\">\n"
+"<li style=\" margin-top:6px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-weight:600;\">Clinical response:</span> Treatment success/failure, remission rates</li>\n"
+"<li style=\" margin-top:6px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-weight:600;\">Time-to-event:</span> Survival time, time to progression, relapse-free survival</li>\n"
+"<li style=\" margin-top:6px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-weight:600;\">Continuous measures:</span> Blood pressure reduction, symptom scores, qua"
+                        "lity of life</li>\n"
+"<li style=\" margin-top:6px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-weight:600;\">Biomarkers:</span> Laboratory values, imaging measurements</li>\n"
+"</ul>\n"
+"<p style=\" margin-top:12px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-style:italic;\">Choose the variable that best represents the treatment's intended therapeutic effect.</span></p></body></html>", None))
+        self.pushButton_clinical_variable_add.setText(QCoreApplication.translate("MainWindow", u"Ok", None))
         self.tabWidget_clinical.setTabText(self.tabWidget_clinical.indexOf(self.tab_clinical_variable), QCoreApplication.translate("MainWindow", u"Primary variable", None))
         self.textEdit_clinical_criteria.setHtml(QCoreApplication.translate("MainWindow", u"<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0//EN\" \"http://www.w3.org/TR/REC-html40/strict.dtd\">\n"
 "<html><head><meta name=\"qrichtext\" content=\"1\" /><meta charset=\"utf-8\" /><style type=\"text/css\">\n"
@@ -956,8 +1006,22 @@ class Ui_MainWindow(object):
 "li.unchecked::marker { content: \"\\2610\"; }\n"
 "li.checked::marker { content: \"\\2612\"; }\n"
 "</style></head><body style=\" font-family:'Sans Serif'; font-size:9pt; font-weight:400; font-style:normal;\">\n"
-"<p align=\"center\" style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-size:12pt;\">Indicate the inclusion/exclusion criteria</span></p></body></html>", None))
-        self.pushButton_clinical_criteria_add.setText(QCoreApplication.translate("MainWindow", u"Add", None))
+"<p style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-size:12pt; font-weight:600;\">Patient Selection Criteria</span></p>\n"
+"<p style=\" margin-top:12px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\">Define criteria to filter patients from your clinical trial dataset. This helps focus the analysis on the intended study population and ensures data quality.</p>\n"
+"<p style=\" margin-top"
+                        ":12px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-weight:600;\">Typical inclusion criteria in clinical trials:</span></p>\n"
+"<ul style=\"margin-top: 0px; margin-bottom: 0px; margin-left: 0px; margin-right: 0px; -qt-list-indent: 1;\">\n"
+"<li style=\" margin-top:6px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-weight:600;\">Demographics:</span> Age ranges, gender requirements</li>\n"
+"<li style=\" margin-top:6px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-weight:600;\">Disease stage:</span> Specific disease severity or staging</li>\n"
+"<li style=\" margin-top:6px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-weight:600;\">Treatment history:</span> Previous therapies, washout periods</li>\n"
+"<li style=\" margin-top:6px; margin-bottom:0px;"
+                        " margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-weight:600;\">Biomarkers:</span> Laboratory values, genetic markers</li>\n"
+"</ul>\n"
+"<p style=\" margin-top:12px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-weight:600;\">Common exclusion criteria:</span></p>\n"
+"<ul style=\"margin-top: 0px; margin-bottom: 0px; margin-left: 0px; margin-right: 0px; -qt-list-indent: 1;\">\n"
+"<li style=\" margin-top:6px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\">Protocol violations, incomplete data, safety concerns</li>\n"
+"</ul></body></html>", None))
+        self.pushButton_clinical_criteria_add.setText(QCoreApplication.translate("MainWindow", u"Ok", None))
         self.tabWidget_clinical.setTabText(self.tabWidget_clinical.indexOf(self.tab_clinical_criteria), QCoreApplication.translate("MainWindow", u"Inclusion/Exclusion criteria", None))
         self.textEdit_clinical_investigational.setHtml(QCoreApplication.translate("MainWindow", u"<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0//EN\" \"http://www.w3.org/TR/REC-html40/strict.dtd\">\n"
 "<html><head><meta name=\"qrichtext\" content=\"1\" /><meta charset=\"utf-8\" /><style type=\"text/css\">\n"
@@ -966,8 +1030,19 @@ class Ui_MainWindow(object):
 "li.unchecked::marker { content: \"\\2610\"; }\n"
 "li.checked::marker { content: \"\\2612\"; }\n"
 "</style></head><body style=\" font-family:'Sans Serif'; font-size:9pt; font-weight:400; font-style:normal;\">\n"
-"<p align=\"center\" style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-size:12pt;\">Indicate the investigational drug</span></p></body></html>", None))
-        self.pushButton_clinical_investigational_add.setText(QCoreApplication.translate("MainWindow", u"Add", None))
+"<p style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-size:12pt; font-weight:600;\">Experimental Treatment Group</span></p>\n"
+"<p style=\" margin-top:12px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\">Identify the <span style=\" font-weight:600;\">experimental treatment group</span> in your clinical trial dataset. This represents patients who received the new treatment being tested.</"
+                        "p>\n"
+"<p style=\" margin-top:12px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-weight:600;\">What to specify:</span></p>\n"
+"<ul style=\"margin-top: 0px; margin-bottom: 0px; margin-left: 0px; margin-right: 0px; -qt-list-indent: 1;\">\n"
+"<li style=\" margin-top:6px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-weight:600;\">Treatment group identifier:</span> Column name or values that identify experimental arm</li>\n"
+"<li style=\" margin-top:6px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-weight:600;\">Drug name/code:</span> Name or code of the investigational treatment</li>\n"
+"<li style=\" margin-top:6px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-weight:600;\">Dosage information:</span> Dose levels or regimens if applicable</li>\n"
+""
+                        "<li style=\" margin-top:6px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-weight:600;\">Administration route:</span> How the treatment was given (oral, IV, etc.)</li>\n"
+"</ul>\n"
+"<p style=\" margin-top:12px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-style:italic;\">This information helps the AI identify which patients received the experimental treatment for comparison analysis.</span></p></body></html>", None))
+        self.pushButton_clinical_investigational_add.setText(QCoreApplication.translate("MainWindow", u"Ok", None))
         self.tabWidget_clinical.setTabText(self.tabWidget_clinical.indexOf(self.tab_clinical_investigational), QCoreApplication.translate("MainWindow", u"Investigational drug", None))
         self.textEdit_clinical_control.setHtml(QCoreApplication.translate("MainWindow", u"<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0//EN\" \"http://www.w3.org/TR/REC-html40/strict.dtd\">\n"
 "<html><head><meta name=\"qrichtext\" content=\"1\" /><meta charset=\"utf-8\" /><style type=\"text/css\">\n"
@@ -976,8 +1051,20 @@ class Ui_MainWindow(object):
 "li.unchecked::marker { content: \"\\2610\"; }\n"
 "li.checked::marker { content: \"\\2612\"; }\n"
 "</style></head><body style=\" font-family:'Sans Serif'; font-size:9pt; font-weight:400; font-style:normal;\">\n"
-"<p align=\"center\" style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-size:12pt;\">Indicate the control drug</span></p></body></html>", None))
-        self.pushButton_clinical_control_add.setText(QCoreApplication.translate("MainWindow", u"Add", None))
+"<p style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-size:12pt; font-weight:600;\">Control Group Identification</span></p>\n"
+"<p style=\" margin-top:12px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\">Identify the <span style=\" font-weight:600;\">control group</span> in your clinical trial dataset. This is the comparison group used to evaluate the effectiveness of the experimental tr"
+                        "eatment.</p>\n"
+"<p style=\" margin-top:12px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-weight:600;\">Types of control groups:</span></p>\n"
+"<ul style=\"margin-top: 0px; margin-bottom: 0px; margin-left: 0px; margin-right: 0px; -qt-list-indent: 1;\">\n"
+"<li style=\" margin-top:6px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-weight:600;\">Placebo:</span> Inactive treatment that looks identical to the experimental drug</li>\n"
+"<li style=\" margin-top:6px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-weight:600;\">Active control:</span> Standard treatment or existing approved medication</li>\n"
+"<li style=\" margin-top:6px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-weight:600;\">No treatment:</span> Natural course of disease without int"
+                        "ervention</li>\n"
+"<li style=\" margin-top:6px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-weight:600;\">Historical control:</span> Comparison with past patient data</li>\n"
+"</ul>\n"
+"<p style=\" margin-top:12px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-weight:600;\">What to specify:</span> Control group identifier, treatment name/code, and any relevant dosage information.</p>\n"
+"<p style=\" margin-top:12px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-style:italic;\">Accurate control group identification is essential for meaningful treatment comparisons.</span></p></body></html>", None))
+        self.pushButton_clinical_control_add.setText(QCoreApplication.translate("MainWindow", u"Ok", None))
         self.tabWidget_clinical.setTabText(self.tabWidget_clinical.indexOf(self.tab_clinical_control_drug), QCoreApplication.translate("MainWindow", u"Control drug", None))
         self.textEdit_clinical_disease.setHtml(QCoreApplication.translate("MainWindow", u"<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0//EN\" \"http://www.w3.org/TR/REC-html40/strict.dtd\">\n"
 "<html><head><meta name=\"qrichtext\" content=\"1\" /><meta charset=\"utf-8\" /><style type=\"text/css\">\n"
@@ -986,8 +1073,19 @@ class Ui_MainWindow(object):
 "li.unchecked::marker { content: \"\\2610\"; }\n"
 "li.checked::marker { content: \"\\2612\"; }\n"
 "</style></head><body style=\" font-family:'Sans Serif'; font-size:9pt; font-weight:400; font-style:normal;\">\n"
-"<p align=\"center\" style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-size:12pt;\">Indicate the disease or disorder</span></p></body></html>", None))
-        self.pushButton_clinical_disease_add.setText(QCoreApplication.translate("MainWindow", u"Add", None))
+"<p style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-size:12pt; font-weight:600;\">Target Condition Specification</span></p>\n"
+"<p style=\" margin-top:12px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\">Specify the <span style=\" font-weight:600;\">medical condition</span> that was studied in your clinical trial. This helps contextualize the treatment effects and analysis results.</p>"
+                        "\n"
+"<p style=\" margin-top:12px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-weight:600;\">Information to include:</span></p>\n"
+"<ul style=\"margin-top: 0px; margin-bottom: 0px; margin-left: 0px; margin-right: 0px; -qt-list-indent: 1;\">\n"
+"<li style=\" margin-top:6px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-weight:600;\">Disease name:</span> Primary condition being treated (e.g., diabetes, hypertension, cancer)</li>\n"
+"<li style=\" margin-top:6px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-weight:600;\">Disease stage/severity:</span> Early stage, advanced, mild, moderate, severe</li>\n"
+"<li style=\" margin-top:6px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-weight:600;\">Medical classification:</span> ICD codes, disease subtype"
+                        "s, specific variants</li>\n"
+"<li style=\" margin-top:6px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-weight:600;\">Study population:</span> Specific patient characteristics or demographics</li>\n"
+"</ul>\n"
+"<p style=\" margin-top:12px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-style:italic;\">Clear disease specification helps ensure the analysis focuses on relevant clinical outcomes and safety considerations.</span></p></body></html>", None))
+        self.pushButton_clinical_disease_add.setText(QCoreApplication.translate("MainWindow", u"Ok", None))
         self.tabWidget_clinical.setTabText(self.tabWidget_clinical.indexOf(self.tab_clinical_disease), QCoreApplication.translate("MainWindow", u"Disease/Disorder", None))
         self.pushButton_clinical_process.setText(QCoreApplication.translate("MainWindow", u"Process", None))
         self.textEdit_clinical_process.setHtml(QCoreApplication.translate("MainWindow", u"<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0//EN\" \"http://www.w3.org/TR/REC-html40/strict.dtd\">\n"
@@ -997,7 +1095,19 @@ class Ui_MainWindow(object):
 "li.unchecked::marker { content: \"\\2610\"; }\n"
 "li.checked::marker { content: \"\\2612\"; }\n"
 "</style></head><body style=\" font-family:'Sans Serif'; font-size:9pt; font-weight:400; font-style:normal;\">\n"
-"<p align=\"center\" style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-size:12pt;\">These are the data. Do you agree?</span></p></body></html>", None))
+"<p style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-size:12pt; font-weight:600;\">Clinical Trial Data Analysis</span></p>\n"
+"<p style=\" margin-top:12px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\">Now we will process your clinical trial data to evaluate treatment efficacy and safety. The AI will perform specialized analyses designed for controlled clinical studies.</p>\n"
+"<p styl"
+                        "e=\" margin-top:12px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-weight:600;\">Analysis components:</span></p>\n"
+"<ul style=\"margin-top: 0px; margin-bottom: 0px; margin-left: 0px; margin-right: 0px; -qt-list-indent: 1;\">\n"
+"<li style=\" margin-top:6px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-weight:600;\">Efficacy analysis:</span> Compare primary endpoint between treatment groups</li>\n"
+"<li style=\" margin-top:6px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-weight:600;\">Safety assessment:</span> Analyze adverse events and side effects</li>\n"
+"<li style=\" margin-top:6px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-weight:600;\">Statistical testing:</span> Determine treatment effect significance</li>\n"
+"<li style=\" margin-to"
+                        "p:6px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-weight:600;\">Subgroup analysis:</span> Identify patient populations with different responses</li>\n"
+"<li style=\" margin-top:6px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-weight:600;\">Predictive modeling:</span> Identify factors that predict treatment success</li>\n"
+"</ul>\n"
+"<p style=\" margin-top:12px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-style:italic;\">Review the data summary below and click Process to begin the comprehensive clinical trial analysis.</span></p></body></html>", None))
         self.tabWidget_clinical.setTabText(self.tabWidget_clinical.indexOf(self.tab_clinical_process), QCoreApplication.translate("MainWindow", u"Process", None))
         self.textEdit_clinical_outcome.setHtml(QCoreApplication.translate("MainWindow", u"<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0//EN\" \"http://www.w3.org/TR/REC-html40/strict.dtd\">\n"
 "<html><head><meta name=\"qrichtext\" content=\"1\" /><meta charset=\"utf-8\" /><style type=\"text/css\">\n"
@@ -1006,7 +1116,10 @@ class Ui_MainWindow(object):
 "li.unchecked::marker { content: \"\\2610\"; }\n"
 "li.checked::marker { content: \"\\2612\"; }\n"
 "</style></head><body style=\" font-family:'Sans Serif'; font-size:9pt; font-weight:400; font-style:normal;\">\n"
-"<p align=\"center\" style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-size:12pt;\">Outcome</span></p></body></html>", None))
+"<p style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-size:12pt; font-weight:600;\">Analysis Results</span></p>\n"
+"<p style=\" margin-top:12px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\">Your clinical trial analysis is complete. The results below show treatment efficacy, safety profile, and predictive insights from your study data.</p>\n"
+"<p style=\" margin-top:12px; margin-bottom:"
+                        "0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-weight:600;\">Results include:</span> Treatment comparison outcomes, statistical significance, safety analysis, and patient subgroup insights.</p></body></html>", None))
         self.tabWidget_clinical.setTabText(self.tabWidget_clinical.indexOf(self.tab_clinical_outcome), QCoreApplication.translate("MainWindow", u"Outcome", None))
         self.lineEdit_clinical_title.setText(QCoreApplication.translate("MainWindow", u"Clinical trial", None))
         self.menuFile.setTitle(QCoreApplication.translate("MainWindow", u"File", None))
