@@ -669,7 +669,12 @@ class Ui_MainWindow(object):
 "li.unchecked::marker { content: \"\\2610\"; }\n"
 "li.checked::marker { content: \"\\2612\"; }\n"
 "</style></head><body style=\" font-family:'Sans Serif'; font-size:9pt; font-weight:400; font-style:normal;\">\n"
-"<p align=\"center\" style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-size:12pt;\">Hamelin is an application that empowers Clinical Research Professionals (CRPs) to build their own predictive Machine Learning (ML) models</span></p></body></html>", None))
+"<p align=\"center\" style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-size:14pt; font-weight:600;\">Welcome to Hamelin!</span></p>\n"
+"<p align=\"center\" style=\"-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><br /></p>\n"
+"<p align=\"center\" style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; tex"
+                        "t-indent:0px;\"><span style=\" font-size:11pt;\">Hamelin is a user-friendly tool designed for clinical research professionals who want to create predictive models using artificial intelligence.</span></p>\n"
+"<p align=\"center\" style=\"-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><br /></p>\n"
+"<p align=\"center\" style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-size:11pt;\">With this application, you can analyze medical data and obtain predictions to help with clinical decision-making, without needing advanced programming knowledge.</span></p></body></html>", None))
         self.pushButton_start_welcome.setText(QCoreApplication.translate("MainWindow", u"Ok", None))
         self.tabWidget_start.setTabText(self.tabWidget_start.indexOf(self.tab_start_welcome), QCoreApplication.translate("MainWindow", u"Welcome", None))
         self.textEdit_start_options.setHtml(QCoreApplication.translate("MainWindow", u"<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0//EN\" \"http://www.w3.org/TR/REC-html40/strict.dtd\">\n"
@@ -679,7 +684,15 @@ class Ui_MainWindow(object):
 "li.unchecked::marker { content: \"\\2610\"; }\n"
 "li.checked::marker { content: \"\\2612\"; }\n"
 "</style></head><body style=\" font-family:'Sans Serif'; font-size:9pt; font-weight:400; font-style:normal;\">\n"
-"<p align=\"center\" style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-size:12pt;\">Select an option</span></p></body></html>", None))
+"<p align=\"center\" style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-size:12pt; font-weight:600;\">Study Type</span></p>\n"
+"<p align=\"center\" style=\"-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><br /></p>\n"
+"<p align=\"center\" style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:"
+                        "0px;\"><span style=\" font-size:10pt;\">Please select the type of study that best describes your research:</span></p>\n"
+"<p align=\"center\" style=\"-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><br /></p>\n"
+"<p align=\"center\" style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-size:9pt;\">\u2022 </span><span style=\" font-size:9pt; font-weight:600;\">Patient registry</span><span style=\" font-size:9pt;\">: Follow-up of patients with a specific condition</span></p>\n"
+"<p align=\"center\" style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-size:9pt;\">\u2022 </span><span style=\" font-size:9pt; font-weight:600;\">Observational study</span><span style=\" font-size:9pt;\">: Observation of patients without intervention</span></p>\n"
+"<p align=\"center\""
+                        " style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-size:9pt;\">\u2022 </span><span style=\" font-size:9pt; font-weight:600;\">Clinical trial</span><span style=\" font-size:9pt;\">: Study with controlled intervention or treatment</span></p></body></html>", None))
         self.comboBox_start_options.setItemText(0, QCoreApplication.translate("MainWindow", u"Patient registry", None))
         self.comboBox_start_options.setItemText(1, QCoreApplication.translate("MainWindow", u"Observational study", None))
         self.comboBox_start_options.setItemText(2, QCoreApplication.translate("MainWindow", u"Clinical trial", None))
@@ -693,7 +706,12 @@ class Ui_MainWindow(object):
 "li.unchecked::marker { content: \"\\2610\"; }\n"
 "li.checked::marker { content: \"\\2612\"; }\n"
 "</style></head><body style=\" font-family:'Sans Serif'; font-size:9pt; font-weight:400; font-style:normal;\">\n"
-"<p align=\"center\" style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-size:12pt;\">Select a saved project or create a new one</span></p></body></html>", None))
+"<p align=\"center\" style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-size:12pt; font-weight:600;\">Project Management</span></p>\n"
+"<p align=\"center\" style=\"-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><br /></p>\n"
+"<p align=\"center\" style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text"
+                        "-indent:0px;\"><span style=\" font-size:10pt;\">A project is like a folder where all information about your study is saved: data, settings, and results.</span></p>\n"
+"<p align=\"center\" style=\"-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><br /></p>\n"
+"<p align=\"center\" style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-size:10pt;\">You can </span><span style=\" font-size:10pt; font-weight:600;\">create a new project</span><span style=\" font-size:10pt;\"> to start a fresh analysis, or </span><span style=\" font-size:10pt; font-weight:600;\">select an existing project</span><span style=\" font-size:10pt;\"> to continue working on a previous analysis.</span></p></body></html>", None))
         self.pushButton_start_project.setText(QCoreApplication.translate("MainWindow", u"Ok", None))
         self.tabWidget_start.setTabText(self.tabWidget_start.indexOf(self.tab_start_project), QCoreApplication.translate("MainWindow", u"Project", None))
         self.pushButton_start_data.setText(QCoreApplication.translate("MainWindow", u"Ok", None))
@@ -704,7 +722,12 @@ class Ui_MainWindow(object):
 "li.unchecked::marker { content: \"\\2610\"; }\n"
 "li.checked::marker { content: \"\\2612\"; }\n"
 "</style></head><body style=\" font-family:'Sans Serif'; font-size:9pt; font-weight:400; font-style:normal;\">\n"
-"<p align=\"center\" style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-size:12pt;\">Select a CSV dataset or attach a new one</span></p></body></html>", None))
+"<p align=\"center\" style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-size:12pt; font-weight:600;\">Study Data</span></p>\n"
+"<p align=\"center\" style=\"-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><br /></p>\n"
+"<p align=\"center\" style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:"
+                        "0px;\"><span style=\" font-size:10pt;\">The data is the clinical information from your patients that will be analyzed by artificial intelligence. It should be organized in a CSV file format (like a spreadsheet).</span></p>\n"
+"<p align=\"center\" style=\"-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><br /></p>\n"
+"<p align=\"center\" style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-size:10pt;\">You can </span><span style=\" font-size:10pt; font-weight:600;\">select an existing data file</span><span style=\" font-size:10pt;\"> from the list, or </span><span style=\" font-size:10pt; font-weight:600;\">upload a new file</span><span style=\" font-size:10pt;\"> from your computer.</span></p></body></html>", None))
         self.tabWidget_start.setTabText(self.tabWidget_start.indexOf(self.tab_start_data), QCoreApplication.translate("MainWindow", u"Data", None))
         self.pushButton_start_status.setText(QCoreApplication.translate("MainWindow", u"Ok", None))
         self.textEdit_start_status.setHtml(QCoreApplication.translate("MainWindow", u"<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0//EN\" \"http://www.w3.org/TR/REC-html40/strict.dtd\">\n"
@@ -714,7 +737,12 @@ class Ui_MainWindow(object):
 "li.unchecked::marker { content: \"\\2610\"; }\n"
 "li.checked::marker { content: \"\\2612\"; }\n"
 "</style></head><body style=\" font-family:'Sans Serif'; font-size:9pt; font-weight:400; font-style:normal;\">\n"
-"<p align=\"center\" style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-size:12pt;\">Current status of the project</span></p></body></html>", None))
+"<p align=\"center\" style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-size:12pt; font-weight:600;\">Project Status</span></p>\n"
+"<p align=\"center\" style=\"-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><br /></p>\n"
+"<p align=\"center\" style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-ind"
+                        "ent:0px;\"><span style=\" font-size:10pt;\">Here you can review the current status of your project and add notes or comments about the progress of your research.</span></p>\n"
+"<p align=\"center\" style=\"-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><br /></p>\n"
+"<p align=\"center\" style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-size:10pt;\">This information will be saved and help you remember where you left off when you return to work on this project.</span></p></body></html>", None))
         self.tabWidget_start.setTabText(self.tabWidget_start.indexOf(self.tab_start_status), QCoreApplication.translate("MainWindow", u"Status", None))
         self.lineEdit_start_title.setText(QCoreApplication.translate("MainWindow", u"Start", None))
         self.lineEdit_registry_title.setText(QCoreApplication.translate("MainWindow", u"Patient registry", None))
@@ -725,7 +753,12 @@ class Ui_MainWindow(object):
 "li.unchecked::marker { content: \"\\2610\"; }\n"
 "li.checked::marker { content: \"\\2612\"; }\n"
 "</style></head><body style=\" font-family:'Sans Serif'; font-size:9pt; font-weight:400; font-style:normal;\">\n"
-"<p align=\"center\" style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-size:12pt;\">Back to start</span></p></body></html>", None))
+"<p align=\"center\" style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-size:12pt; font-weight:600;\">Patient Registry Analysis</span></p>\n"
+"<p align=\"center\" style=\"-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><br /></p>\n"
+"<p align=\"center\" style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:"
+                        "0; text-indent:0px;\"><span style=\" font-size:10pt;\">You are now working with a Patient Registry study. This type of analysis is used to track and analyze patients with a specific medical condition over time.</span></p>\n"
+"<p align=\"center\" style=\"-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><br /></p>\n"
+"<p align=\"center\" style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-size:10pt;\">You will configure the analysis parameters step by step to create a predictive model that can help identify patterns and outcomes in your patient data.</span></p></body></html>", None))
         self.pushButton_registry_start.setText(QCoreApplication.translate("MainWindow", u"Back to start", None))
         self.tabWidget_registry.setTabText(self.tabWidget_registry.indexOf(self.tab_registry_start), QCoreApplication.translate("MainWindow", u"Start", None))
         self.textEdit_registry_variable.setHtml(QCoreApplication.translate("MainWindow", u"<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0//EN\" \"http://www.w3.org/TR/REC-html40/strict.dtd\">\n"
@@ -735,7 +768,12 @@ class Ui_MainWindow(object):
 "li.unchecked::marker { content: \"\\2610\"; }\n"
 "li.checked::marker { content: \"\\2612\"; }\n"
 "</style></head><body style=\" font-family:'Sans Serif'; font-size:9pt; font-weight:400; font-style:normal;\">\n"
-"<p align=\"center\" style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-size:12pt;\">Indicate a primary variable (target)</span></p></body></html>", None))
+"<p align=\"center\" style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-size:12pt; font-weight:600;\">Primary Variable (Target)</span></p>\n"
+"<p align=\"center\" style=\"-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><br /></p>\n"
+"<p align=\"center\" style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:"
+                        "0; text-indent:0px;\"><span style=\" font-size:10pt;\">Select the main outcome you want to predict or analyze. This is called the </span><span style=\" font-size:10pt; font-weight:600;\">target variable</span><span style=\" font-size:10pt;\"> or </span><span style=\" font-size:10pt; font-weight:600;\">primary endpoint</span><span style=\" font-size:10pt;\">.</span></p>\n"
+"<p align=\"center\" style=\"-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><br /></p>\n"
+"<p align=\"center\" style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-size:10pt;\">Examples: patient survival, treatment response, disease progression, readmission risk, or any clinical outcome you want to predict.</span></p></body></html>", None))
         self.pushButton_registry_variable.setText(QCoreApplication.translate("MainWindow", u"Ok", None))
         self.tabWidget_registry.setTabText(self.tabWidget_registry.indexOf(self.tab_registry_variable), QCoreApplication.translate("MainWindow", u"Primary variable", None))
         self.pushButton_registry_criteria.setText(QCoreApplication.translate("MainWindow", u"Ok", None))
@@ -746,7 +784,12 @@ class Ui_MainWindow(object):
 "li.unchecked::marker { content: \"\\2610\"; }\n"
 "li.checked::marker { content: \"\\2612\"; }\n"
 "</style></head><body style=\" font-family:'Sans Serif'; font-size:9pt; font-weight:400; font-style:normal;\">\n"
-"<p align=\"center\" style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-size:12pt;\">Indicate the inclusion and exclusion criteria</span></p></body></html>", None))
+"<p align=\"center\" style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-size:12pt; font-weight:600;\">Inclusion and Exclusion Criteria</span></p>\n"
+"<p align=\"center\" style=\"-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><br /></p>\n"
+"<p align=\"center\" style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-"
+                        "indent:0; text-indent:0px;\"><span style=\" font-size:10pt;\">Define which patients should be </span><span style=\" font-size:10pt; font-weight:600;\">included</span><span style=\" font-size:10pt;\"> in your analysis and which should be </span><span style=\" font-size:10pt; font-weight:600;\">excluded</span><span style=\" font-size:10pt;\">.</span></p>\n"
+"<p align=\"center\" style=\"-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><br /></p>\n"
+"<p align=\"center\" style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-size:10pt;\">Set conditions based on patient characteristics such as age ranges, specific diagnoses, treatment history, or any other clinical parameters relevant to your study.</span></p></body></html>", None))
         self.tabWidget_registry.setTabText(self.tabWidget_registry.indexOf(self.tab_registry_criteria), QCoreApplication.translate("MainWindow", u"Inclusion/Exclusion criteria", None))
         self.textEdit_registry_settings.setHtml(QCoreApplication.translate("MainWindow", u"<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0//EN\" \"http://www.w3.org/TR/REC-html40/strict.dtd\">\n"
 "<html><head><meta name=\"qrichtext\" content=\"1\" /><meta charset=\"utf-8\" /><style type=\"text/css\">\n"
@@ -755,8 +798,16 @@ class Ui_MainWindow(object):
 "li.unchecked::marker { content: \"\\2610\"; }\n"
 "li.checked::marker { content: \"\\2612\"; }\n"
 "</style></head><body style=\" font-family:'Sans Serif'; font-size:9pt; font-weight:400; font-style:normal;\">\n"
-"<p align=\"center\" style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-size:12pt;\">Indicate some settings:</span></p>\n"
-"<p align=\"center\" style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-size:12pt;\">Separator, missing data, metric, goal, runtime.</span></p></body></html>", None))
+"<p align=\"center\" style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-size:12pt; font-weight:600;\">Analysis Settings</span></p>\n"
+"<p align=\"center\" style=\"-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><br /></p>\n"
+"<p align=\"center\" style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-"
+                        "indent:0px;\"><span style=\" font-size:10pt;\">Configure technical parameters for your analysis:</span></p>\n"
+"<p align=\"center\" style=\"-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><br /></p>\n"
+"<p align=\"center\" style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-size:9pt;\">\u2022 </span><span style=\" font-size:9pt; font-weight:600;\">Data separator</span><span style=\" font-size:9pt;\">: How data columns are separated in your file</span></p>\n"
+"<p align=\"center\" style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-size:9pt;\">\u2022 </span><span style=\" font-size:9pt; font-weight:600;\">Missing data handling</span><span style=\" font-size:9pt;\">: How to treat incomplete patient records</span></p>\n"
+"<p align=\"center\" style=\" margin-to"
+                        "p:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-size:9pt;\">\u2022 </span><span style=\" font-size:9pt; font-weight:600;\">Performance metric</span><span style=\" font-size:9pt;\">: How to measure model accuracy</span></p>\n"
+"<p align=\"center\" style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-size:9pt;\">\u2022 </span><span style=\" font-size:9pt; font-weight:600;\">Analysis goal</span><span style=\" font-size:9pt;\">: Optimize for speed vs. accuracy</span></p></body></html>", None))
         self.pushButton_registry_settings.setText(QCoreApplication.translate("MainWindow", u"Ok", None))
         self.tabWidget_registry.setTabText(self.tabWidget_registry.indexOf(self.tab_registry_settings), QCoreApplication.translate("MainWindow", u"Settings", None))
         self.pushButton_registry_process.setText(QCoreApplication.translate("MainWindow", u"Process", None))
@@ -767,7 +818,12 @@ class Ui_MainWindow(object):
 "li.unchecked::marker { content: \"\\2610\"; }\n"
 "li.checked::marker { content: \"\\2612\"; }\n"
 "</style></head><body style=\" font-family:'Sans Serif'; font-size:9pt; font-weight:400; font-style:normal;\">\n"
-"<p align=\"center\" style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-size:12pt;\">Before processing data, check the summary.</span></p></body></html>", None))
+"<p align=\"center\" style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-size:12pt; font-weight:600;\">Ready to Process</span></p>\n"
+"<p align=\"center\" style=\"-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><br /></p>\n"
+"<p align=\"center\" style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-i"
+                        "ndent:0px;\"><span style=\" font-size:10pt;\">Review the summary below to verify all your settings are correct before starting the analysis.</span></p>\n"
+"<p align=\"center\" style=\"-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><br /></p>\n"
+"<p align=\"center\" style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-size:10pt;\">The artificial intelligence will analyze your patient registry data and create a predictive model. This process may take several minutes depending on the size of your dataset.</span></p></body></html>", None))
         self.tabWidget_registry.setTabText(self.tabWidget_registry.indexOf(self.tab_registry_process), QCoreApplication.translate("MainWindow", u"Process", None))
         self.textEdit_registry_outcome.setHtml(QCoreApplication.translate("MainWindow", u"<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0//EN\" \"http://www.w3.org/TR/REC-html40/strict.dtd\">\n"
 "<html><head><meta name=\"qrichtext\" content=\"1\" /><meta charset=\"utf-8\" /><style type=\"text/css\">\n"
@@ -785,7 +841,12 @@ class Ui_MainWindow(object):
 "li.unchecked::marker { content: \"\\2610\"; }\n"
 "li.checked::marker { content: \"\\2612\"; }\n"
 "</style></head><body style=\" font-family:'Sans Serif'; font-size:9pt; font-weight:400; font-style:normal;\">\n"
-"<p align=\"center\" style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-size:12pt;\">Back to start</span></p></body></html>", None))
+"<p align=\"center\" style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-size:12pt; font-weight:600;\">Observational Study Analysis</span></p>\n"
+"<p align=\"center\" style=\"-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><br /></p>\n"
+"<p align=\"center\" style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-inde"
+                        "nt:0; text-indent:0px;\"><span style=\" font-size:10pt;\">You are now working with an Observational Study. This type of analysis examines patient data without any intervention, looking for natural patterns and associations.</span></p>\n"
+"<p align=\"center\" style=\"-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><br /></p>\n"
+"<p align=\"center\" style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-size:10pt;\">You will set up the analysis parameters to discover relationships between different factors and outcomes in your observational data.</span></p></body></html>", None))
         self.pushButton_observational_start.setText(QCoreApplication.translate("MainWindow", u"Back to start", None))
         self.tabWidget_observational.setTabText(self.tabWidget_observational.indexOf(self.tab_observational_start), QCoreApplication.translate("MainWindow", u"Start", None))
         self.textEdit_observational_variable.setHtml(QCoreApplication.translate("MainWindow", u"<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0//EN\" \"http://www.w3.org/TR/REC-html40/strict.dtd\">\n"
@@ -795,7 +856,12 @@ class Ui_MainWindow(object):
 "li.unchecked::marker { content: \"\\2610\"; }\n"
 "li.checked::marker { content: \"\\2612\"; }\n"
 "</style></head><body style=\" font-family:'Sans Serif'; font-size:9pt; font-weight:400; font-style:normal;\">\n"
-"<p align=\"center\" style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-size:12pt;\">Indicate a primary variable (target)</span></p></body></html>", None))
+"<p align=\"center\" style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-size:12pt; font-weight:600;\">Primary Variable (Outcome of Interest)</span></p>\n"
+"<p align=\"center\" style=\"-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><br /></p>\n"
+"<p align=\"center\" style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-"
+                        "block-indent:0; text-indent:0px;\"><span style=\" font-size:10pt;\">Select the main outcome you want to study or predict. This is the </span><span style=\" font-size:10pt; font-weight:600;\">dependent variable</span><span style=\" font-size:10pt;\"> that you believe may be influenced by other factors.</span></p>\n"
+"<p align=\"center\" style=\"-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><br /></p>\n"
+"<p align=\"center\" style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-size:10pt;\">Examples: disease occurrence, treatment effectiveness, quality of life scores, laboratory values, or any clinical measurement you want to analyze.</span></p></body></html>", None))
         self.pushButton_observational_variable.setText(QCoreApplication.translate("MainWindow", u"Ok", None))
         self.tabWidget_observational.setTabText(self.tabWidget_observational.indexOf(self.tab_observational_variable), QCoreApplication.translate("MainWindow", u"Primary variable", None))
         self.pushButton_observational_criteria.setText(QCoreApplication.translate("MainWindow", u"Ok", None))
@@ -806,7 +872,12 @@ class Ui_MainWindow(object):
 "li.unchecked::marker { content: \"\\2610\"; }\n"
 "li.checked::marker { content: \"\\2612\"; }\n"
 "</style></head><body style=\" font-family:'Sans Serif'; font-size:9pt; font-weight:400; font-style:normal;\">\n"
-"<p align=\"center\" style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-size:12pt;\">Indicate the inclusion and exclusion criteria</span></p></body></html>", None))
+"<p align=\"center\" style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-size:12pt; font-weight:600;\">Selection Criteria</span></p>\n"
+"<p align=\"center\" style=\"-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><br /></p>\n"
+"<p align=\"center\" style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text"
+                        "-indent:0px;\"><span style=\" font-size:10pt;\">Define which subjects should be </span><span style=\" font-size:10pt; font-weight:600;\">included</span><span style=\" font-size:10pt;\"> or </span><span style=\" font-size:10pt; font-weight:600;\">excluded</span><span style=\" font-size:10pt;\"> from your observational analysis.</span></p>\n"
+"<p align=\"center\" style=\"-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><br /></p>\n"
+"<p align=\"center\" style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-size:10pt;\">Set conditions based on demographics, exposure history, baseline characteristics, or any other factors that define your study population.</span></p></body></html>", None))
         self.tabWidget_observational.setTabText(self.tabWidget_observational.indexOf(self.tab_observational_criteria), QCoreApplication.translate("MainWindow", u"Inclusion/Exclusion criteria", None))
         self.textEdit_observational_settings.setHtml(QCoreApplication.translate("MainWindow", u"<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0//EN\" \"http://www.w3.org/TR/REC-html40/strict.dtd\">\n"
 "<html><head><meta name=\"qrichtext\" content=\"1\" /><meta charset=\"utf-8\" /><style type=\"text/css\">\n"
@@ -815,8 +886,16 @@ class Ui_MainWindow(object):
 "li.unchecked::marker { content: \"\\2610\"; }\n"
 "li.checked::marker { content: \"\\2612\"; }\n"
 "</style></head><body style=\" font-family:'Sans Serif'; font-size:9pt; font-weight:400; font-style:normal;\">\n"
-"<p align=\"center\" style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-size:12pt;\">Indicate some settings:</span></p>\n"
-"<p align=\"center\" style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-size:12pt;\">Separator, missing data, metric, goal, runtime.</span></p></body></html>", None))
+"<p align=\"center\" style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-size:12pt; font-weight:600;\">Analysis Configuration</span></p>\n"
+"<p align=\"center\" style=\"-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><br /></p>\n"
+"<p align=\"center\" style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; "
+                        "text-indent:0px;\"><span style=\" font-size:10pt;\">Configure technical parameters for your observational analysis:</span></p>\n"
+"<p align=\"center\" style=\"-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><br /></p>\n"
+"<p align=\"center\" style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-size:9pt;\">\u2022 </span><span style=\" font-size:9pt; font-weight:600;\">Data format</span><span style=\" font-size:9pt;\">: How your data is structured and separated</span></p>\n"
+"<p align=\"center\" style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-size:9pt;\">\u2022 </span><span style=\" font-size:9pt; font-weight:600;\">Missing data strategy</span><span style=\" font-size:9pt;\">: How to handle incomplete observations</span></p>\n"
+"<p align=\"center\" style="
+                        "\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-size:9pt;\">\u2022 </span><span style=\" font-size:9pt; font-weight:600;\">Evaluation metric</span><span style=\" font-size:9pt;\">: How to measure prediction performance</span></p>\n"
+"<p align=\"center\" style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-size:9pt;\">\u2022 </span><span style=\" font-size:9pt; font-weight:600;\">Optimization goal</span><span style=\" font-size:9pt;\">: Balance between speed and accuracy</span></p></body></html>", None))
         self.pushButton_observational_settings.setText(QCoreApplication.translate("MainWindow", u"Ok", None))
         self.tabWidget_observational.setTabText(self.tabWidget_observational.indexOf(self.tab_observational_settings), QCoreApplication.translate("MainWindow", u"Settings", None))
         self.pushButton_observational_process.setText(QCoreApplication.translate("MainWindow", u"Process", None))
@@ -827,7 +906,18 @@ class Ui_MainWindow(object):
 "li.unchecked::marker { content: \"\\2610\"; }\n"
 "li.checked::marker { content: \"\\2612\"; }\n"
 "</style></head><body style=\" font-family:'Sans Serif'; font-size:9pt; font-weight:400; font-style:normal;\">\n"
-"<p align=\"center\" style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-size:12pt;\">Before processing data, check the summary.</span></p></body></html>", None))
+"<p style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-size:12pt; font-weight:600;\">Data Processing and Analysis</span></p>\n"
+"<p style=\" margin-top:12px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\">In this final phase, we will process and analyze your collected data to extract meaningful insights from your observational study:</p>\n"
+"<p style=\" margin-top:12px; margin-bottom:0px;"
+                        " margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-weight:600;\">What happens during processing:</span></p>\n"
+"<ul style=\"margin-top: 0px; margin-bottom: 0px; margin-left: 0px; margin-right: 0px; -qt-list-indent: 1;\">\n"
+"<li style=\" margin-top:6px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-weight:600;\">Data Cleaning:</span> Remove inconsistencies and handle missing values in your dataset</li>\n"
+"<li style=\" margin-top:6px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-weight:600;\">Statistical Analysis:</span> Identify patterns, correlations, and trends in your observational data</li>\n"
+"<li style=\" margin-top:6px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-weight:600;\">Hypothesis Testing:</span> Test your research questions against the collected evide"
+                        "nce</li>\n"
+"<li style=\" margin-top:6px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-weight:600;\">Results Generation:</span> Create charts, tables, and summaries of your findings</li>\n"
+"</ul>\n"
+"<p style=\" margin-top:12px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-style:italic;\">Tip: Before processing, review the data summary below to ensure all information is correct and complete.</span></p></body></html>", None))
         self.tabWidget_observational.setTabText(self.tabWidget_observational.indexOf(self.tab_observational_process), QCoreApplication.translate("MainWindow", u"Process", None))
         self.textEdit_observational_outcome.setHtml(QCoreApplication.translate("MainWindow", u"<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0//EN\" \"http://www.w3.org/TR/REC-html40/strict.dtd\">\n"
 "<html><head><meta name=\"qrichtext\" content=\"1\" /><meta charset=\"utf-8\" /><style type=\"text/css\">\n"
