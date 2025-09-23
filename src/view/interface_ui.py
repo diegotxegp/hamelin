@@ -58,6 +58,30 @@ class Ui_MainWindow(object):
         self.gridLayout_3.addWidget(self.pushButton_start_welcome, 1, 0, 1, 1)
 
         self.tabWidget_start.addTab(self.tab_start_welcome, "")
+        self.tab_start_options = QWidget()
+        self.tab_start_options.setObjectName(u"tab_start_options")
+        self.gridLayout_6 = QGridLayout(self.tab_start_options)
+        self.gridLayout_6.setObjectName(u"gridLayout_6")
+        self.textEdit_start_options = QTextEdit(self.tab_start_options)
+        self.textEdit_start_options.setObjectName(u"textEdit_start_options")
+        self.textEdit_start_options.setReadOnly(True)
+
+        self.gridLayout_6.addWidget(self.textEdit_start_options, 0, 0, 1, 1)
+
+        self.comboBox_start_options = QComboBox(self.tab_start_options)
+        self.comboBox_start_options.addItem("")
+        self.comboBox_start_options.addItem("")
+        self.comboBox_start_options.addItem("")
+        self.comboBox_start_options.setObjectName(u"comboBox_start_options")
+
+        self.gridLayout_6.addWidget(self.comboBox_start_options, 1, 0, 1, 1)
+
+        self.pushButton_start_options = QPushButton(self.tab_start_options)
+        self.pushButton_start_options.setObjectName(u"pushButton_start_options")
+
+        self.gridLayout_6.addWidget(self.pushButton_start_options, 2, 0, 1, 1)
+
+        self.tabWidget_start.addTab(self.tab_start_options, "")
         self.tab_start_project = QWidget()
         self.tab_start_project.setObjectName(u"tab_start_project")
         self.gridLayout_29 = QGridLayout(self.tab_start_project)
@@ -123,30 +147,6 @@ class Ui_MainWindow(object):
         self.gridLayout_5.addWidget(self.textEdit_start_status_text, 1, 0, 1, 1)
 
         self.tabWidget_start.addTab(self.tab_start_status, "")
-        self.tab_start_options = QWidget()
-        self.tab_start_options.setObjectName(u"tab_start_options")
-        self.gridLayout_6 = QGridLayout(self.tab_start_options)
-        self.gridLayout_6.setObjectName(u"gridLayout_6")
-        self.textEdit_start_options = QTextEdit(self.tab_start_options)
-        self.textEdit_start_options.setObjectName(u"textEdit_start_options")
-        self.textEdit_start_options.setReadOnly(True)
-
-        self.gridLayout_6.addWidget(self.textEdit_start_options, 0, 0, 1, 1)
-
-        self.comboBox_start_options = QComboBox(self.tab_start_options)
-        self.comboBox_start_options.addItem("")
-        self.comboBox_start_options.addItem("")
-        self.comboBox_start_options.addItem("")
-        self.comboBox_start_options.setObjectName(u"comboBox_start_options")
-
-        self.gridLayout_6.addWidget(self.comboBox_start_options, 1, 0, 1, 1)
-
-        self.pushButton_start_options = QPushButton(self.tab_start_options)
-        self.pushButton_start_options.setObjectName(u"pushButton_start_options")
-
-        self.gridLayout_6.addWidget(self.pushButton_start_options, 2, 0, 1, 1)
-
-        self.tabWidget_start.addTab(self.tab_start_options, "")
 
         self.gridLayout_2.addWidget(self.tabWidget_start, 1, 0, 1, 1)
 
@@ -650,7 +650,7 @@ class Ui_MainWindow(object):
         self.retranslateUi(MainWindow)
 
         self.stackedWidget.setCurrentIndex(2)
-        self.tabWidget_start.setCurrentIndex(3)
+        self.tabWidget_start.setCurrentIndex(1)
         self.tabWidget_registry.setCurrentIndex(4)
         self.tabWidget_observational.setCurrentIndex(5)
         self.tabWidget_clinical.setCurrentIndex(6)
@@ -672,6 +672,20 @@ class Ui_MainWindow(object):
 "<p align=\"center\" style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-size:12pt;\">Hamelin is an application that empowers Clinical Research Professionals (CRPs) to build their own predictive Machine Learning (ML) models</span></p></body></html>", None))
         self.pushButton_start_welcome.setText(QCoreApplication.translate("MainWindow", u"Ok", None))
         self.tabWidget_start.setTabText(self.tabWidget_start.indexOf(self.tab_start_welcome), QCoreApplication.translate("MainWindow", u"Welcome", None))
+        self.textEdit_start_options.setHtml(QCoreApplication.translate("MainWindow", u"<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0//EN\" \"http://www.w3.org/TR/REC-html40/strict.dtd\">\n"
+"<html><head><meta name=\"qrichtext\" content=\"1\" /><meta charset=\"utf-8\" /><style type=\"text/css\">\n"
+"p, li { white-space: pre-wrap; }\n"
+"hr { height: 1px; border-width: 0; }\n"
+"li.unchecked::marker { content: \"\\2610\"; }\n"
+"li.checked::marker { content: \"\\2612\"; }\n"
+"</style></head><body style=\" font-family:'Sans Serif'; font-size:9pt; font-weight:400; font-style:normal;\">\n"
+"<p align=\"center\" style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-size:12pt;\">Select an option</span></p></body></html>", None))
+        self.comboBox_start_options.setItemText(0, QCoreApplication.translate("MainWindow", u"Patient registry", None))
+        self.comboBox_start_options.setItemText(1, QCoreApplication.translate("MainWindow", u"Observational study", None))
+        self.comboBox_start_options.setItemText(2, QCoreApplication.translate("MainWindow", u"Clinical trial", None))
+
+        self.pushButton_start_options.setText(QCoreApplication.translate("MainWindow", u"Ok", None))
+        self.tabWidget_start.setTabText(self.tabWidget_start.indexOf(self.tab_start_options), QCoreApplication.translate("MainWindow", u"Options", None))
         self.textEdit_start_project.setHtml(QCoreApplication.translate("MainWindow", u"<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0//EN\" \"http://www.w3.org/TR/REC-html40/strict.dtd\">\n"
 "<html><head><meta name=\"qrichtext\" content=\"1\" /><meta charset=\"utf-8\" /><style type=\"text/css\">\n"
 "p, li { white-space: pre-wrap; }\n"
@@ -702,20 +716,6 @@ class Ui_MainWindow(object):
 "</style></head><body style=\" font-family:'Sans Serif'; font-size:9pt; font-weight:400; font-style:normal;\">\n"
 "<p align=\"center\" style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-size:12pt;\">Current status of the project</span></p></body></html>", None))
         self.tabWidget_start.setTabText(self.tabWidget_start.indexOf(self.tab_start_status), QCoreApplication.translate("MainWindow", u"Status", None))
-        self.textEdit_start_options.setHtml(QCoreApplication.translate("MainWindow", u"<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0//EN\" \"http://www.w3.org/TR/REC-html40/strict.dtd\">\n"
-"<html><head><meta name=\"qrichtext\" content=\"1\" /><meta charset=\"utf-8\" /><style type=\"text/css\">\n"
-"p, li { white-space: pre-wrap; }\n"
-"hr { height: 1px; border-width: 0; }\n"
-"li.unchecked::marker { content: \"\\2610\"; }\n"
-"li.checked::marker { content: \"\\2612\"; }\n"
-"</style></head><body style=\" font-family:'Sans Serif'; font-size:9pt; font-weight:400; font-style:normal;\">\n"
-"<p align=\"center\" style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-size:12pt;\">Select an option</span></p></body></html>", None))
-        self.comboBox_start_options.setItemText(0, QCoreApplication.translate("MainWindow", u"Patient registry", None))
-        self.comboBox_start_options.setItemText(1, QCoreApplication.translate("MainWindow", u"Observational study", None))
-        self.comboBox_start_options.setItemText(2, QCoreApplication.translate("MainWindow", u"Clinical trial", None))
-
-        self.pushButton_start_options.setText(QCoreApplication.translate("MainWindow", u"Ok", None))
-        self.tabWidget_start.setTabText(self.tabWidget_start.indexOf(self.tab_start_options), QCoreApplication.translate("MainWindow", u"Options", None))
         self.lineEdit_start_title.setText(QCoreApplication.translate("MainWindow", u"Start", None))
         self.lineEdit_registry_title.setText(QCoreApplication.translate("MainWindow", u"Patient registry", None))
         self.textEdit_registry_start.setHtml(QCoreApplication.translate("MainWindow", u"<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0//EN\" \"http://www.w3.org/TR/REC-html40/strict.dtd\">\n"

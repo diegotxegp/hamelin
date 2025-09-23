@@ -15,6 +15,7 @@ class ControllerStart:
         self.controller = controller
 
         self.tab = 0 # Initial tab. Default: Welcome
+        self.selected_option = None # Variable to store the selected option from Options tab
 
         self.tabWidget_start = self.ui.findChild(QTabWidget, "tabWidget_start")
         self.tabWidget_start.setCurrentIndex(self.tab)
@@ -75,12 +76,18 @@ class ControllerStart:
 
         # Tab 0: Welcome
         if self.tab == 0:
+            self._next_tab() # Switches to the next tab (Options)
+            return
+
+        # Tab 1: Options
+        if self.tab == 1:
+            self._save_option() # Saves the selected option
             self._update_tab_project() # Updates the project tab
             self._next_tab() # Switches to the next tab
             return
 
-        # Tab 1: Project
-        if self.tab == 1:
+        # Tab 2: Project
+        if self.tab == 2:
             if self.listWidget_start_project.currentItem().text() == "[New project]":
                 self._new_project()
             else:
@@ -89,8 +96,8 @@ class ControllerStart:
                 self._next_tab() # Switches to the next tab
                 return
 
-        # Tab 2: Data
-        if self.tab == 2:
+        # Tab 3: Data
+        if self.tab == 3:
             if self.listWidget_start_data.currentItem().text() == "[New dataset]":
                 self._load_dataset()
             else:
@@ -99,15 +106,10 @@ class ControllerStart:
                 self._next_tab() # Switches to the next tab
                 return
 
-        # Tab 3: Status
-        if self.tab == 3:
-            self._set_status() # Selects the status
-            self._next_tab() # Switches to the next tab
-            return
-        
-        # Tab 4: Options
+        # Tab 4: Status (now the last tab)
         if self.tab == 4:
-            self._select_option() # Selects the option
+            self._set_status() # Selects the status
+            self._select_option() # Now executes the final option selection
             return
 
 
@@ -204,9 +206,15 @@ class ControllerStart:
             else:
                 self._update_tab_status()
 
+    def _save_option(self):
+        """
+        Saves the selected option from the combo box for later use.
+        """
+        self.selected_option = self.comboBox_start_options.currentText()
+
     def _select_option(self):
         """
-        Reads the selected option from the combo box and tells the main controller to switch pages.
+        Uses the previously saved option to tell the main controller to switch pages.
         """
         pages = {
             "Start": 0,
@@ -214,6 +222,6 @@ class ControllerStart:
             "Observational study": 2,
             "Clinical trial": 3,
         }
-        option = self.comboBox_start_options.currentText()
+        option = self.selected_option if self.selected_option else self.comboBox_start_options.currentText()
         index = pages.get(option, 0)
         self.controller.change_page(index)
