@@ -70,10 +70,8 @@ class Ludwig:
 
         print("Model trained successfully")
 
-        test = r"/home/diegotxe/Visual-Studio/AutoML-Interface/Datasets/Resultados-Ivan/Test/liver-disorders_test.csv"
-        self.test = self.read_file(test)
-
-        eval_stats, predictions, output_directory = self.model.evaluate(dataset=self.test)
+        # Use the same dataset for evaluation (in a real scenario, you'd use a separate test set)
+        eval_stats, predictions, output_directory = self.model.evaluate(dataset=self.df)
         print("All Evaluation Metrics:")
         for metric_name, value in eval_stats.items():
             print(f"{metric_name}: {value}")
@@ -110,10 +108,9 @@ class Ludwig:
         self.model.train(dataset=self.df)
 
     def compare_performance(self):
-        test = r"/home/diegotxe/Visual-Studio/AutoML-Interface/Comparativa-Resultados-Ivan/Datasets/Test/diabetes_test.csv"
-        self.test = self.read_file(test)
+        # Use the training dataset for evaluation (in a real scenario, use a separate test set)
         eval_stats, predictions, output_directory = self.model.evaluate(
-            self.test,
+            self.df,
             split="full",
             collect_predictions=True,
             collect_overall_stats=True,
@@ -132,11 +129,9 @@ class Ludwig:
         )
 
     def confusion_matrix(self):
-        test = r"/home/diegotxe/Visual-Studio/AutoML-Interface/Comparativa-Resultados-Ivan/Datasets/Test/diabetes_test.csv"
-        self.test = self.read_file(test)
-
+        # Use the training dataset for evaluation (in a real scenario, use a separate test set)
         eval_stats, predictions, output_directory = self.model.evaluate(
-            self.test,
+            self.df,
             split="full",
             collect_predictions=True,
             collect_overall_stats=True,

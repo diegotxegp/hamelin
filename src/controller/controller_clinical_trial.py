@@ -48,6 +48,9 @@ class ControllerClinicalTrial:
         # Process tab
         self.textEdit_4 = self.ui.findChild(QTextEdit, "textEdit_4")
         self.pushButton_clinical_process = self.ui.findChild(QPushButton, "pushButton_clinical_process")
+        
+        # Outcome tab
+        self.textEdit_clinical_outcome = self.ui.findChild(QTextEdit, "textEdit_clinical_outcome")
 
         self._setup_signals()
         self._set_tabs_disabled()
@@ -151,6 +154,7 @@ class ControllerClinicalTrial:
             if self.model_clinical.is_ready_for_analysis():
                 try:
                     self.model_clinical.model.auto_train() # Train the model
+                    self._update_tab_outcome() # Update the outcome tab with results
                     self._next_tab() # Switch to outcome tab
                 except Exception as e:
                     self.controller.popup_message(self.ui, "Training Error", 
@@ -470,3 +474,63 @@ class ControllerClinicalTrial:
                     disease_info.append(f"{selection}: {column}")
         
         self.model_clinical.disease = "; ".join(disease_info) if disease_info else "No disease information specified"
+
+    def _update_tab_outcome(self):
+        """Updates the outcome tab with training results."""
+        if hasattr(self.model_clinical.model, 'ludwig') and hasattr(self.model_clinical.model.ludwig, 'model'):
+            try:
+                # Get evaluation metrics from the trained model
+                eval_stats, predictions, output_directory = self.model_clinical.model.ludwig.model.evaluate(dataset=self.model_clinical.model.ludwig.df)
+                
+                # Format the results for display
+                results_text = "=== CLINICAL TRIAL ANALYSIS RESULTS ===\n\n"
+                results_text += f"Dataset: {self.model_clinical.model.dataset_name}\n"
+                results_text += f"Primary Endpoint: {self.model_clinical.model.primary_variable}\n"
+                
+                # Add clinical trial specific information
+                if self.model_clinical.investigational_drug:
+                    results_text += f"Experimental Treatment: {self.model_clinical.investigational_drug}\n"
+                if self.model_clinical.control_drug:
+                    results_text += f"Control Group: {self.model_clinical.control_drug}\n"
+                if self.model_clinical.disease:
+                    results_text += f"Target Condition: {self.model_clinical.disease}\n"
+                
+                results_text += "\n"
+                
+                # Display evaluation metrics
+                results_text += "EVALUATION METRICS:\n"
+                results_text += "-" * 40 + "\n"
+                
+                for feature_name, metrics in eval_stats.items():
+                    if isinstance(metrics, dict):
+                        results_text += f"\n{feature_name.upper()}:\n"
+                        for metric_name, value in metrics.items():
+                            if isinstance(value, float):
+                                results_text += f"  {metric_name}: {value:.4f}\n"
+                            else:
+                                results_text += f"  {metric_name}: {value}\n"
+                
+                # Add model configuration summary
+                results_text += f"\nTRIAL CONFIGURATION:\n"
+                results_text += "-" * 40 + "\n"
+                results_text += f"Input Features: {len(self.model_clinical.model.ludwig.input_features)}\n"
+                results_text += f"Target Features: {len(self.model_clinical.model.ludwig.target)}\n"
+                results_text += f"Patient Samples: {len(self.model_clinical.model.ludwig.df)}\n"
+                
+                # Add clinical trial summary
+                if hasattr(self.model_clinical, 'get_summary'):
+                    trial_summary = self.model_clinical.get_summary()
+                    if trial_summary:
+                        results_text += f"\nTRIAL SUMMARY:\n"
+                        results_text += "-" * 40 + "\n"
+                        for key, value in trial_summary.items():
+                            results_text += f"{key}: {value}\n"
+                
+                # Set the results in the outcome tab
+                self.textEdit_clinical_outcome.setText(results_text)
+                
+            except Exception as e:
+                error_text = f"Error displaying results:\n{str(e)}\n\nPlease ensure the model has been trained successfully."
+                self.textEdit_clinical_outcome.setText(error_text)
+        else:
+            self.textEdit_clinical_outcome.setText("No trained model available. Please complete the training process first.")

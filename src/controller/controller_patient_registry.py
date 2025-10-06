@@ -27,6 +27,7 @@ class ControllerPatientRegistry:
         self.pushButton_registry_settings = self.ui.findChild(QPushButton, "pushButton_registry_settings")
         self.textEdit_registry_process_summary = self.ui.findChild(QTextEdit, "textEdit_registry_process_summary")
         self.pushButton_registry_process = self.ui.findChild(QPushButton, "pushButton_registry_process")
+        self.textEdit_registry_outcome = self.ui.findChild(QTextEdit, "textEdit_registry_outcome")
 
         scroll_area = self.ui.findChild(QScrollArea, "scrollArea_registry_criteria")
         container = scroll_area.widget()
@@ -93,7 +94,8 @@ class ControllerPatientRegistry:
         # Tab 4: Process
         if self.tab == 4:
             self.model_registry.model.auto_train() # Train the model
-            self._update_tab_outcome() # Update the outcome tab
+            self._update_tab_process() # Update the process tab
+            self._update_tab_outcome() # Update the outcome tab with results
             self._next_tab() # Switches to the next tab
             return
         
@@ -254,3 +256,44 @@ class ControllerPatientRegistry:
                 )
         
         self.textEdit_registry_process_summary.setText(summary_text)
+
+    def _update_tab_outcome(self):
+        """Updates the outcome tab with training results."""
+        if hasattr(self.model_registry.model, 'ludwig') and hasattr(self.model_registry.model.ludwig, 'model'):
+            try:
+                # Get evaluation metrics from the trained model
+                eval_stats, predictions, output_directory = self.model_registry.model.ludwig.model.evaluate(dataset=self.model_registry.model.ludwig.df)
+                
+                # Format the results for display
+                results_text = "=== MODEL TRAINING RESULTS ===\n\n"
+                results_text += f"Dataset: {self.model_registry.model.dataset_name}\n"
+                results_text += f"Primary Variable: {self.model_registry.model.primary_variable}\n\n"
+                
+                # Display evaluation metrics
+                results_text += "EVALUATION METRICS:\n"
+                results_text += "-" * 40 + "\n"
+                
+                for feature_name, metrics in eval_stats.items():
+                    if isinstance(metrics, dict):
+                        results_text += f"\n{feature_name.upper()}:\n"
+                        for metric_name, value in metrics.items():
+                            if isinstance(value, float):
+                                results_text += f"  {metric_name}: {value:.4f}\n"
+                            else:
+                                results_text += f"  {metric_name}: {value}\n"
+                
+                # Add model configuration summary
+                results_text += f"\nMODEL CONFIGURATION:\n"
+                results_text += "-" * 40 + "\n"
+                results_text += f"Input Features: {len(self.model_registry.model.ludwig.input_features)}\n"
+                results_text += f"Target Features: {len(self.model_registry.model.ludwig.target)}\n"
+                results_text += f"Training Samples: {len(self.model_registry.model.ludwig.df)}\n"
+                
+                # Set the results in the outcome tab
+                self.textEdit_registry_outcome.setText(results_text)
+                
+            except Exception as e:
+                error_text = f"Error displaying results:\n{str(e)}\n\nPlease ensure the model has been trained successfully."
+                self.textEdit_registry_outcome.setText(error_text)
+        else:
+            self.textEdit_registry_outcome.setText("No trained model available. Please complete the training process first.")
