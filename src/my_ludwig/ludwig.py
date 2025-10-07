@@ -22,6 +22,8 @@ class Ludwig:
 
         self.config = None
         self.model = None
+        self.training_time = None
+        self.num_trials = None
 
     def read_file(self, dataset_path):
         """
@@ -59,14 +61,28 @@ class Ludwig:
 
         #split_df = get_repeatable_train_val_test_split(self.df, self.target, random_seed=42)
 
+        # Use configured runtime or default to 7200 seconds
+        runtime_limit = int(self.runtime) if self.runtime else 7200
+        
+        import time
+        start_time = time.time()
+        
         auto_train_results = auto_train(
             dataset=self.df,
             target=primary_variable,
-            time_limit_s=7200,
+            time_limit_s=runtime_limit,
             tune_for_memory=False,
         )
 
+        end_time = time.time()
+        self.training_time = end_time - start_time
         self.model = auto_train_results.best_model
+        
+        # Get number of trials from hyperopt results if available
+        try:
+            self.num_trials = len(auto_train_results.experiment_analysis.trials)
+        except:
+            self.num_trials = "Unknown"
 
         print("Model trained successfully")
 
@@ -84,10 +100,13 @@ class Ludwig:
 
         self.split_df = get_repeatable_train_val_test_split(self.df, self.target, random_seed=42)
 
+        # Use configured runtime or default to 7200 seconds
+        runtime_limit = int(self.runtime) if self.runtime else 7200
+        
         self.config = create_auto_config(
             dataset=self.split_df,
             target=self.target,
-            time_limit_s=7200,
+            time_limit_s=runtime_limit,
             tune_for_memory=False,
             #user_config={'hyperopt': {'goal': 'maximize', 'metric': 'accuracy', 'output_feature': f"{self.target}"}},
         )

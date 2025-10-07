@@ -333,6 +333,23 @@ class ControllerObservationalStudy:
                 results_text += f"Target Features: {len(self.model_observational.model.ludwig.target)}\n"
                 results_text += f"Study Samples: {len(self.model_observational.model.ludwig.df)}\n"
                 
+                # Add training time and number of models
+                if hasattr(self.model_observational.model.ludwig, 'training_time') and self.model_observational.model.ludwig.training_time:
+                    training_time = self.model_observational.model.ludwig.training_time
+                    hours = int(training_time // 3600)
+                    minutes = int((training_time % 3600) // 60)
+                    seconds = int(training_time % 60)
+                    if hours > 0:
+                        time_str = f"{hours}h {minutes}m {seconds}s"
+                    elif minutes > 0:
+                        time_str = f"{minutes}m {seconds}s"
+                    else:
+                        time_str = f"{seconds}s"
+                    results_text += f"Analysis Time: {time_str}\n"
+                
+                if hasattr(self.model_observational.model.ludwig, 'num_trials') and self.model_observational.model.ludwig.num_trials:
+                    results_text += f"Models Tested: {self.model_observational.model.ludwig.num_trials}\n"
+                
                 # Combine results and explanations
                 full_text = results_text + explanation_text
                 

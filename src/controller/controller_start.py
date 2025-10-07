@@ -1,6 +1,7 @@
 # controller/controller_start.py
 
 from PySide6.QtWidgets import QPushButton, QComboBox, QTabWidget, QInputDialog, QListWidget, QTextEdit, QFileDialog
+import pandas as pd
 
 class ControllerStart:
     def __init__(self, ui, model_start, controller):
@@ -182,10 +183,100 @@ class ControllerStart:
     def _update_tab_status(self):
         self.textEdit_start_status_text.clear()
 
-        self.model_start.read_status_from_file()
-
-        if self.model_start.model.status is not None:
-            self.textEdit_start_status_text.setPlainText(self.model_start.model.status)
+        # Generate automatic dataset characteristics
+        if hasattr(self.model_start.model, 'df') and self.model_start.model.df is not None:
+            df = self.model_start.model.df
+            
+            # Generate comprehensive dataset statistics
+            status_info = []
+            status_info.append("=== DATASET CHARACTERISTICS ===\n")
+            
+            # Basic information
+            status_info.append(f"📊 Dataset Shape: {df.shape[0]:,} rows × {df.shape[1]} columns")
+            status_info.append(f"💾 Memory Usage: {df.memory_usage(deep=True).sum() / 1024**2:.2f} MB")
+            status_info.append(f"📅 Dataset Name: {self.model_start.model.dataset_name if self.model_start.model.dataset_name else 'Unknown'}")
+            
+            # Data types analysis
+            status_info.append("\n📈 DATA TYPES:")
+            dtype_counts = df.dtypes.value_counts()
+            for dtype, count in dtype_counts.items():
+                status_info.append(f"  • {dtype}: {count} columns")
+            
+            # Missing data analysis
+            missing_data = df.isnull().sum()
+            total_missing = missing_data.sum()
+            if total_missing > 0:
+                status_info.append(f"\n⚠️  MISSING DATA: {total_missing:,} total missing values")
+                missing_cols = missing_data[missing_data > 0]
+                for col, missing_count in missing_cols.head(5).items():
+                    percentage = (missing_count / len(df)) * 100
+                    status_info.append(f"  • {col}: {missing_count:,} ({percentage:.1f}%)")
+                if len(missing_cols) > 5:
+                    status_info.append(f"  • ... and {len(missing_cols) - 5} more columns with missing data")
+            else:
+                status_info.append("\n✅ MISSING DATA: No missing values detected")
+            
+            # Numeric columns statistics
+            numeric_cols = df.select_dtypes(include=['int64', 'float64']).columns
+            if len(numeric_cols) > 0:
+                status_info.append(f"\n🔢 NUMERIC COLUMNS ({len(numeric_cols)}):")
+                for col in numeric_cols[:5]:  # Show first 5
+                    min_val = df[col].min()
+                    max_val = df[col].max()
+                    mean_val = df[col].mean()
+                    status_info.append(f"  • {col}: Range [{min_val:.2f} - {max_val:.2f}], Mean: {mean_val:.2f}")
+                if len(numeric_cols) > 5:
+                    status_info.append(f"  • ... and {len(numeric_cols) - 5} more numeric columns")
+            
+            # Categorical columns analysis
+            categorical_cols = df.select_dtypes(include=['object', 'category']).columns
+            if len(categorical_cols) > 0:
+                status_info.append(f"\n📝 CATEGORICAL COLUMNS ({len(categorical_cols)}):")
+                for col in categorical_cols[:5]:  # Show first 5
+                    unique_count = df[col].nunique()
+                    most_common = df[col].value_counts().iloc[0] if len(df[col].value_counts()) > 0 else 0
+                    status_info.append(f"  • {col}: {unique_count} unique values, Most frequent: {most_common} occurrences")
+                if len(categorical_cols) > 5:
+                    status_info.append(f"  • ... and {len(categorical_cols) - 5} more categorical columns")
+            
+            # Potential target variables (same logic as acceptable_stratify_variables)
+            status_info.append("\n🎯 POTENTIAL TARGET VARIABLES:")
+            potential_targets = []
+            for col in df.columns:
+                # Only consider categorical variables (same as acceptable_stratify_variables)
+                if pd.api.types.is_categorical_dtype(df[col]) or df[col].dtype == object:
+                    counts = df[col].value_counts(dropna=True)
+                    if len(counts) <= 10 and (counts >= 5).all():  # max_categories=10, min_samples=5
+                        potential_targets.append((col, len(counts)))
+            
+            if potential_targets:
+                for col, unique_count in sorted(potential_targets, key=lambda x: x[1])[:3]:
+                    status_info.append(f"  • {col}: {unique_count} unique values")
+            else:
+                status_info.append("  • No suitable categorical target variables found")
+            
+            # Data quality assessment
+            status_info.append("\n✅ DATA QUALITY ASSESSMENT:")
+            if total_missing == 0:
+                status_info.append("  • ✅ Complete dataset (no missing values)")
+            elif total_missing / (df.shape[0] * df.shape[1]) < 0.05:
+                status_info.append("  • ✅ Good quality (< 5% missing data)")
+            else:
+                status_info.append("  • ⚠️  Needs attention (≥ 5% missing data)")
+            
+            if len(df) >= 1000:
+                status_info.append("  • ✅ Sufficient sample size for analysis")
+            else:
+                status_info.append("  • ⚠️  Small sample size - results may be less reliable")
+            
+            self.textEdit_start_status_text.setPlainText("\n".join(status_info))
+        else:
+            # Fallback to original behavior if no dataset loaded
+            self.model_start.read_status_from_file()
+            if self.model_start.model.status is not None:
+                self.textEdit_start_status_text.setPlainText(self.model_start.model.status)
+            else:
+                self.textEdit_start_status_text.setPlainText("No dataset loaded yet. Please select a dataset from the Data tab to see automatic characteristics.")
 
     def _set_status(self):
         """ Reads the selected status from the list widget. """
