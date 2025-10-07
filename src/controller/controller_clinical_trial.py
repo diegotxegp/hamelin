@@ -1,6 +1,7 @@
 # controller/controller_clinical_trial.py
 
-from PySide6.QtWidgets import QPushButton, QTabWidget, QListWidget, QLabel, QComboBox, QWidget, QHBoxLayout, QScrollArea, QTextEdit, QLineEdit, QSizePolicy
+from PySide6.QtWidgets import QPushButton, QTabWidget, QListWidget, QLabel, QComboBox, QWidget, QHBoxLayout, QScrollArea, QTextEdit, QLineEdit, QSizePolicy, QMessageBox
+from datetime import datetime
 
 from my_ludwig.ludwig_data import input_feature_types, output_feature_types, separators, missing_data_options, metrics, goals
 
@@ -184,15 +185,18 @@ class ControllerClinicalTrial:
     def _set_primary_variable(self):
         """Set the primary endpoint variable."""
         selected_item = self.listWidget_clinical_variable.currentItem()
-        if selected_item:
-            primary_variable = selected_item.text()
-            self.model_clinical.primary_variable = primary_variable
-            self.model_clinical.model.primary_variable = primary_variable
-            return True
-        else:
-            self.controller.popup_message(self.ui, "Missing Selection", 
-                                        "Please select a primary endpoint variable from the list.")
+        if selected_item is None:
+            QMessageBox.warning(
+                None, 
+                "No Variable Selected", 
+                "Please select a primary endpoint variable from the list before continuing."
+            )
             return False
+            
+        primary_variable = selected_item.text()
+        self.model_clinical.primary_variable = primary_variable
+        self.model_clinical.model.primary_variable = primary_variable
+        return True
     
     def _set_criteria(self):
         """Set inclusion/exclusion criteria."""
@@ -484,6 +488,7 @@ class ControllerClinicalTrial:
                 
                 # Format the results for display (excluding 'combined')
                 results_text = "=== CLINICAL TRIAL ANALYSIS RESULTS ===\n\n"
+                results_text += f"Analysis completed: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n"
                 results_text += f"Dataset: {self.model_clinical.model.dataset_name}\n"
                 results_text += f"Primary Endpoint: {self.model_clinical.model.primary_variable}\n"
                 

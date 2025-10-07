@@ -1,6 +1,7 @@
 # controller/controller_observational_study.py
 
-from PySide6.QtWidgets import QPushButton, QTabWidget, QListWidget, QLabel, QComboBox, QWidget, QHBoxLayout, QScrollArea, QTextEdit, QLineEdit, QSizePolicy
+from PySide6.QtWidgets import QPushButton, QTabWidget, QListWidget, QLabel, QComboBox, QWidget, QHBoxLayout, QScrollArea, QTextEdit, QLineEdit, QSizePolicy, QMessageBox
+from datetime import datetime
 
 from my_ludwig.ludwig_data import input_feature_types, output_feature_types, separators, missing_data_options, metrics, goals
 
@@ -71,7 +72,8 @@ class ControllerObservationalStudy:
         
         # Tab 1: Primary variable
         if self.tab == 1:
-            self._set_primary_variable()
+            if not self._set_primary_variable():
+                return  # Don't proceed if validation failed
             self.model_observational.model.autoconfig()
             self._update_tab_criteria()
             self._next_tab() # Switches to the next tab
@@ -112,8 +114,18 @@ class ControllerObservationalStudy:
 
     def _set_primary_variable(self):
         """ Reads the selected project from the list widget. """
-        selected_primary_variable = self.listWidget_observational_variable.currentItem().text()
+        current_item = self.listWidget_observational_variable.currentItem()
+        if current_item is None:
+            QMessageBox.warning(
+                None, 
+                "No Variable Selected", 
+                "Please select a primary variable from the list before continuing."
+            )
+            return False
+        
+        selected_primary_variable = current_item.text()
         self.model_observational.model.primary_variable = selected_primary_variable
+        return True
 
     def _update_tab_criteria(self):
         """ Updates the criteria tab."""
@@ -266,6 +278,7 @@ class ControllerObservationalStudy:
                 
                 # Format the results for display (excluding 'combined')
                 results_text = "=== OBSERVATIONAL STUDY RESULTS ===\n\n"
+                results_text += f"Analysis completed: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n"
                 results_text += f"Dataset: {self.model_observational.model.dataset_name}\n"
                 results_text += f"Primary Variable: {self.model_observational.model.primary_variable}\n\n"
                 
