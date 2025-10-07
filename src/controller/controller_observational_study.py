@@ -264,23 +264,67 @@ class ControllerObservationalStudy:
                 # Get evaluation metrics from the trained model
                 eval_stats, predictions, output_directory = self.model_observational.model.ludwig.model.evaluate(dataset=self.model_observational.model.ludwig.df)
                 
-                # Format the results for display
+                # Format the results for display (excluding 'combined')
                 results_text = "=== OBSERVATIONAL STUDY RESULTS ===\n\n"
                 results_text += f"Dataset: {self.model_observational.model.dataset_name}\n"
                 results_text += f"Primary Variable: {self.model_observational.model.primary_variable}\n\n"
                 
-                # Display evaluation metrics
+                # Display evaluation metrics (skip 'combined')
                 results_text += "EVALUATION METRICS:\n"
                 results_text += "-" * 40 + "\n"
                 
+                explanation_text = "\n=== RESULTS EXPLANATION FOR NON-EXPERTS ===\n\n"
+                
                 for feature_name, metrics in eval_stats.items():
-                    if isinstance(metrics, dict):
+                    if isinstance(metrics, dict) and feature_name != 'combined':
                         results_text += f"\n{feature_name.upper()}:\n"
+                        
                         for metric_name, value in metrics.items():
                             if isinstance(value, float):
                                 results_text += f"  {metric_name}: {value:.4f}\n"
                             else:
                                 results_text += f"  {metric_name}: {value}\n"
+                        
+                        # Add user-friendly explanations
+                        explanation_text += f"📊 {feature_name.upper()} Analysis:\n"
+                        
+                        if 'accuracy' in metrics:
+                            acc_value = metrics['accuracy']
+                            explanation_text += f"• Accuracy: {acc_value:.1%} - This shows how often our analysis correctly identifies patterns.\n"
+                            if acc_value >= 0.9:
+                                explanation_text += "  → Excellent! The analysis is very reliable for this outcome.\n"
+                            elif acc_value >= 0.8:
+                                explanation_text += "  → Good reliability for observational conclusions.\n"
+                            elif acc_value >= 0.7:
+                                explanation_text += "  → Moderate reliability. Consider additional data collection.\n"
+                            else:
+                                explanation_text += "  → Low reliability. Results should be interpreted with caution.\n"
+                        
+                        if 'roc_auc' in metrics:
+                            auc_value = metrics['roc_auc']
+                            explanation_text += f"• ROC AUC: {auc_value:.3f} - Measures how well we can distinguish between different study outcomes.\n"
+                            if auc_value >= 0.9:
+                                explanation_text += "  → Outstanding discrimination between groups.\n"
+                            elif auc_value >= 0.8:
+                                explanation_text += "  → Good ability to distinguish between study groups.\n"
+                            elif auc_value >= 0.7:
+                                explanation_text += "  → Fair discrimination ability.\n"
+                            else:
+                                explanation_text += "  → Poor discrimination. Groups may be too similar to distinguish.\n"
+                        
+                        if 'loss' in metrics:
+                            loss_value = metrics['loss']
+                            explanation_text += f"• Loss: {loss_value:.4f} - Lower values indicate better pattern recognition.\n"
+                            if loss_value <= 0.3:
+                                explanation_text += "  → Excellent pattern recognition in the data.\n"
+                            elif loss_value <= 0.5:
+                                explanation_text += "  → Good pattern recognition.\n"
+                            elif loss_value <= 0.7:
+                                explanation_text += "  → Acceptable pattern recognition.\n"
+                            else:
+                                explanation_text += "  → Poor pattern recognition. May need more data or different approach.\n"
+                        
+                        explanation_text += "\n"
                 
                 # Add model configuration summary
                 results_text += f"\nSTUDY CONFIGURATION:\n"
@@ -289,8 +333,35 @@ class ControllerObservationalStudy:
                 results_text += f"Target Features: {len(self.model_observational.model.ludwig.target)}\n"
                 results_text += f"Study Samples: {len(self.model_observational.model.ludwig.df)}\n"
                 
+                # Combine results and explanations
+                full_text = results_text + explanation_text
+                
+                # Add study interpretation
+                full_text += "🔬 STUDY INTERPRETATION:\n"
+                full_text += "-" * 40 + "\n"
+                
+                # Get primary metric for interpretation
+                primary_metrics = None
+                for feature_name, metrics in eval_stats.items():
+                    if isinstance(metrics, dict) and feature_name != 'combined':
+                        primary_metrics = metrics
+                        break
+                
+                if primary_metrics and 'accuracy' in primary_metrics:
+                    acc = primary_metrics['accuracy']
+                    if acc >= 0.85:
+                        full_text += "✅ Strong evidence found in the observational data. Results can inform decision-making.\n"
+                    elif acc >= 0.75:
+                        full_text += "⚠️ Moderate evidence found. Consider collecting additional data for confirmation.\n"
+                    else:
+                        full_text += "❌ Weak evidence in current data. Results should be interpreted cautiously.\n"
+                else:
+                    full_text += "ℹ️ Review the metrics above to interpret the strength of observational findings.\n"
+                
+                full_text += "\n💡 Note: Observational studies show associations, not causation. Consider controlled studies for causal conclusions.\n"
+                
                 # Set the results in the outcome tab
-                self.textEdit_observational_outcome.setText(results_text)
+                self.textEdit_observational_outcome.setText(full_text)
                 
             except Exception as e:
                 error_text = f"Error displaying results:\n{str(e)}\n\nPlease ensure the model has been trained successfully."

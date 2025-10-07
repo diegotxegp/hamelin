@@ -264,23 +264,67 @@ class ControllerPatientRegistry:
                 # Get evaluation metrics from the trained model
                 eval_stats, predictions, output_directory = self.model_registry.model.ludwig.model.evaluate(dataset=self.model_registry.model.ludwig.df)
                 
-                # Format the results for display
+                # Format the results for display (excluding 'combined')
                 results_text = "=== MODEL TRAINING RESULTS ===\n\n"
                 results_text += f"Dataset: {self.model_registry.model.dataset_name}\n"
                 results_text += f"Primary Variable: {self.model_registry.model.primary_variable}\n\n"
                 
-                # Display evaluation metrics
+                # Display evaluation metrics (skip 'combined')
                 results_text += "EVALUATION METRICS:\n"
                 results_text += "-" * 40 + "\n"
                 
+                explanation_text = "\n=== RESULTS EXPLANATION FOR NON-EXPERTS ===\n\n"
+                
                 for feature_name, metrics in eval_stats.items():
-                    if isinstance(metrics, dict):
+                    if isinstance(metrics, dict) and feature_name != 'combined':
                         results_text += f"\n{feature_name.upper()}:\n"
+                        
                         for metric_name, value in metrics.items():
                             if isinstance(value, float):
                                 results_text += f"  {metric_name}: {value:.4f}\n"
                             else:
                                 results_text += f"  {metric_name}: {value}\n"
+                        
+                        # Add user-friendly explanations
+                        explanation_text += f"📊 {feature_name.upper()} Performance:\n"
+                        
+                        if 'accuracy' in metrics:
+                            acc_value = metrics['accuracy']
+                            explanation_text += f"• Accuracy: {acc_value:.1%} - This means the model correctly predicts the outcome {acc_value:.1%} of the time.\n"
+                            if acc_value >= 0.9:
+                                explanation_text += "  → Excellent! The model is very reliable.\n"
+                            elif acc_value >= 0.8:
+                                explanation_text += "  → Good performance for most practical applications.\n"
+                            elif acc_value >= 0.7:
+                                explanation_text += "  → Moderate performance. Consider reviewing the data quality.\n"
+                            else:
+                                explanation_text += "  → Low performance. The model may need improvement or more data.\n"
+                        
+                        if 'roc_auc' in metrics:
+                            auc_value = metrics['roc_auc']
+                            explanation_text += f"• ROC AUC: {auc_value:.3f} - Measures how well the model distinguishes between different outcomes.\n"
+                            if auc_value >= 0.9:
+                                explanation_text += "  → Outstanding ability to distinguish between outcomes.\n"
+                            elif auc_value >= 0.8:
+                                explanation_text += "  → Good discrimination ability.\n"
+                            elif auc_value >= 0.7:
+                                explanation_text += "  → Fair discrimination ability.\n"
+                            else:
+                                explanation_text += "  → Poor discrimination. The model struggles to distinguish outcomes.\n"
+                        
+                        if 'loss' in metrics:
+                            loss_value = metrics['loss']
+                            explanation_text += f"• Loss: {loss_value:.4f} - Lower values indicate better model fit.\n"
+                            if loss_value <= 0.3:
+                                explanation_text += "  → Excellent model fit to the data.\n"
+                            elif loss_value <= 0.5:
+                                explanation_text += "  → Good model fit.\n"
+                            elif loss_value <= 0.7:
+                                explanation_text += "  → Acceptable fit, but could be improved.\n"
+                            else:
+                                explanation_text += "  → Poor fit. The model may be struggling with this data.\n"
+                        
+                        explanation_text += "\n"
                 
                 # Add model configuration summary
                 results_text += f"\nMODEL CONFIGURATION:\n"
@@ -289,8 +333,33 @@ class ControllerPatientRegistry:
                 results_text += f"Target Features: {len(self.model_registry.model.ludwig.target)}\n"
                 results_text += f"Training Samples: {len(self.model_registry.model.ludwig.df)}\n"
                 
+                # Combine results and explanations
+                full_text = results_text + explanation_text
+                
+                # Add overall recommendation
+                full_text += "🎯 RECOMMENDATION:\n"
+                full_text += "-" * 40 + "\n"
+                
+                # Get primary metric for recommendation
+                primary_metrics = None
+                for feature_name, metrics in eval_stats.items():
+                    if isinstance(metrics, dict) and feature_name != 'combined':
+                        primary_metrics = metrics
+                        break
+                
+                if primary_metrics and 'accuracy' in primary_metrics:
+                    acc = primary_metrics['accuracy']
+                    if acc >= 0.85:
+                        full_text += "✅ This model shows strong performance and can be used with confidence.\n"
+                    elif acc >= 0.75:
+                        full_text += "⚠️ This model shows decent performance but consider validating with new data.\n"
+                    else:
+                        full_text += "❌ This model shows poor performance. Consider collecting more data or reviewing features.\n"
+                else:
+                    full_text += "ℹ️ Review the metrics above to assess model performance.\n"
+                
                 # Set the results in the outcome tab
-                self.textEdit_registry_outcome.setText(results_text)
+                self.textEdit_registry_outcome.setText(full_text)
                 
             except Exception as e:
                 error_text = f"Error displaying results:\n{str(e)}\n\nPlease ensure the model has been trained successfully."

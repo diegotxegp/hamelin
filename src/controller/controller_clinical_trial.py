@@ -482,7 +482,7 @@ class ControllerClinicalTrial:
                 # Get evaluation metrics from the trained model
                 eval_stats, predictions, output_directory = self.model_clinical.model.ludwig.model.evaluate(dataset=self.model_clinical.model.ludwig.df)
                 
-                # Format the results for display
+                # Format the results for display (excluding 'combined')
                 results_text = "=== CLINICAL TRIAL ANALYSIS RESULTS ===\n\n"
                 results_text += f"Dataset: {self.model_clinical.model.dataset_name}\n"
                 results_text += f"Primary Endpoint: {self.model_clinical.model.primary_variable}\n"
@@ -497,18 +497,62 @@ class ControllerClinicalTrial:
                 
                 results_text += "\n"
                 
-                # Display evaluation metrics
+                # Display evaluation metrics (skip 'combined')
                 results_text += "EVALUATION METRICS:\n"
                 results_text += "-" * 40 + "\n"
                 
+                explanation_text = "\n=== CLINICAL RESULTS EXPLANATION ===\n\n"
+                
                 for feature_name, metrics in eval_stats.items():
-                    if isinstance(metrics, dict):
+                    if isinstance(metrics, dict) and feature_name != 'combined':
                         results_text += f"\n{feature_name.upper()}:\n"
+                        
                         for metric_name, value in metrics.items():
                             if isinstance(value, float):
                                 results_text += f"  {metric_name}: {value:.4f}\n"
                             else:
                                 results_text += f"  {metric_name}: {value}\n"
+                        
+                        # Add clinical-specific explanations
+                        explanation_text += f"🏥 {feature_name.upper()} Clinical Performance:\n"
+                        
+                        if 'accuracy' in metrics:
+                            acc_value = metrics['accuracy']
+                            explanation_text += f"• Accuracy: {acc_value:.1%} - This shows how often the trial analysis correctly predicts the primary endpoint.\n"
+                            if acc_value >= 0.9:
+                                explanation_text += "  → Excellent predictive power. Strong evidence for treatment efficacy.\n"
+                            elif acc_value >= 0.8:
+                                explanation_text += "  → Good predictive ability. Promising treatment results.\n"
+                            elif acc_value >= 0.7:
+                                explanation_text += "  → Moderate predictive ability. Further validation may be needed.\n"
+                            else:
+                                explanation_text += "  → Low predictive ability. Treatment effect may be limited.\n"
+                        
+                        if 'roc_auc' in metrics:
+                            auc_value = metrics['roc_auc']
+                            explanation_text += f"• ROC AUC: {auc_value:.3f} - Measures ability to distinguish between treatment responders and non-responders.\n"
+                            if auc_value >= 0.9:
+                                explanation_text += "  → Outstanding discrimination. Clear treatment benefit.\n"
+                            elif auc_value >= 0.8:
+                                explanation_text += "  → Good discrimination between treatment groups.\n"
+                            elif auc_value >= 0.7:
+                                explanation_text += "  → Fair discrimination. Moderate treatment effect.\n"
+                            else:
+                                explanation_text += "  → Poor discrimination. Treatment may not be significantly different from control.\n"
+                        
+                        if 'loss' in metrics:
+                            loss_value = metrics['loss']
+                            explanation_text += f"• Loss: {loss_value:.4f} - Lower values indicate better model fit to trial data.\n"
+                            if loss_value <= 0.3:
+                                explanation_text += "  → Excellent model fit. High confidence in results.\n"
+                            elif loss_value <= 0.5:
+                                explanation_text += "  → Good model fit. Reliable results.\n"
+                            elif loss_value <= 0.7:
+                                explanation_text += "  → Acceptable fit. Results should be validated.\n"
+                            else:
+                                explanation_text += "  → Poor fit. Consider additional data or analysis methods.\n"
+                        
+                        explanation_text += "\n"
                 
                 # Add model configuration summary
                 results_text += f"\nTRIAL CONFIGURATION:\n"
@@ -517,17 +561,47 @@ class ControllerClinicalTrial:
                 results_text += f"Target Features: {len(self.model_clinical.model.ludwig.target)}\n"
                 results_text += f"Patient Samples: {len(self.model_clinical.model.ludwig.df)}\n"
                 
+                # Combine results and explanations
+                full_text = results_text + explanation_text
+                
+                # Add clinical recommendation
+                full_text += "💊 CLINICAL INTERPRETATION:\n"
+                full_text += "-" * 40 + "\n"
+                
+                # Get primary metric for clinical interpretation
+                primary_metrics = None
+                for feature_name, metrics in eval_stats.items():
+                    if isinstance(metrics, dict) and feature_name != 'combined':
+                        primary_metrics = metrics
+                        break
+                
+                if primary_metrics and 'accuracy' in primary_metrics:
+                    acc = primary_metrics['accuracy']
+                    if acc >= 0.85:
+                        full_text += "✅ Strong evidence of treatment efficacy. Results support clinical significance.\n"
+                        full_text += "   Consider proceeding with regulatory submission or larger trials.\n"
+                    elif acc >= 0.75:
+                        full_text += "⚠️ Moderate evidence of treatment benefit. Consider additional validation studies.\n"
+                        full_text += "   Results show promise but may need confirmation in larger populations.\n"
+                    else:
+                        full_text += "❌ Limited evidence of treatment benefit. Consider alternative approaches.\n"
+                        full_text += "   Current data suggests treatment may not be significantly better than control.\n"
+                else:
+                    full_text += "ℹ️ Review the metrics above to assess treatment efficacy and clinical significance.\n"
+                
                 # Add clinical trial summary
                 if hasattr(self.model_clinical, 'get_summary'):
                     trial_summary = self.model_clinical.get_summary()
                     if trial_summary:
-                        results_text += f"\nTRIAL SUMMARY:\n"
-                        results_text += "-" * 40 + "\n"
+                        full_text += f"\n📋 TRIAL DETAILS:\n"
+                        full_text += "-" * 40 + "\n"
                         for key, value in trial_summary.items():
-                            results_text += f"{key}: {value}\n"
+                            full_text += f"{key}: {value}\n"
+                
+                full_text += "\n⚠️ Important: These results are based on computational analysis. Always consult with clinical experts and regulatory guidelines before making treatment decisions.\n"
                 
                 # Set the results in the outcome tab
-                self.textEdit_clinical_outcome.setText(results_text)
+                self.textEdit_clinical_outcome.setText(full_text)
                 
             except Exception as e:
                 error_text = f"Error displaying results:\n{str(e)}\n\nPlease ensure the model has been trained successfully."
