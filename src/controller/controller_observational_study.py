@@ -4,6 +4,7 @@ from PySide6.QtWidgets import QPushButton, QTabWidget, QListWidget, QLabel, QCom
 from datetime import datetime
 
 from my_ludwig.ludwig_data import input_feature_types, output_feature_types, separators, missing_data_options, metrics, goals
+from texts import text_manager
 
 class ControllerObservationalStudy:
     def __init__(self, ui, model_observational, controller):
@@ -40,6 +41,7 @@ class ControllerObservationalStudy:
 
         self._setup_signals()
         self._set_tabs_disabled()
+        self._setup_texts()
 
         self.tabWidget_observational.setCurrentIndex(1)
 
@@ -50,6 +52,15 @@ class ControllerObservationalStudy:
         self.pushButton_observational_criteria.clicked.connect(self._ok)
         self.pushButton_observational_settings.clicked.connect(self._ok)
         self.pushButton_observational_process.clicked.connect(self._ok)
+
+    def _setup_texts(self):
+        """
+        Inicializa todos los textos explicativos usando el sistema centralizado de textos.
+        """
+        # Configurar texto para la pestaña de variable primaria
+        textEdit_variable = self.ui.findChild(QTextEdit, "textEdit_observational_variable")
+        if textEdit_variable:
+            textEdit_variable.setHtml(text_manager.get_html_content('observational_study', 'primary_variable'))
 
     def _set_tabs_disabled(self):
         """ Disables all tabs except the first two. """
@@ -299,11 +310,11 @@ class ControllerObservationalStudy:
                                 results_text += f"  {metric_name}: {value}\n"
                         
                         # Add user-friendly explanations
-                        explanation_text += f"📊 {feature_name.upper()} Analysis:\n"
+                        explanation_text += f"[RESULTS] {feature_name.upper()} Analysis:\n"
                         
                         if 'accuracy' in metrics:
                             acc_value = metrics['accuracy']
-                            explanation_text += f"• Accuracy: {acc_value:.1%} - This shows how often our analysis correctly identifies patterns.\n"
+                            explanation_text += f"- Accuracy: {acc_value:.1%} - This shows how often our analysis correctly identifies patterns.\n"
                             if acc_value >= 0.9:
                                 explanation_text += "  → Excellent! The analysis is very reliable for this outcome.\n"
                             elif acc_value >= 0.8:
@@ -380,15 +391,15 @@ class ControllerObservationalStudy:
                 if primary_metrics and 'accuracy' in primary_metrics:
                     acc = primary_metrics['accuracy']
                     if acc >= 0.85:
-                        full_text += "✅ Strong evidence found in the observational data. Results can inform decision-making.\n"
+                        full_text += "[OK] Strong evidence found in the observational data. Results can inform decision-making.\n"
                     elif acc >= 0.75:
-                        full_text += "⚠️ Moderate evidence found. Consider collecting additional data for confirmation.\n"
+                        full_text += "[WARNING] Moderate evidence found. Consider collecting additional data for confirmation.\n"
                     else:
-                        full_text += "❌ Weak evidence in current data. Results should be interpreted cautiously.\n"
+                        full_text += "[ERROR] Weak evidence in current data. Results should be interpreted cautiously.\n"
                 else:
-                    full_text += "ℹ️ Review the metrics above to interpret the strength of observational findings.\n"
+                    full_text += "[INFO] Review the metrics above to interpret the strength of observational findings.\n"
                 
-                full_text += "\n💡 Note: Observational studies show associations, not causation. Consider controlled studies for causal conclusions.\n"
+                full_text += "\n* Note: Observational studies show associations, not causation. Consider controlled studies for causal conclusions.\n"
                 
                 # Set the results in the outcome tab
                 self.textEdit_observational_outcome.setText(full_text)

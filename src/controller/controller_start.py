@@ -1,6 +1,6 @@
 # controller/controller_start.py
 
-from PySide6.QtWidgets import QPushButton, QComboBox, QTabWidget, QInputDialog, QListWidget, QTextEdit, QFileDialog
+from PySide6.QtWidgets import QPushButton, QComboBox, QTabWidget, QInputDialog, QListWidget, QTextEdit, QFileDialog, QMessageBox
 import pandas as pd
 
 class ControllerStart:
@@ -82,6 +82,15 @@ class ControllerStart:
 
         # Tab 1: Options
         if self.tab == 1:
+            current_option = self.comboBox_start_options.currentText()
+            if not current_option or current_option == "":
+                QMessageBox.warning(
+                    None,
+                    "No Study Type Selected",
+                    "Please select a study type from the dropdown menu before continuing."
+                )
+                return
+            
             self._save_option() # Saves the selected option
             self._update_tab_project() # Updates the project tab
             self._next_tab() # Switches to the next tab
@@ -89,7 +98,16 @@ class ControllerStart:
 
         # Tab 2: Project
         if self.tab == 2:
-            if self.listWidget_start_project.currentItem().text() == "[New project]":
+            current_project = self.listWidget_start_project.currentItem()
+            if current_project is None:
+                QMessageBox.warning(
+                    None,
+                    "No Project Selected",
+                    "Please select a project from the list or create a new one before continuing."
+                )
+                return
+                
+            if current_project.text() == "[New project]":
                 self._new_project()
             else:
                 self._set_project() # Selects the project
@@ -99,7 +117,16 @@ class ControllerStart:
 
         # Tab 3: Data
         if self.tab == 3:
-            if self.listWidget_start_data.currentItem().text() == "[New dataset]":
+            current_data = self.listWidget_start_data.currentItem()
+            if current_data is None:
+                QMessageBox.warning(
+                    None,
+                    "No Dataset Selected",
+                    "Please select a dataset from the list or upload a new one before continuing."
+                )
+                return
+                
+            if current_data.text() == "[New dataset]":
                 self._load_dataset()
             else:
                 self._set_dataset() # Selects the dataset
@@ -109,6 +136,21 @@ class ControllerStart:
 
         # Tab 4: Status (now the last tab)
         if self.tab == 4:
+            # Optional confirmation before proceeding to analysis
+            reply = QMessageBox.question(
+                None,
+                "Ready to Begin Analysis",
+                f"You are about to start a {self.comboBox_start_options.currentText()} analysis.\n\n"
+                f"Project: {self.model_start.model.project_name if hasattr(self.model_start.model, 'project_name') else 'Unknown'}\n"
+                f"Dataset: {self.model_start.model.dataset_name if hasattr(self.model_start.model, 'dataset_name') else 'Unknown'}\n\n"
+                "Are you ready to proceed?",
+                QMessageBox.Yes | QMessageBox.No,
+                QMessageBox.Yes
+            )
+            
+            if reply == QMessageBox.No:
+                return
+                
             self._set_status() # Selects the status
             self._select_option() # Now executes the final option selection
             return
@@ -141,19 +183,39 @@ class ControllerStart:
         Creates a new project.
         """
         name, ok = QInputDialog.getText(self.ui, "New project", "Enter the project name:")
-        if ok and name:
-            np = self.model_start.new_project(name)
+        if ok and name.strip():  # Check for empty/whitespace names
+            np = self.model_start.new_project(name.strip())
             if np == None:
-                self.controller.popup_message(self.ui, "Project name exists", "This project name already exists. Please choose a different name.")
+                QMessageBox.warning(
+                    None,
+                    "Project Name Exists",
+                    "This project name already exists. Please choose a different name."
+                )
             else:
                 self._update_tab_project()
+                # Automatically select the new project
+                for i in range(self.listWidget_start_project.count()):
+                    if self.listWidget_start_project.item(i).text() == name.strip():
+                        self.listWidget_start_project.setCurrentRow(i)
+                        break
+        elif ok and not name.strip():
+            QMessageBox.warning(
+                None,
+                "Invalid Project Name",
+                "Project name cannot be empty. Please enter a valid name."
+            )
 
     def _set_project(self):
         """
         Reads the selected project from the list widget.
         """
-        selected_project = self.listWidget_start_project.currentItem().text()
+        current_item = self.listWidget_start_project.currentItem()
+        if current_item is None:
+            return False
+        
+        selected_project = current_item.text()
         self.model_start.set_project(selected_project)
+        return True
 
     def _update_tab_data(self):
         self.listWidget_start_data.clear()
@@ -169,16 +231,33 @@ class ControllerStart:
         # Open file dialog to select the CSV file
         origin_path, _ = QFileDialog.getOpenFileName(None, "Open CSV File", "", "CSV Files (*.csv)")
         if origin_path:
-            self.model_start.load_dataset(origin_path)
-
-        self._update_tab_data()
+            try:
+                self.model_start.load_dataset(origin_path)
+                self._update_tab_data()
+            except Exception as e:
+                QMessageBox.critical(
+                    None,
+                    "Error Loading Dataset",
+                    f"Failed to load the selected CSV file.\n\nError: {str(e)}\n\nPlease ensure the file is a valid CSV format."
+                )
+        else:
+            QMessageBox.information(
+                None,
+                "No File Selected",
+                "Please select a CSV file to upload or choose an existing dataset from the list."
+            )
 
     def _set_dataset(self):
         """
         Reads the selected dataset from the list widget.
         """
-        selected_dataset = self.listWidget_start_data.currentItem().text()
+        current_item = self.listWidget_start_data.currentItem()
+        if current_item is None:
+            return False
+        
+        selected_dataset = current_item.text()
         self.model_start.set_dataset(selected_dataset)
+        return True
 
     def _update_tab_status(self):
         self.textEdit_start_status_text.clear()
@@ -192,55 +271,55 @@ class ControllerStart:
             status_info.append("=== DATASET CHARACTERISTICS ===\n")
             
             # Basic information
-            status_info.append(f"📊 Dataset Shape: {df.shape[0]:,} rows × {df.shape[1]} columns")
-            status_info.append(f"💾 Memory Usage: {df.memory_usage(deep=True).sum() / 1024**2:.2f} MB")
-            status_info.append(f"📅 Dataset Name: {self.model_start.model.dataset_name if self.model_start.model.dataset_name else 'Unknown'}")
+            status_info.append(f"* Dataset Shape: {df.shape[0]:,} rows × {df.shape[1]} columns")
+            status_info.append(f"* Memory Usage: {df.memory_usage(deep=True).sum() / 1024**2:.2f} MB")
+            status_info.append(f"* Dataset Name: {self.model_start.model.dataset_name if self.model_start.model.dataset_name else 'Unknown'}")
             
             # Data types analysis
-            status_info.append("\n📈 DATA TYPES:")
+            status_info.append("\n+ DATA TYPES:")
             dtype_counts = df.dtypes.value_counts()
             for dtype, count in dtype_counts.items():
-                status_info.append(f"  • {dtype}: {count} columns")
+                status_info.append(f"  - {dtype}: {count} columns")
             
             # Missing data analysis
             missing_data = df.isnull().sum()
             total_missing = missing_data.sum()
             if total_missing > 0:
-                status_info.append(f"\n⚠️  MISSING DATA: {total_missing:,} total missing values")
+                status_info.append(f"\n! MISSING DATA: {total_missing:,} total missing values")
                 missing_cols = missing_data[missing_data > 0]
                 for col, missing_count in missing_cols.head(5).items():
                     percentage = (missing_count / len(df)) * 100
-                    status_info.append(f"  • {col}: {missing_count:,} ({percentage:.1f}%)")
+                    status_info.append(f"  - {col}: {missing_count:,} ({percentage:.1f}%)")
                 if len(missing_cols) > 5:
-                    status_info.append(f"  • ... and {len(missing_cols) - 5} more columns with missing data")
+                    status_info.append(f"  - ... and {len(missing_cols) - 5} more columns with missing data")
             else:
-                status_info.append("\n✅ MISSING DATA: No missing values detected")
+                status_info.append("\n+ MISSING DATA: No missing values detected")
             
             # Numeric columns statistics
             numeric_cols = df.select_dtypes(include=['int64', 'float64']).columns
             if len(numeric_cols) > 0:
-                status_info.append(f"\n🔢 NUMERIC COLUMNS ({len(numeric_cols)}):")
+                status_info.append(f"\n+ NUMERIC COLUMNS ({len(numeric_cols)}):")
                 for col in numeric_cols[:5]:  # Show first 5
                     min_val = df[col].min()
                     max_val = df[col].max()
                     mean_val = df[col].mean()
-                    status_info.append(f"  • {col}: Range [{min_val:.2f} - {max_val:.2f}], Mean: {mean_val:.2f}")
+                    status_info.append(f"  - {col}: Range [{min_val:.2f} - {max_val:.2f}], Mean: {mean_val:.2f}")
                 if len(numeric_cols) > 5:
-                    status_info.append(f"  • ... and {len(numeric_cols) - 5} more numeric columns")
+                    status_info.append(f"  - ... and {len(numeric_cols) - 5} more numeric columns")
             
             # Categorical columns analysis
             categorical_cols = df.select_dtypes(include=['object', 'category']).columns
             if len(categorical_cols) > 0:
-                status_info.append(f"\n📝 CATEGORICAL COLUMNS ({len(categorical_cols)}):")
+                status_info.append(f"\n+ CATEGORICAL COLUMNS ({len(categorical_cols)}):")
                 for col in categorical_cols[:5]:  # Show first 5
                     unique_count = df[col].nunique()
                     most_common = df[col].value_counts().iloc[0] if len(df[col].value_counts()) > 0 else 0
-                    status_info.append(f"  • {col}: {unique_count} unique values, Most frequent: {most_common} occurrences")
+                    status_info.append(f"  - {col}: {unique_count} unique values, Most frequent: {most_common} occurrences")
                 if len(categorical_cols) > 5:
-                    status_info.append(f"  • ... and {len(categorical_cols) - 5} more categorical columns")
+                    status_info.append(f"  - ... and {len(categorical_cols) - 5} more categorical columns")
             
             # Potential target variables (same logic as acceptable_stratify_variables)
-            status_info.append("\n🎯 POTENTIAL TARGET VARIABLES:")
+            status_info.append("\n+ POTENTIAL TARGET VARIABLES:")
             potential_targets = []
             for col in df.columns:
                 # Only consider categorical variables (same as acceptable_stratify_variables)
@@ -251,23 +330,23 @@ class ControllerStart:
             
             if potential_targets:
                 for col, unique_count in sorted(potential_targets, key=lambda x: x[1])[:3]:
-                    status_info.append(f"  • {col}: {unique_count} unique values")
+                    status_info.append(f"  - {col}: {unique_count} unique values")
             else:
-                status_info.append("  • No suitable categorical target variables found")
+                status_info.append("  - No suitable categorical target variables found")
             
             # Data quality assessment
-            status_info.append("\n✅ DATA QUALITY ASSESSMENT:")
+            status_info.append("\n+ DATA QUALITY ASSESSMENT:")
             if total_missing == 0:
-                status_info.append("  • ✅ Complete dataset (no missing values)")
+                status_info.append("  - + Complete dataset (no missing values)")
             elif total_missing / (df.shape[0] * df.shape[1]) < 0.05:
-                status_info.append("  • ✅ Good quality (< 5% missing data)")
+                status_info.append("  - + Good quality (< 5% missing data)")
             else:
-                status_info.append("  • ⚠️  Needs attention (≥ 5% missing data)")
+                status_info.append("  - ! Needs attention (>= 5% missing data)")
             
             if len(df) >= 1000:
-                status_info.append("  • ✅ Sufficient sample size for analysis")
+                status_info.append("  - + Sufficient sample size for analysis")
             else:
-                status_info.append("  • ⚠️  Small sample size - results may be less reliable")
+                status_info.append("  - ! Small sample size - results may be less reliable")
             
             self.textEdit_start_status_text.setPlainText("\n".join(status_info))
         else:

@@ -4,6 +4,7 @@ from PySide6.QtWidgets import QPushButton, QTabWidget, QListWidget, QLabel, QCom
 from datetime import datetime
 
 from my_ludwig.ludwig_data import input_feature_types, output_feature_types, separators, missing_data_options, metrics, goals
+from texts import text_manager
 
 class ControllerPatientRegistry:
     def __init__(self, ui, model_registry, controller):
@@ -41,6 +42,7 @@ class ControllerPatientRegistry:
 
         self._setup_signals()
         self._set_tabs_disabled()
+        self._setup_texts()
 
     def _setup_signals(self):
         """ Connect UI elements (buttons, etc.) to their respective slots. """
@@ -50,6 +52,15 @@ class ControllerPatientRegistry:
         self.pushButton_registry_criteria.clicked.connect(self._ok)
         self.pushButton_registry_settings.clicked.connect(self._ok)
         self.pushButton_registry_process.clicked.connect(self._ok)
+
+    def _setup_texts(self):
+        """
+        Inicializa todos los textos explicativos usando el sistema centralizado de textos.
+        """
+        # Configurar texto para la pestaña de variable primaria
+        textEdit_variable = self.ui.findChild(QTextEdit, "textEdit_registry_variable")
+        if textEdit_variable:
+            textEdit_variable.setHtml(text_manager.get_html_content('patient_registry', 'primary_variable'))
 
     def _set_tabs_disabled(self):
         """ Disables all tabs except the first two."""
@@ -299,35 +310,35 @@ class ControllerPatientRegistry:
                                 results_text += f"  {metric_name}: {value}\n"
                         
                         # Add user-friendly explanations
-                        explanation_text += f"📊 {feature_name.upper()} Performance:\n"
+                        explanation_text += f"[RESULTS] {feature_name.upper()} Performance:\n"
                         
                         if 'accuracy' in metrics:
                             acc_value = metrics['accuracy']
-                            explanation_text += f"• Accuracy: {acc_value:.1%} - This means the model correctly predicts the outcome {acc_value:.1%} of the time.\n"
+                            explanation_text += f"- Accuracy: {acc_value:.1%} - This means the model correctly predicts the outcome {acc_value:.1%} of the time.\n"
                             if acc_value >= 0.9:
-                                explanation_text += "  → Excellent! The model is very reliable.\n"
+                                explanation_text += "  > Excellent! The model is very reliable.\n"
                             elif acc_value >= 0.8:
-                                explanation_text += "  → Good performance for most practical applications.\n"
+                                explanation_text += "  > Good performance for most practical applications.\n"
                             elif acc_value >= 0.7:
-                                explanation_text += "  → Moderate performance. Consider reviewing the data quality.\n"
+                                explanation_text += "  > Moderate performance. Consider reviewing the data quality.\n"
                             else:
-                                explanation_text += "  → Low performance. The model may need improvement or more data.\n"
+                                explanation_text += "  > Low performance. The model may need improvement or more data.\n"
                         
                         if 'roc_auc' in metrics:
                             auc_value = metrics['roc_auc']
-                            explanation_text += f"• ROC AUC: {auc_value:.3f} - Measures how well the model distinguishes between different outcomes.\n"
+                            explanation_text += f"- ROC AUC: {auc_value:.3f} - Measures how well the model distinguishes between different outcomes.\n"
                             if auc_value >= 0.9:
-                                explanation_text += "  → Outstanding ability to distinguish between outcomes.\n"
+                                explanation_text += "  > Outstanding ability to distinguish between outcomes.\n"
                             elif auc_value >= 0.8:
-                                explanation_text += "  → Good discrimination ability.\n"
+                                explanation_text += "  > Good discrimination ability.\n"
                             elif auc_value >= 0.7:
-                                explanation_text += "  → Fair discrimination ability.\n"
+                                explanation_text += "  > Fair discrimination ability.\n"
                             else:
-                                explanation_text += "  → Poor discrimination. The model struggles to distinguish outcomes.\n"
+                                explanation_text += "  > Poor discrimination. The model struggles to distinguish outcomes.\n"
                         
                         if 'loss' in metrics:
                             loss_value = metrics['loss']
-                            explanation_text += f"• Loss: {loss_value:.4f} - Lower values indicate better model fit.\n"
+                            explanation_text += f"- Loss: {loss_value:.4f} - Lower values indicate better model fit.\n"
                             if loss_value <= 0.3:
                                 explanation_text += "  → Excellent model fit to the data.\n"
                             elif loss_value <= 0.5:
@@ -367,7 +378,7 @@ class ControllerPatientRegistry:
                 full_text = results_text + explanation_text
                 
                 # Add overall recommendation
-                full_text += "🎯 RECOMMENDATION:\n"
+                full_text += "[RECOMMENDATION]:\n"
                 full_text += "-" * 40 + "\n"
                 
                 # Get primary metric for recommendation
@@ -380,13 +391,13 @@ class ControllerPatientRegistry:
                 if primary_metrics and 'accuracy' in primary_metrics:
                     acc = primary_metrics['accuracy']
                     if acc >= 0.85:
-                        full_text += "✅ This model shows strong performance and can be used with confidence.\n"
+                        full_text += "[OK] This model shows strong performance and can be used with confidence.\n"
                     elif acc >= 0.75:
-                        full_text += "⚠️ This model shows decent performance but consider validating with new data.\n"
+                        full_text += "[WARNING] This model shows decent performance but consider validating with new data.\n"
                     else:
-                        full_text += "❌ This model shows poor performance. Consider collecting more data or reviewing features.\n"
+                        full_text += "[ERROR] This model shows poor performance. Consider collecting more data or reviewing features.\n"
                 else:
-                    full_text += "ℹ️ Review the metrics above to assess model performance.\n"
+                    full_text += "[INFO] Review the metrics above to assess model performance.\n"
                 
                 # Set the results in the outcome tab
                 self.textEdit_registry_outcome.setText(full_text)

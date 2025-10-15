@@ -2,8 +2,10 @@
 
 from PySide6.QtWidgets import QPushButton, QTabWidget, QListWidget, QLabel, QComboBox, QWidget, QHBoxLayout, QScrollArea, QTextEdit, QLineEdit, QSizePolicy, QMessageBox
 from datetime import datetime
+from datetime import datetime
 
 from my_ludwig.ludwig_data import input_feature_types, output_feature_types, separators, missing_data_options, metrics, goals
+from texts import text_manager
 
 class ControllerClinicalTrial:
     def __init__(self, ui, model_clinical, controller):
@@ -46,6 +48,15 @@ class ControllerClinicalTrial:
         self.scrollArea_clinical_disease = self.ui.findChild(QScrollArea, "scrollArea_clinical_disease")
         self.pushButton_clinical_disease_add = self.ui.findChild(QPushButton, "pushButton_clinical_disease_add")
         
+        # Settings tab
+        self.pushButton_clinical_settings = self.ui.findChild(QPushButton, "pushButton_clinical_settings")
+        scroll_area = self.ui.findChild(QScrollArea, "scrollArea_clinical_settings")
+        self.layout_clinical_settings = None
+        if scroll_area:
+            container = scroll_area.widget()
+            if container:
+                self.layout_clinical_settings = container.layout()
+        
         # Process tab
         self.textEdit_4 = self.ui.findChild(QTextEdit, "textEdit_4")
         self.pushButton_clinical_process = self.ui.findChild(QPushButton, "pushButton_clinical_process")
@@ -55,6 +66,7 @@ class ControllerClinicalTrial:
 
         self._setup_signals()
         self._set_tabs_disabled()
+        self._setup_texts()
         self._setup_scroll_areas()
 
     def _setup_signals(self):
@@ -67,7 +79,38 @@ class ControllerClinicalTrial:
         self.pushButton_clinical_investigational_add.clicked.connect(self._ok)
         self.pushButton_clinical_control_add.clicked.connect(self._ok)
         self.pushButton_clinical_disease_add.clicked.connect(self._ok)
+        if self.pushButton_clinical_settings:
+            self.pushButton_clinical_settings.clicked.connect(self._ok)
         self.pushButton_clinical_process.clicked.connect(self._ok)
+
+    def _setup_texts(self):
+        """
+        Inicializa todos los textos explicativos usando el sistema centralizado de textos.
+        """
+        # Buscar y configurar los QTextEdit de cada pestaña
+        textEdit_variable = self.ui.findChild(QTextEdit, "textEdit_clinical_variable")
+        if textEdit_variable:
+            textEdit_variable.setHtml(text_manager.get_html_content('clinical_trial', 'primary_variable'))
+        
+        textEdit_criteria = self.ui.findChild(QTextEdit, "textEdit_clinical_criteria")
+        if textEdit_criteria:
+            textEdit_criteria.setHtml(text_manager.get_html_content('clinical_trial', 'criteria'))
+        
+        textEdit_investigational = self.ui.findChild(QTextEdit, "textEdit_clinical_investigational")
+        if textEdit_investigational:
+            textEdit_investigational.setHtml(text_manager.get_html_content('clinical_trial', 'investigational_drug'))
+        
+        textEdit_control = self.ui.findChild(QTextEdit, "textEdit_clinical_control")
+        if textEdit_control:
+            textEdit_control.setHtml(text_manager.get_html_content('clinical_trial', 'control_drug'))
+        
+        textEdit_disease = self.ui.findChild(QTextEdit, "textEdit_clinical_disease")
+        if textEdit_disease:
+            textEdit_disease.setHtml(text_manager.get_html_content('clinical_trial', 'disease'))
+            
+        textEdit_settings = self.ui.findChild(QTextEdit, "textEdit_clinical_settings")
+        if textEdit_settings:
+            textEdit_settings.setHtml(text_manager.get_html_content('clinical_trial', 'settings'))
 
     def _set_tabs_disabled(self):
         """
@@ -99,6 +142,10 @@ class ControllerClinicalTrial:
             
             # Setup disease scroll area
             self._update_tab_disease()
+            
+            # Setup settings area
+            if self.layout_clinical_settings:
+                self._update_tab_settings()
 
     def _back_to_start(self):
         self.controller.change_page(0)
@@ -149,8 +196,14 @@ class ControllerClinicalTrial:
             self._next_tab()
             return
         
-        # Tab 6: Process
+        # Tab 6: Settings
         if self.tab == 6:
+            self._read_updated_settings()
+            self._next_tab()
+            return
+        
+        # Tab 7: Process
+        if self.tab == 7:
             self._update_process_summary()
             if self.model_clinical.is_ready_for_analysis():
                 try:
@@ -174,6 +227,8 @@ class ControllerClinicalTrial:
             self._update_tab_investigational()
             self._update_tab_control()
             self._update_tab_disease()
+            if self.layout_clinical_settings:
+                self._update_tab_settings()
         
     def _update_tab_variable(self):
         """Shows the variables in the dataset."""
@@ -226,7 +281,7 @@ class ControllerClinicalTrial:
     def _set_disease(self):
         """Set disease/disorder information."""
         self._read_updated_disease()
-        # Disease is optional, so always return True
+        # Disease information is optional - always allow progression
         return True
     
     def _update_process_summary(self):
@@ -247,6 +302,25 @@ class ControllerClinicalTrial:
         
         if self.model_clinical.disease:
             summary.append(f"Target Condition: {self.model_clinical.disease}")
+        
+        # Add settings information if available
+        if hasattr(self.model_clinical, 'model') and self.model_clinical.model and hasattr(self.model_clinical.model, 'ludwig'):
+            ludwig = self.model_clinical.model.ludwig
+            settings_info = []
+            
+            if hasattr(ludwig, 'separator') and ludwig.separator:
+                settings_info.append(f"Separator: {ludwig.separator}")
+            if hasattr(ludwig, 'missing_data') and ludwig.missing_data:
+                settings_info.append(f"Missing data handling: {ludwig.missing_data}")
+            if hasattr(ludwig, 'metric') and ludwig.metric:
+                settings_info.append(f"Evaluation metric: {ludwig.metric}")
+            if hasattr(ludwig, 'goal') and ludwig.goal:
+                settings_info.append(f"Optimization goal: {ludwig.goal}")
+            if hasattr(ludwig, 'runtime') and ludwig.runtime:
+                settings_info.append(f"Max runtime: {ludwig.runtime} seconds")
+            
+            if settings_info:
+                summary.append("Analysis Settings:\n" + "\n".join(settings_info))
         
         summary_text = "\n\n".join(summary) if summary else "No information collected yet."
         self.textEdit_4.setPlainText(summary_text)
@@ -317,7 +391,8 @@ class ControllerClinicalTrial:
             
             # Feature type selection
             feature_combo = QComboBox()
-            feature_combo.addItems(["ignore", "treatment_group", "drug_name", "dosage", "administration_route"])
+            feature_combo.addItems(["Ignore", "Investigational drug"])
+            feature_combo.setCurrentText("Ignore")  # Default to Ignore
             feature_combo.setObjectName(f"investigational_combo_{column}")
             h_layout.addWidget(feature_combo)
             
@@ -352,7 +427,8 @@ class ControllerClinicalTrial:
             
             # Feature type selection
             feature_combo = QComboBox()
-            feature_combo.addItems(["ignore", "control_group", "control_treatment", "placebo", "standard_care"])
+            feature_combo.addItems(["Ignore", "Control drug"])
+            feature_combo.setCurrentText("Ignore")  # Default to Ignore
             feature_combo.setObjectName(f"control_combo_{column}")
             h_layout.addWidget(feature_combo)
             
@@ -387,7 +463,8 @@ class ControllerClinicalTrial:
             
             # Feature type selection
             feature_combo = QComboBox()
-            feature_combo.addItems(["ignore", "disease_stage", "severity", "subtype", "diagnosis_code"])
+            feature_combo.addItems(["Ignore", "Disease/Disorder"])
+            feature_combo.setCurrentText("Ignore")  # Default to Ignore
             feature_combo.setObjectName(f"disease_combo_{column}")
             h_layout.addWidget(feature_combo)
             
@@ -395,6 +472,80 @@ class ControllerClinicalTrial:
             widget = QWidget()
             widget.setLayout(h_layout)
             layout.addWidget(widget)
+
+    def _update_tab_settings(self):
+        """Updates the settings tab with predefined configuration options depending on primary variable type."""
+        if not hasattr(self.model_clinical, 'model') or not self.model_clinical.model or self.model_clinical.model.df is None:
+            return
+        
+        if not self.layout_clinical_settings:
+            return
+            
+        target_type = next(iter(self.model_clinical.model.ludwig.target.values()))
+
+        settings = {
+            "Separator": [""] + separators,
+            "Missing-data": [""] + missing_data_options,
+            "Metric": metrics.get(target_type, []),
+            "Goal":  goals,
+            "Time-dependable": ["False", "True"]
+        }
+
+        while self.layout_clinical_settings.count():
+            item = self.layout_clinical_settings.takeAt(0)
+            if item.widget():
+                item.widget().deleteLater()
+
+        for label_text, options in settings.items():
+            row = QWidget()
+            row_layout = QHBoxLayout(row)
+
+            label = QLabel(label_text)
+            combo = QComboBox()
+            combo.addItems(options)
+
+            row_layout.addWidget(label)
+            row_layout.addWidget(combo)
+            self.layout_clinical_settings.addWidget(row)
+
+        row = QWidget()
+        row_layout = QHBoxLayout(row)
+
+        label = QLabel("runtime")
+        line_edit = QLineEdit()
+        line_edit.setPlaceholderText("Enter max runtime in seconds (Default: 7200)")
+        line_edit.setMaximumWidth(700)
+
+        row_layout.addWidget(label)
+        row_layout.addWidget(line_edit)
+        self.layout_clinical_settings.addWidget(row)
+
+    def _read_updated_settings(self):
+        """Reads the user-modified settings from the layout."""
+        if not hasattr(self, 'layout_clinical_settings'):
+            return
+
+        for i in range(self.layout_clinical_settings.count()):
+            row_widget = self.layout_clinical_settings.itemAt(i).widget()
+            if not row_widget:
+                continue
+            row_layout = row_widget.layout()
+            if not row_layout or row_layout.count() < 2:
+                continue
+
+            label = row_layout.itemAt(0).widget()
+            input_widget = row_layout.itemAt(1).widget()
+
+            key = label.text()
+
+            if isinstance(input_widget, QComboBox):
+                value = input_widget.currentText()
+            elif isinstance(input_widget, QLineEdit):
+                value = input_widget.text()
+            else:
+                continue  # Skip unknown widgets
+
+            setattr(self.model_clinical.model.ludwig, key, value)
 
     def _read_updated_criteria(self):
         """Reads the user-modified criteria from the layout."""
@@ -436,7 +587,7 @@ class ControllerClinicalTrial:
             combo = scroll_widget.findChild(QComboBox, f"investigational_combo_{column}")
             if combo:
                 selection = combo.currentText()
-                if selection != "ignore":
+                if selection != "Ignore" and selection != "":
                     drug_info.append(f"{selection}: {column}")
         
         self.model_clinical.investigational_drug = "; ".join(drug_info) if drug_info else "No investigational drug information specified"
@@ -455,7 +606,7 @@ class ControllerClinicalTrial:
             combo = scroll_widget.findChild(QComboBox, f"control_combo_{column}")
             if combo:
                 selection = combo.currentText()
-                if selection != "ignore":
+                if selection != "Ignore" and selection != "":
                     control_info.append(f"{selection}: {column}")
         
         self.model_clinical.control_drug = "; ".join(control_info) if control_info else "No control group information specified"
@@ -474,7 +625,7 @@ class ControllerClinicalTrial:
             combo = scroll_widget.findChild(QComboBox, f"disease_combo_{column}")
             if combo:
                 selection = combo.currentText()
-                if selection != "ignore":
+                if selection != "Ignore" and selection != "":
                     disease_info.append(f"{selection}: {column}")
         
         self.model_clinical.disease = "; ".join(disease_info) if disease_info else "No disease information specified"
@@ -587,7 +738,7 @@ class ControllerClinicalTrial:
                 full_text = results_text + explanation_text
                 
                 # Add clinical recommendation
-                full_text += "💊 CLINICAL INTERPRETATION:\n"
+                full_text += "[CLINICAL] CLINICAL INTERPRETATION:\n"
                 full_text += "-" * 40 + "\n"
                 
                 # Get primary metric for clinical interpretation
@@ -600,16 +751,16 @@ class ControllerClinicalTrial:
                 if primary_metrics and 'accuracy' in primary_metrics:
                     acc = primary_metrics['accuracy']
                     if acc >= 0.85:
-                        full_text += "✅ Strong evidence of treatment efficacy. Results support clinical significance.\n"
+                        full_text += "[OK] Strong evidence of treatment efficacy. Results support clinical significance.\n"
                         full_text += "   Consider proceeding with regulatory submission or larger trials.\n"
                     elif acc >= 0.75:
-                        full_text += "⚠️ Moderate evidence of treatment benefit. Consider additional validation studies.\n"
+                        full_text += "[WARNING] Moderate evidence of treatment benefit. Consider additional validation studies.\n"
                         full_text += "   Results show promise but may need confirmation in larger populations.\n"
                     else:
-                        full_text += "❌ Limited evidence of treatment benefit. Consider alternative approaches.\n"
+                        full_text += "[ERROR] Limited evidence of treatment benefit. Consider alternative approaches.\n"
                         full_text += "   Current data suggests treatment may not be significantly better than control.\n"
                 else:
-                    full_text += "ℹ️ Review the metrics above to assess treatment efficacy and clinical significance.\n"
+                    full_text += "[INFO] Review the metrics above to assess treatment efficacy and clinical significance.\n"
                 
                 # Add clinical trial summary
                 if hasattr(self.model_clinical, 'get_summary'):
@@ -620,7 +771,7 @@ class ControllerClinicalTrial:
                         for key, value in trial_summary.items():
                             full_text += f"{key}: {value}\n"
                 
-                full_text += "\n⚠️ Important: These results are based on computational analysis. Always consult with clinical experts and regulatory guidelines before making treatment decisions.\n"
+                full_text += "\n! Important: These results are based on computational analysis. Always consult with clinical experts and regulatory guidelines before making treatment decisions.\n"
                 
                 # Set the results in the outcome tab
                 self.textEdit_clinical_outcome.setText(full_text)
