@@ -61,6 +61,11 @@ class ControllerObservationalStudy:
         textEdit_variable = self.ui.findChild(QTextEdit, "textEdit_observational_variable")
         if textEdit_variable:
             textEdit_variable.setHtml(text_manager.get_html_content('observational_study', 'primary_variable'))
+        
+        # Configurar texto para la pestaña de settings
+        textEdit_settings = self.ui.findChild(QTextEdit, "textEdit_observational_settings")
+        if textEdit_settings:
+            textEdit_settings.setHtml(text_manager.get_html_content('observational_study', 'settings'))
 
     def _set_tabs_disabled(self):
         """ Disables all tabs except the first two. """

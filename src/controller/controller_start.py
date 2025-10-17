@@ -266,63 +266,85 @@ class ControllerStart:
         if hasattr(self.model_start.model, 'df') and self.model_start.model.df is not None:
             df = self.model_start.model.df
             
-            # Generate comprehensive dataset statistics
+            # Generate comprehensive dataset statistics in plain language
             status_info = []
-            status_info.append("=== DATASET CHARACTERISTICS ===\n")
+            status_info.append("=== DATASET SUMMARY ===\n")
             
             # Basic information
-            status_info.append(f"* Dataset Shape: {df.shape[0]:,} rows × {df.shape[1]} columns")
-            status_info.append(f"* Memory Usage: {df.memory_usage(deep=True).sum() / 1024**2:.2f} MB")
-            status_info.append(f"* Dataset Name: {self.model_start.model.dataset_name if self.model_start.model.dataset_name else 'Unknown'}")
+            status_info.append(f"[*] Size: {df.shape[0]:,} patients/records with {df.shape[1]} characteristics")
+            status_info.append(f"[*] File size: {df.memory_usage(deep=True).sum() / 1024**2:.2f} MB")
+            if self.model_start.model.dataset_name:
+                status_info.append(f"[*] Name: {self.model_start.model.dataset_name}")
             
-            # Data types analysis
-            status_info.append("\n+ DATA TYPES:")
-            dtype_counts = df.dtypes.value_counts()
-            for dtype, count in dtype_counts.items():
-                status_info.append(f"  - {dtype}: {count} columns")
+            # Data types analysis - simplified for non-experts
+            status_info.append("\n--- TYPES OF INFORMATION ---")
+            numeric_count = len(df.select_dtypes(include=['int64', 'float64']).columns)
+            categorical_count = len(df.select_dtypes(include=['object', 'category']).columns)
+            
+            if numeric_count > 0:
+                status_info.append(f"  > {numeric_count} numerical variables (measurements, counts, values)")
+            if categorical_count > 0:
+                status_info.append(f"  > {categorical_count} categorical variables (categories, labels, groups)")
             
             # Missing data analysis
             missing_data = df.isnull().sum()
             total_missing = missing_data.sum()
-            if total_missing > 0:
-                status_info.append(f"\n! MISSING DATA: {total_missing:,} total missing values")
-                missing_cols = missing_data[missing_data > 0]
-                for col, missing_count in missing_cols.head(5).items():
-                    percentage = (missing_count / len(df)) * 100
-                    status_info.append(f"  - {col}: {missing_count:,} ({percentage:.1f}%)")
-                if len(missing_cols) > 5:
-                    status_info.append(f"  - ... and {len(missing_cols) - 5} more columns with missing data")
-            else:
-                status_info.append("\n+ MISSING DATA: No missing values detected")
+            total_cells = df.shape[0] * df.shape[1]
+            missing_percentage = (total_missing / total_cells) * 100
             
-            # Numeric columns statistics
+            status_info.append("\n--- DATA COMPLETENESS ---")
+            if total_missing > 0:
+                status_info.append(f"  [!] {total_missing:,} missing values found ({missing_percentage:.1f}% of all data)")
+                missing_cols = missing_data[missing_data > 0]
+                status_info.append(f"  > {len(missing_cols)} variables have incomplete information")
+                
+                # Show columns with most missing data
+                top_missing = missing_cols.nlargest(3)
+                if len(top_missing) > 0:
+                    status_info.append("\n  Most affected variables:")
+                    for col, missing_count in top_missing.items():
+                        percentage = (missing_count / len(df)) * 100
+                        status_info.append(f"    - {col}: {percentage:.1f}% missing")
+            else:
+                status_info.append("  [OK] Complete dataset - no missing values")
+            
+            # Numeric columns statistics - simplified
             numeric_cols = df.select_dtypes(include=['int64', 'float64']).columns
             if len(numeric_cols) > 0:
-                status_info.append(f"\n+ NUMERIC COLUMNS ({len(numeric_cols)}):")
-                for col in numeric_cols[:5]:  # Show first 5
+                status_info.append(f"\n--- NUMERICAL VARIABLES ({len(numeric_cols)} total) ---")
+                status_info.append("  Examples of measured values:")
+                for col in numeric_cols[:3]:  # Show first 3
                     min_val = df[col].min()
                     max_val = df[col].max()
                     mean_val = df[col].mean()
-                    status_info.append(f"  - {col}: Range [{min_val:.2f} - {max_val:.2f}], Mean: {mean_val:.2f}")
-                if len(numeric_cols) > 5:
-                    status_info.append(f"  - ... and {len(numeric_cols) - 5} more numeric columns")
+                    status_info.append(f"    > {col}")
+                    status_info.append(f"      Range: {min_val:.2f} to {max_val:.2f} (average: {mean_val:.2f})")
+                if len(numeric_cols) > 3:
+                    status_info.append(f"    ... and {len(numeric_cols) - 3} more")
             
-            # Categorical columns analysis
+            # Categorical columns analysis - simplified
             categorical_cols = df.select_dtypes(include=['object', 'category']).columns
             if len(categorical_cols) > 0:
-                status_info.append(f"\n+ CATEGORICAL COLUMNS ({len(categorical_cols)}):")
-                for col in categorical_cols[:5]:  # Show first 5
+                status_info.append(f"\n--- CATEGORICAL VARIABLES ({len(categorical_cols)} total) ---")
+                status_info.append("  Examples of categories:")
+                for col in categorical_cols[:3]:  # Show first 3
                     unique_count = df[col].nunique()
-                    most_common = df[col].value_counts().iloc[0] if len(df[col].value_counts()) > 0 else 0
-                    status_info.append(f"  - {col}: {unique_count} unique values, Most frequent: {most_common} occurrences")
-                if len(categorical_cols) > 5:
-                    status_info.append(f"  - ... and {len(categorical_cols) - 5} more categorical columns")
+                    status_info.append(f"    > {col}: {unique_count} different categories")
+                    # Show most common category
+                    if len(df[col].value_counts()) > 0:
+                        top_category = df[col].value_counts().index[0]
+                        top_count = df[col].value_counts().iloc[0]
+                        top_percent = (top_count / len(df)) * 100
+                        status_info.append(f"      Most common: '{top_category}' ({top_percent:.1f}%)")
+                if len(categorical_cols) > 3:
+                    status_info.append(f"    ... and {len(categorical_cols) - 3} more")
             
-            # Potential target variables (same logic as acceptable_stratify_variables)
-            status_info.append("\n+ POTENTIAL TARGET VARIABLES:")
+            # Potential target variables
+            status_info.append("\n--- SUITABLE OUTCOME VARIABLES ---")
+            status_info.append("  (Variables that could be predicted)")
             potential_targets = []
             for col in df.columns:
-                # Only consider categorical variables (same as acceptable_stratify_variables)
+                # Only consider categorical variables
                 if pd.api.types.is_categorical_dtype(df[col]) or df[col].dtype == object:
                     counts = df[col].value_counts(dropna=True)
                     if len(counts) <= 10 and (counts >= 5).all():  # max_categories=10, min_samples=5
@@ -330,23 +352,49 @@ class ControllerStart:
             
             if potential_targets:
                 for col, unique_count in sorted(potential_targets, key=lambda x: x[1])[:3]:
-                    status_info.append(f"  - {col}: {unique_count} unique values")
+                    status_info.append(f"    > {col} ({unique_count} categories)")
             else:
-                status_info.append("  - No suitable categorical target variables found")
+                status_info.append("    [!] No suitable categorical variables found")
+                status_info.append("    Note: Outcome variable needs 2-10 categories with at least 5 examples each")
             
             # Data quality assessment
-            status_info.append("\n+ DATA QUALITY ASSESSMENT:")
-            if total_missing == 0:
-                status_info.append("  - + Complete dataset (no missing values)")
-            elif total_missing / (df.shape[0] * df.shape[1]) < 0.05:
-                status_info.append("  - + Good quality (< 5% missing data)")
-            else:
-                status_info.append("  - ! Needs attention (>= 5% missing data)")
+            status_info.append("\n--- OVERALL DATA QUALITY ---")
+            quality_score = 0
             
-            if len(df) >= 1000:
-                status_info.append("  - + Sufficient sample size for analysis")
+            # Check missing data
+            if total_missing == 0:
+                status_info.append("  [OK] Excellent: Complete dataset with no missing values")
+                quality_score += 1
+            elif missing_percentage < 5:
+                status_info.append("  [OK] Good: Very few missing values (< 5%)")
+                quality_score += 1
+            elif missing_percentage < 15:
+                status_info.append("  [!] Fair: Some missing data (5-15%) - may need attention")
             else:
-                status_info.append("  - ! Small sample size - results may be less reliable")
+                status_info.append("  [X] Poor: Significant missing data (> 15%) - preprocessing recommended")
+            
+            # Check sample size
+            if len(df) >= 1000:
+                status_info.append("  [OK] Good: Large sample size - reliable results expected")
+                quality_score += 1
+            elif len(df) >= 100:
+                status_info.append("  [!] Fair: Moderate sample size - results may vary")
+            else:
+                status_info.append("  [X] Small: Limited data - results may be unreliable")
+            
+            # Check variable balance
+            if len(numeric_cols) > 0 and len(categorical_cols) > 0:
+                status_info.append("  [OK] Good: Balanced mix of numerical and categorical data")
+                quality_score += 1
+            
+            # Overall recommendation
+            status_info.append("\n--- RECOMMENDATION ---")
+            if quality_score >= 3:
+                status_info.append("  [OK] Dataset is ready for analysis!")
+            elif quality_score >= 2:
+                status_info.append("  [!] Dataset can be used but may benefit from preprocessing")
+            else:
+                status_info.append("  [X] Consider data cleaning before analysis")
             
             self.textEdit_start_status_text.setPlainText("\n".join(status_info))
         else:
@@ -355,7 +403,7 @@ class ControllerStart:
             if self.model_start.model.status is not None:
                 self.textEdit_start_status_text.setPlainText(self.model_start.model.status)
             else:
-                self.textEdit_start_status_text.setPlainText("No dataset loaded yet. Please select a dataset from the Data tab to see automatic characteristics.")
+                self.textEdit_start_status_text.setPlainText("[*] No dataset loaded yet.\n\nPlease select a dataset from the Data tab to see its characteristics and quality assessment.")
 
     def _set_status(self):
         """ Reads the selected status from the list widget. """

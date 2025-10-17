@@ -61,6 +61,11 @@ class ControllerPatientRegistry:
         textEdit_variable = self.ui.findChild(QTextEdit, "textEdit_registry_variable")
         if textEdit_variable:
             textEdit_variable.setHtml(text_manager.get_html_content('patient_registry', 'primary_variable'))
+        
+        # Configurar texto para la pestaña de settings
+        textEdit_settings = self.ui.findChild(QTextEdit, "textEdit_registry_settings")
+        if textEdit_settings:
+            textEdit_settings.setHtml(text_manager.get_html_content('patient_registry', 'settings'))
 
     def _set_tabs_disabled(self):
         """ Disables all tabs except the first two."""
