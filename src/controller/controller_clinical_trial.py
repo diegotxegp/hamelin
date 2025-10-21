@@ -779,6 +779,22 @@ class ControllerClinicalTrial:
                 
                 full_text += "\n! Important: These results are based on computational analysis. Always consult with clinical experts and regulatory guidelines before making treatment decisions.\n"
                 
+                # Generate visualizations automatically after training
+                try:
+                    import os
+                    project_dir = self.model_clinical.model.project_dir
+                    output_dir = os.path.join(project_dir, "visualizations")
+                    
+                    # Generate performance chart
+                    self.model_clinical.model.ludwig.compare_performance(output_dir=output_dir)
+                    
+                    # Generate confusion matrix
+                    self.model_clinical.model.ludwig.confusion_matrix(output_dir=output_dir)
+                    
+                    full_text += "\n[VISUALIZATIONS] Performance chart and confusion matrix generated successfully.\n"
+                except Exception as viz_error:
+                    full_text += f"\n[WARNING] Could not generate visualizations: {str(viz_error)}\n"
+                
                 # Set the results in the outcome tab
                 self.textEdit_clinical_outcome.setText(full_text)
                 
@@ -859,20 +875,24 @@ class ControllerClinicalTrial:
                 from PySide6.QtWidgets import QMessageBox
                 import os
                 
-                # Get the project directory
+                # Get the project directory and target name
                 project_dir = self.model_clinical.model.project_dir
                 output_dir = os.path.join(project_dir, "visualizations")
                 
-                # Generate the performance chart
-                chart_path = self.model_clinical.model.ludwig.compare_performance(output_dir=output_dir)
+                # Get target name from model config
+                target = self.model_clinical.model.ludwig.model.config["output_features"]
+                target_name = list(target[0].keys())[0] if isinstance(target, list) else list(target.keys())[0]
                 
-                # Open the image using multiple fallback methods
+                # Construct path to pre-generated performance chart
+                chart_path = os.path.join(output_dir, f"compare_performance_{target_name}.png")
+                
+                # Open the pre-generated image
                 self._open_image_file(chart_path, "Performance Chart")
                 
             except Exception as e:
                 from PySide6.QtWidgets import QMessageBox
                 QMessageBox.critical(None, "Error", 
-                                   f"Error generating performance chart:\n{str(e)}")
+                                   f"Error opening performance chart:\n{str(e)}")
         else:
             from PySide6.QtWidgets import QMessageBox
             QMessageBox.warning(None, "No Model", 
@@ -884,21 +904,33 @@ class ControllerClinicalTrial:
             try:
                 from PySide6.QtWidgets import QMessageBox
                 import os
+                import glob
                 
-                # Get the project directory
+                # Get the project directory and target name
                 project_dir = self.model_clinical.model.project_dir
                 output_dir = os.path.join(project_dir, "visualizations")
                 
-                # Generate the confusion matrix
-                matrix_path = self.model_clinical.model.ludwig.confusion_matrix(output_dir=output_dir)
+                # Get target name from model config
+                target = self.model_clinical.model.ludwig.model.config["output_features"]
+                target_name = list(target[0].keys())[0] if isinstance(target, list) else list(target.keys())[0]
                 
-                # Open the image using multiple fallback methods
+                # Find pre-generated confusion matrix using glob pattern
+                pattern = os.path.join(output_dir, f"confusion_matrix__{target_name}_top*.png")
+                matching_files = glob.glob(pattern)
+                
+                if matching_files:
+                    matrix_path = matching_files[0]  # Use the first match
+                else:
+                    # Fallback to direct path
+                    matrix_path = os.path.join(output_dir, f"confusion_matrix_{target_name}.png")
+                
+                # Open the pre-generated image
                 self._open_image_file(matrix_path, "Confusion Matrix")
                 
             except Exception as e:
                 from PySide6.QtWidgets import QMessageBox
                 QMessageBox.critical(None, "Error", 
-                                   f"Error generating confusion matrix:\n{str(e)}")
+                                   f"Error opening confusion matrix:\n{str(e)}")
         else:
             from PySide6.QtWidgets import QMessageBox
             QMessageBox.warning(None, "No Model", 
