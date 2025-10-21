@@ -126,7 +126,13 @@ class Ludwig:
         self.model = LudwigModel(self.config)
         self.model.train(dataset=self.df)
 
-    def compare_performance(self):
+    def compare_performance(self, output_dir="results/visualizations"):
+        """Generate and save performance comparison chart."""
+        import os
+        
+        # Create output directory if it doesn't exist
+        os.makedirs(output_dir, exist_ok=True)
+        
         # Use the training dataset for evaluation (in a real scenario, use a separate test set)
         eval_stats, predictions, output_directory = self.model.evaluate(
             self.df,
@@ -139,15 +145,28 @@ class Ludwig:
             return_type="dict"
         )
 
+        # Get the target name (first output feature)
+        target_name = list(self.target.keys())[0] if isinstance(self.target, dict) else self.target
+
         compare_performance(
             eval_stats,
-            output_feature_name=self.target,
+            output_feature_name=target_name,
             model_names=None,
-            output_directory=None,
-            file_format='pdf'
+            output_directory=output_dir,
+            file_format='png'
         )
+        
+        # Ludwig generates the file as compare_performance_{target_name}.png
+        return os.path.join(output_dir, f"compare_performance_{target_name}.png")
 
-    def confusion_matrix(self):
+    def confusion_matrix(self, output_dir="results/visualizations"):
+        """Generate and save confusion matrix chart."""
+        import os
+        import glob
+        
+        # Create output directory if it doesn't exist
+        os.makedirs(output_dir, exist_ok=True)
+        
         # Use the training dataset for evaluation (in a real scenario, use a separate test set)
         eval_stats, predictions, output_directory = self.model.evaluate(
             self.df,
@@ -160,16 +179,31 @@ class Ludwig:
             return_type="dict"
         )
         
+        # Get the target name (first output feature)
+        target_name = list(self.target.keys())[0] if isinstance(self.target, dict) else self.target
+        
         confusion_matrix(
             [eval_stats],
             self.model.training_set_metadata,
-            output_feature_name = self.target,
-            top_n_classes = [10],
+            output_feature_name=target_name,
+            top_n_classes=[10],
             normalize=True,
             model_names=None,
-            output_directory=None,
-            file_format='pdf'
+            output_directory=output_dir,
+            file_format='png'
         )
+        
+        # Ludwig generates confusion matrix files with pattern: confusion_matrix__{target_name}_top*.png
+        # Search for the generated file
+        pattern = os.path.join(output_dir, f"confusion_matrix__{target_name}_top*.png")
+        matching_files = glob.glob(pattern)
+        
+        if matching_files:
+            # Return the first matching file (usually there's only one)
+            return matching_files[0]
+        else:
+            # Fallback to expected name if pattern search fails
+            return os.path.join(output_dir, f"confusion_matrix_{target_name}.png")
 
     def input_features_from_config(self):
         self.input_features = {i_f["column"]: i_f['type'] for i_f in self.config["input_features"]}

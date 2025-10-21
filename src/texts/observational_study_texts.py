@@ -44,6 +44,80 @@ OBSERVATIONAL_STUDY_TEXTS = {
         """
     },
     
+    "criteria": {
+        "title": "Variable Selection",
+        "content": """
+        <p style="font-size: 14pt; font-weight: bold; margin-bottom: 15px; text-align: center;">
+            Variable Selection and Configuration
+        </p>
+        
+        <p style="margin-bottom: 15px; text-align: justify;">
+            For each variable (column) in your observational study dataset, you need to specify <strong>two things</strong>:
+        </p>
+        
+        <p style="font-weight: bold; margin-bottom: 10px; font-size: 12pt;">
+            [1] Role in Analysis
+        </p>
+        
+        <p style="margin-left: 20px; margin-bottom: 10px; text-align: justify;">
+            Choose whether the variable will be used as:
+        </p>
+        
+        <p style="margin-left: 40px; margin-bottom: 5px;">
+            <strong>input:</strong> Variables that may be associated with the outcome (exposures, risk factors, characteristics)
+        </p>
+        
+        <p style="margin-left: 40px; margin-bottom: 5px;">
+            <strong>output:</strong> The outcome of interest you're studying (only one variable - your primary outcome)
+        </p>
+        
+        <p style="margin-left: 40px; margin-bottom: 15px;">
+            <strong>(blank):</strong> Leave empty to exclude variables that aren't relevant to your analysis
+        </p>
+        
+        <p style="font-weight: bold; margin-bottom: 10px; font-size: 12pt;">
+            [2] Data Type
+        </p>
+        
+        <p style="margin-left: 20px; margin-bottom: 10px; text-align: justify;">
+            Specify what kind of data the variable contains:
+        </p>
+        
+        <p style="margin-left: 40px; margin-bottom: 5px;">
+            <strong>binary:</strong> Yes/No, True/False, 0/1 (e.g., Exposed/Not exposed, Smoker/Non-smoker)
+        </p>
+        
+        <p style="margin-left: 40px; margin-bottom: 5px;">
+            <strong>category:</strong> Multiple distinct groups (e.g., Education level: High school, College, Graduate)
+        </p>
+        
+        <p style="margin-left: 40px; margin-bottom: 5px;">
+            <strong>number:</strong> Numerical measurements (e.g., BMI, income, years of exposure)
+        </p>
+        
+        <p style="margin-left: 40px; margin-bottom: 5px;">
+            <strong>text:</strong> Free text descriptions or narrative data
+        </p>
+        
+        <p style="margin-left: 40px; margin-bottom: 5px;">
+            <strong>date:</strong> Date or time information (e.g., Study entry date, exposure dates)
+        </p>
+        
+        <p style="margin-left: 40px; margin-bottom: 15px;">
+            <strong>Other types:</strong> bag, set, sequence, vector, audio, h3, image, timeseries (for specialized data)
+        </p>
+        
+        <p style="margin-top: 15px; font-style: italic; background-color: #fff3cd; padding: 10px; border-left: 4px solid #f0ad4e;">
+            <strong>Example:</strong> For "Smoking Status" with Current/Former/Never, select <strong>input</strong> + <strong>category</strong>. 
+            For "Years of Education" with numerical values, use <strong>input</strong> + <strong>number</strong>. Your outcome should be <strong>output</strong> + its type.
+        </p>
+        
+        <p style="margin-top: 15px; font-style: italic; background-color: #d1ecf1; padding: 10px; border-left: 4px solid #0c5460;">
+            <strong>Tip:</strong> Include all potential confounders and exposures. Remember: associations found do not prove causation in observational studies.
+        </p>
+        """
+    },
+    
     "settings": {
         "title": "Analysis Settings",
         "content": """

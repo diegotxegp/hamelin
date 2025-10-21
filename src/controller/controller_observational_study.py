@@ -30,6 +30,8 @@ class ControllerObservationalStudy:
         self.textEdit_observational_process_summary = self.ui.findChild(QTextEdit, "textEdit_observational_process_summary")
         self.pushButton_observational_process = self.ui.findChild(QPushButton, "pushButton_observational_process")
         self.textEdit_observational_outcome = self.ui.findChild(QTextEdit, "textEdit_observational_outcome")
+        self.pushButton_observational_performance = self.ui.findChild(QPushButton, "pushButton_observational_performance")
+        self.pushButton_observational_confusion_matrix = self.ui.findChild(QPushButton, "pushButton_observational_confusion_matrix")
 
         scroll_area = self.ui.findChild(QScrollArea, "scrollArea_observational_criteria")
         container = scroll_area.widget()
@@ -52,6 +54,10 @@ class ControllerObservationalStudy:
         self.pushButton_observational_criteria.clicked.connect(self._ok)
         self.pushButton_observational_settings.clicked.connect(self._ok)
         self.pushButton_observational_process.clicked.connect(self._ok)
+        
+        # Connect visualization buttons
+        self.pushButton_observational_performance.clicked.connect(self._show_performance_chart)
+        self.pushButton_observational_confusion_matrix.clicked.connect(self._show_confusion_matrix)
 
     def _setup_texts(self):
         """
@@ -61,6 +67,11 @@ class ControllerObservationalStudy:
         textEdit_variable = self.ui.findChild(QTextEdit, "textEdit_observational_variable")
         if textEdit_variable:
             textEdit_variable.setHtml(text_manager.get_html_content('observational_study', 'primary_variable'))
+        
+        # Configurar texto para la pestaña de criteria
+        textEdit_criteria = self.ui.findChild(QTextEdit, "textEdit_observational_criteria")
+        if textEdit_criteria:
+            textEdit_criteria.setHtml(text_manager.get_html_content('observational_study', 'criteria'))
         
         # Configurar texto para la pestaña de settings
         textEdit_settings = self.ui.findChild(QTextEdit, "textEdit_observational_settings")
@@ -410,7 +421,123 @@ class ControllerObservationalStudy:
                 self.textEdit_observational_outcome.setText(full_text)
                 
             except Exception as e:
-                error_text = f"Error displaying results:\n{str(e)}\n\nPlease ensure the model has been trained successfully."
+                error_text = f"Error displaying results:\n{str(e)}\n\nPlease ensure the analysis has been completed successfully."
                 self.textEdit_observational_outcome.setText(error_text)
         else:
             self.textEdit_observational_outcome.setText("No trained model available. Please complete the training process first.")
+
+    def _open_image_file(self, image_path, title="Visualization"):
+        """
+        Open an image file using multiple fallback methods.
+        """
+        from PySide6.QtWidgets import QMessageBox, QDialog, QVBoxLayout, QLabel, QPushButton
+        from PySide6.QtGui import QDesktopServices, QPixmap
+        from PySide6.QtCore import QUrl, Qt
+        import subprocess
+        import os
+        
+        if not os.path.exists(image_path):
+            QMessageBox.warning(None, "File Not Found", 
+                              f"Image file not found:\n{image_path}")
+            return
+        
+        # Method 1: Try QDesktopServices (default system viewer)
+        try:
+            if QDesktopServices.openUrl(QUrl.fromLocalFile(image_path)):
+                return  # Success
+        except:
+            pass
+        
+        # Method 2: Try common Linux image viewers
+        viewers = ['eog', 'feh', 'gwenview', 'gpicview', 'ristretto', 'display', 'xdg-open']
+        for viewer in viewers:
+            try:
+                subprocess.Popen([viewer, image_path], 
+                               stdout=subprocess.DEVNULL, 
+                               stderr=subprocess.DEVNULL)
+                return  # Success
+            except FileNotFoundError:
+                continue
+        
+        # Method 3: Show image in Qt dialog as fallback
+        try:
+            dialog = QDialog()
+            dialog.setWindowTitle(title)
+            dialog.setMinimumSize(800, 600)
+            
+            layout = QVBoxLayout()
+            
+            # Load and display image
+            label = QLabel()
+            pixmap = QPixmap(image_path)
+            
+            # Scale image to fit dialog while maintaining aspect ratio
+            scaled_pixmap = pixmap.scaled(780, 550, Qt.KeepAspectRatio, Qt.SmoothTransformation)
+            label.setPixmap(scaled_pixmap)
+            label.setAlignment(Qt.AlignCenter)
+            
+            layout.addWidget(label)
+            
+            # Add close button
+            close_btn = QPushButton("Close")
+            close_btn.clicked.connect(dialog.accept)
+            layout.addWidget(close_btn)
+            
+            dialog.setLayout(layout)
+            dialog.exec()
+            return  # Success
+        except Exception as e:
+            QMessageBox.critical(None, "Error", 
+                               f"Unable to display image.\nError: {str(e)}\n\nFile location:\n{image_path}")
+
+    def _show_performance_chart(self):
+        """Display the performance chart generated by Ludwig."""
+        if hasattr(self.model_observational.model, 'ludwig') and hasattr(self.model_observational.model.ludwig, 'model'):
+            try:
+                from PySide6.QtWidgets import QMessageBox
+                import os
+                
+                # Get the project directory
+                project_dir = self.model_observational.model.project_dir
+                output_dir = os.path.join(project_dir, "visualizations")
+                
+                # Generate the performance chart
+                chart_path = self.model_observational.model.ludwig.compare_performance(output_dir=output_dir)
+                
+                # Open the image using multiple fallback methods
+                self._open_image_file(chart_path, "Performance Chart")
+                
+            except Exception as e:
+                from PySide6.QtWidgets import QMessageBox
+                QMessageBox.critical(None, "Error", 
+                                   f"Error generating performance chart:\n{str(e)}")
+        else:
+            from PySide6.QtWidgets import QMessageBox
+            QMessageBox.warning(None, "No Model", 
+                              "No trained model available. Please complete the training process first.")
+
+    def _show_confusion_matrix(self):
+        """Display the confusion matrix generated by Ludwig."""
+        if hasattr(self.model_observational.model, 'ludwig') and hasattr(self.model_observational.model.ludwig, 'model'):
+            try:
+                from PySide6.QtWidgets import QMessageBox
+                import os
+                
+                # Get the project directory
+                project_dir = self.model_observational.model.project_dir
+                output_dir = os.path.join(project_dir, "visualizations")
+                
+                # Generate the confusion matrix
+                matrix_path = self.model_observational.model.ludwig.confusion_matrix(output_dir=output_dir)
+                
+                # Open the image using multiple fallback methods
+                self._open_image_file(matrix_path, "Confusion Matrix")
+                
+            except Exception as e:
+                from PySide6.QtWidgets import QMessageBox
+                QMessageBox.critical(None, "Error", 
+                                   f"Error generating confusion matrix:\n{str(e)}")
+        else:
+            from PySide6.QtWidgets import QMessageBox
+            QMessageBox.warning(None, "No Model", 
+                              "No trained model available. Please complete the training process first.")

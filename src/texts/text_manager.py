@@ -5,6 +5,7 @@ Centralized text manager for the HAMELIN application
 This module allows loading and managing all user interface texts
 """
 
+import re
 from .clinical_trial_texts import CLINICAL_TRIAL_TEXTS
 from .patient_registry_texts import PATIENT_REGISTRY_TEXTS
 from .observational_study_texts import OBSERVATIONAL_STUDY_TEXTS
@@ -50,6 +51,15 @@ class TextManager:
             str: Complete HTML to display in QTextEdit
         """
         content = self.get_text(section, subsection, 'content')
+        
+        # Limpiar espacios extra del contenido HTML
+        # Eliminar espacios al inicio y final de cada línea
+        content = '\n'.join(line.strip() for line in content.split('\n'))
+        # Eliminar múltiples espacios consecutivos
+        content = re.sub(r'\s+', ' ', content)
+        # Eliminar espacios alrededor de tags HTML
+        content = re.sub(r'>\s+<', '><', content)
+        content = content.strip()
         
         # HTML wrapper with base styles
         html_template = '''<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">

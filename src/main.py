@@ -1,5 +1,9 @@
 import os
 import sys
+
+# Forzar el uso de X11 en lugar de Wayland para evitar errores de display
+os.environ['QT_QPA_PLATFORM'] = 'xcb'
+
 from PySide6.QtWidgets import QApplication
 from utils.ui_to_py_converter import convert_ui_to_py
 from controller.controller import Controller

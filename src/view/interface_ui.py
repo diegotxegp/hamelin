@@ -16,11 +16,11 @@ from PySide6.QtGui import (QAction, QBrush, QColor, QConicalGradient,
     QIcon, QImage, QKeySequence, QLinearGradient,
     QPainter, QPalette, QPixmap, QRadialGradient,
     QTransform)
-from PySide6.QtWidgets import (QApplication, QComboBox, QGridLayout, QLineEdit,
-    QListWidget, QListWidgetItem, QMainWindow, QMenu,
-    QMenuBar, QPushButton, QScrollArea, QSizePolicy,
-    QStackedWidget, QStatusBar, QTabWidget, QTextEdit,
-    QVBoxLayout, QWidget)
+from PySide6.QtWidgets import (QApplication, QComboBox, QGridLayout, QHBoxLayout,
+    QLineEdit, QListWidget, QListWidgetItem, QMainWindow,
+    QMenu, QMenuBar, QPushButton, QScrollArea,
+    QSizePolicy, QSpacerItem, QStackedWidget, QStatusBar,
+    QTabWidget, QTextEdit, QVBoxLayout, QWidget)
 
 class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
@@ -303,6 +303,29 @@ class Ui_MainWindow(object):
 
         self.gridLayout_14.addWidget(self.textEdit_registry_outcome, 0, 0, 1, 1)
 
+        self.horizontalLayout_registry_outcome = QHBoxLayout()
+        self.horizontalLayout_registry_outcome.setObjectName(u"horizontalLayout_registry_outcome")
+        self.horizontalSpacer_registry_outcome_left = QSpacerItem(40, 20, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
+
+        self.horizontalLayout_registry_outcome.addItem(self.horizontalSpacer_registry_outcome_left)
+
+        self.pushButton_registry_performance = QPushButton(self.tab_registry_outcome)
+        self.pushButton_registry_performance.setObjectName(u"pushButton_registry_performance")
+
+        self.horizontalLayout_registry_outcome.addWidget(self.pushButton_registry_performance)
+
+        self.pushButton_registry_confusion_matrix = QPushButton(self.tab_registry_outcome)
+        self.pushButton_registry_confusion_matrix.setObjectName(u"pushButton_registry_confusion_matrix")
+
+        self.horizontalLayout_registry_outcome.addWidget(self.pushButton_registry_confusion_matrix)
+
+        self.horizontalSpacer_registry_outcome_right = QSpacerItem(40, 20, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
+
+        self.horizontalLayout_registry_outcome.addItem(self.horizontalSpacer_registry_outcome_right)
+
+
+        self.gridLayout_14.addLayout(self.horizontalLayout_registry_outcome, 1, 0, 1, 1)
+
         self.tabWidget_registry.addTab(self.tab_registry_outcome, "")
 
         self.gridLayout_7.addWidget(self.tabWidget_registry, 1, 0, 1, 1)
@@ -446,6 +469,29 @@ class Ui_MainWindow(object):
         self.textEdit_observational_outcome.setReadOnly(True)
 
         self.gridLayout_19.addWidget(self.textEdit_observational_outcome, 0, 0, 1, 1)
+
+        self.horizontalLayout_observational_outcome = QHBoxLayout()
+        self.horizontalLayout_observational_outcome.setObjectName(u"horizontalLayout_observational_outcome")
+        self.horizontalSpacer_observational_outcome_left = QSpacerItem(40, 20, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
+
+        self.horizontalLayout_observational_outcome.addItem(self.horizontalSpacer_observational_outcome_left)
+
+        self.pushButton_observational_performance = QPushButton(self.tab_observational_outcome)
+        self.pushButton_observational_performance.setObjectName(u"pushButton_observational_performance")
+
+        self.horizontalLayout_observational_outcome.addWidget(self.pushButton_observational_performance)
+
+        self.pushButton_observational_confusion_matrix = QPushButton(self.tab_observational_outcome)
+        self.pushButton_observational_confusion_matrix.setObjectName(u"pushButton_observational_confusion_matrix")
+
+        self.horizontalLayout_observational_outcome.addWidget(self.pushButton_observational_confusion_matrix)
+
+        self.horizontalSpacer_observational_outcome_right = QSpacerItem(40, 20, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
+
+        self.horizontalLayout_observational_outcome.addItem(self.horizontalSpacer_observational_outcome_right)
+
+
+        self.gridLayout_19.addLayout(self.horizontalLayout_observational_outcome, 1, 0, 1, 1)
 
         self.tabWidget_observational.addTab(self.tab_observational_outcome, "")
 
@@ -644,6 +690,29 @@ class Ui_MainWindow(object):
 
         self.gridLayout_25.addWidget(self.textEdit_clinical_outcome, 0, 0, 1, 1)
 
+        self.horizontalLayout_clinical_outcome = QHBoxLayout()
+        self.horizontalLayout_clinical_outcome.setObjectName(u"horizontalLayout_clinical_outcome")
+        self.horizontalSpacer_clinical_outcome_left = QSpacerItem(40, 20, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
+
+        self.horizontalLayout_clinical_outcome.addItem(self.horizontalSpacer_clinical_outcome_left)
+
+        self.pushButton_clinical_performance = QPushButton(self.tab_clinical_outcome)
+        self.pushButton_clinical_performance.setObjectName(u"pushButton_clinical_performance")
+
+        self.horizontalLayout_clinical_outcome.addWidget(self.pushButton_clinical_performance)
+
+        self.pushButton_clinical_confusion_matrix = QPushButton(self.tab_clinical_outcome)
+        self.pushButton_clinical_confusion_matrix.setObjectName(u"pushButton_clinical_confusion_matrix")
+
+        self.horizontalLayout_clinical_outcome.addWidget(self.pushButton_clinical_confusion_matrix)
+
+        self.horizontalSpacer_clinical_outcome_right = QSpacerItem(40, 20, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
+
+        self.horizontalLayout_clinical_outcome.addItem(self.horizontalSpacer_clinical_outcome_right)
+
+
+        self.gridLayout_25.addLayout(self.horizontalLayout_clinical_outcome, 1, 0, 1, 1)
+
         self.tabWidget_clinical.addTab(self.tab_clinical_outcome, "")
 
         self.gridLayout_20.addWidget(self.tabWidget_clinical, 1, 0, 1, 1)
@@ -765,18 +834,12 @@ class Ui_MainWindow(object):
 "li.unchecked::marker { content: \"\\2610\"; }\n"
 "li.checked::marker { content: \"\\2612\"; }\n"
 "</style></head><body style=\" font-family:'Sans Serif'; font-size:9pt; font-weight:400; font-style:normal;\">\n"
-"<p align=\"center\" style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-size:12pt; font-weight:600;\">Dataset Status & Information</span></p>\n"
+"<p align=\"center\" style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-size:12pt; font-weight:600;\">Project Status</span></p>\n"
 "<p align=\"center\" style=\"-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><br /></p>\n"
 "<p align=\"center\" style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-ind"
-                        "ent:0px;\"><span style=\" font-size:10pt;\">This section displays an <strong>automatic summary</strong> of your selected dataset, including:</span></p>\n"
+                        "ent:0px;\"><span style=\" font-size:10pt;\">Here you can review the current status of your project and add notes or comments about the progress of your research.</span></p>\n"
 "<p align=\"center\" style=\"-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><br /></p>\n"
-"<p align=\"center\" style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-size:10pt;\">[*] Dataset size and structure</span></p>\n"
-"<p align=\"center\" style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-size:10pt;\">[*] Variable types and examples</span></p>\n"
-"<p align=\"center\" style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-size:10pt;\">[*] Data quality assessment</span></p>\n"
-"<p align=\"center\" style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-size:10pt;\">[*] Suitable outcome variables</span></p>\n"
-"<p align=\"center\" style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-size:10pt;\">[*] Recommendations for analysis</span></p>\n"
-"<p align=\"center\" style=\"-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><br /></p>\n"
-"<p align=\"center\" style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-size:10pt; font-style:italic;\">You can also add your own notes and comments about the dataset or project progress. All information will be saved with your project.</span></p></body></html>", None))
+"<p align=\"center\" style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-size:10pt;\">This information will be saved and help you remember where you left off when you return to work on this project.</span></p></body></html>", None))
         self.tabWidget_start.setTabText(self.tabWidget_start.indexOf(self.tab_start_status), QCoreApplication.translate("MainWindow", u"Status", None))
         self.lineEdit_start_title.setText(QCoreApplication.translate("MainWindow", u"Start", None))
         self.lineEdit_registry_title.setText(QCoreApplication.translate("MainWindow", u"Patient registry", None))
@@ -867,6 +930,8 @@ class Ui_MainWindow(object):
 "li.checked::marker { content: \"\\2612\"; }\n"
 "</style></head><body style=\" font-family:'Sans Serif'; font-size:9pt; font-weight:400; font-style:normal;\">\n"
 "<p align=\"center\" style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-size:12pt;\">Outcome</span></p></body></html>", None))
+        self.pushButton_registry_performance.setText(QCoreApplication.translate("MainWindow", u"Show Performance Chart", None))
+        self.pushButton_registry_confusion_matrix.setText(QCoreApplication.translate("MainWindow", u"Show Confusion Matrix", None))
         self.tabWidget_registry.setTabText(self.tabWidget_registry.indexOf(self.tab_registry_outcome), QCoreApplication.translate("MainWindow", u"Outcome", None))
         self.textEdit_observational_start.setHtml(QCoreApplication.translate("MainWindow", u"<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0//EN\" \"http://www.w3.org/TR/REC-html40/strict.dtd\">\n"
 "<html><head><meta name=\"qrichtext\" content=\"1\" /><meta charset=\"utf-8\" /><style type=\"text/css\">\n"
@@ -961,6 +1026,8 @@ class Ui_MainWindow(object):
 "li.checked::marker { content: \"\\2612\"; }\n"
 "</style></head><body style=\" font-family:'Sans Serif'; font-size:9pt; font-weight:400; font-style:normal;\">\n"
 "<p align=\"center\" style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-size:12pt;\">Outcome</span></p></body></html>", None))
+        self.pushButton_observational_performance.setText(QCoreApplication.translate("MainWindow", u"Show Performance Chart", None))
+        self.pushButton_observational_confusion_matrix.setText(QCoreApplication.translate("MainWindow", u"Show Confusion Matrix", None))
         self.tabWidget_observational.setTabText(self.tabWidget_observational.indexOf(self.tab_observational_outcome), QCoreApplication.translate("MainWindow", u"Outcome", None))
         self.lineEdit_observational_title.setText(QCoreApplication.translate("MainWindow", u"Observational study", None))
         self.textEdit_clinical_start.setHtml(QCoreApplication.translate("MainWindow", u"<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0//EN\" \"http://www.w3.org/TR/REC-html40/strict.dtd\">\n"
@@ -1126,6 +1193,8 @@ class Ui_MainWindow(object):
 "<p style=\" margin-top:12px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\">Your clinical trial analysis is complete. The results below show treatment efficacy, safety profile, and predictive insights from your study data.</p>\n"
 "<p style=\" margin-top:12px; margin-bottom:"
                         "0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-weight:600;\">Results include:</span> Treatment comparison outcomes, statistical significance, safety analysis, and patient subgroup insights.</p></body></html>", None))
+        self.pushButton_clinical_performance.setText(QCoreApplication.translate("MainWindow", u"Show Performance Chart", None))
+        self.pushButton_clinical_confusion_matrix.setText(QCoreApplication.translate("MainWindow", u"Show Confusion Matrix", None))
         self.tabWidget_clinical.setTabText(self.tabWidget_clinical.indexOf(self.tab_clinical_outcome), QCoreApplication.translate("MainWindow", u"Outcome", None))
         self.lineEdit_clinical_title.setText(QCoreApplication.translate("MainWindow", u"Clinical trial", None))
         self.menuFile.setTitle(QCoreApplication.translate("MainWindow", u"File", None))

@@ -74,6 +74,80 @@ PATIENT_REGISTRY_TEXTS = {
         """
     },
     
+    "criteria": {
+        "title": "Variable Selection",
+        "content": """
+        <p style="font-size: 14pt; font-weight: bold; margin-bottom: 15px; text-align: center;">
+            Variable Selection and Configuration
+        </p>
+        
+        <p style="margin-bottom: 15px; text-align: justify;">
+            For each variable (column) in your patient registry, you need to specify <strong>two things</strong>:
+        </p>
+        
+        <p style="font-weight: bold; margin-bottom: 10px; font-size: 12pt;">
+            [1] Role in Analysis
+        </p>
+        
+        <p style="margin-left: 20px; margin-bottom: 10px; text-align: justify;">
+            Choose whether the variable will be used as:
+        </p>
+        
+        <p style="margin-left: 40px; margin-bottom: 5px;">
+            <strong>input:</strong> Variables used to make predictions (patient characteristics, clinical measurements, demographics)
+        </p>
+        
+        <p style="margin-left: 40px; margin-bottom: 5px;">
+            <strong>output:</strong> The outcome you want to predict (only your primary variable)
+        </p>
+        
+        <p style="margin-left: 40px; margin-bottom: 15px;">
+            <strong>(blank):</strong> Leave empty to exclude variables you don't want to use
+        </p>
+        
+        <p style="font-weight: bold; margin-bottom: 10px; font-size: 12pt;">
+            [2] Data Type
+        </p>
+        
+        <p style="margin-left: 20px; margin-bottom: 10px; text-align: justify;">
+            Specify what kind of data the variable contains:
+        </p>
+        
+        <p style="margin-left: 40px; margin-bottom: 5px;">
+            <strong>binary:</strong> Yes/No, True/False, 0/1 (e.g., Event occurred/not occurred)
+        </p>
+        
+        <p style="margin-left: 40px; margin-bottom: 5px;">
+            <strong>category:</strong> Multiple distinct groups (e.g., Disease severity: Mild, Moderate, Severe)
+        </p>
+        
+        <p style="margin-left: 40px; margin-bottom: 5px;">
+            <strong>number:</strong> Numerical measurements (e.g., Age, lab values, questionnaire scores)
+        </p>
+        
+        <p style="margin-left: 40px; margin-bottom: 5px;">
+            <strong>text:</strong> Free text descriptions or medical notes
+        </p>
+        
+        <p style="margin-left: 40px; margin-bottom: 5px;">
+            <strong>date:</strong> Date or time information (e.g., Visit dates, diagnosis dates)
+        </p>
+        
+        <p style="margin-left: 40px; margin-bottom: 15px;">
+            <strong>Other types:</strong> bag, set, sequence, vector, audio, h3, image, timeseries (for specialized data)
+        </p>
+        
+        <p style="margin-top: 15px; font-style: italic; background-color: #fff3cd; padding: 10px; border-left: 4px solid #f0ad4e;">
+            <strong>Example:</strong> For "Patient Status" with values Alive/Deceased, select <strong>input</strong> + <strong>binary</strong>. 
+            For "Hospital Admissions" with a count, use <strong>input</strong> + <strong>number</strong>. Your primary variable should be <strong>output</strong> + its type.
+        </p>
+        
+        <p style="margin-top: 15px; font-style: italic; background-color: #d1ecf1; padding: 10px; border-left: 4px solid #0c5460;">
+            <strong>Tip:</strong> Include all clinical variables that might influence the outcome. Patient identifiers or administrative codes can be left blank.
+        </p>
+        """
+    },
+    
     "settings": {
         "title": "Analysis Settings",
         "content": """
