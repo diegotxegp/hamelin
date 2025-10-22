@@ -212,6 +212,19 @@ class ControllerClinicalTrial:
         if self.tab == 7:
             self._update_process_summary()
             if self.model_clinical.is_ready_for_analysis():
+                # Show confirmation dialog before training
+                reply = QMessageBox.question(
+                    None,
+                    "Confirm Training",
+                    "Are you sure you want to start the model training?\n\n"
+                    "This process may take several minutes depending on your data size and settings.",
+                    QMessageBox.Yes | QMessageBox.No,
+                    QMessageBox.No
+                )
+                
+                if reply == QMessageBox.No:
+                    return  # User cancelled, don't proceed
+                
                 try:
                     self.model_clinical.model.auto_train() # Train the model
                     self._update_tab_outcome() # Update the outcome tab with results
