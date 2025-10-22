@@ -1,7 +1,10 @@
 # controller/controller_start.py
 
-from PySide6.QtWidgets import QPushButton, QComboBox, QTabWidget, QInputDialog, QListWidget, QTextEdit, QFileDialog, QMessageBox
+from PySide6.QtWidgets import QPushButton, QComboBox, QTabWidget, QInputDialog, QListWidget, QTextEdit, QFileDialog, QMessageBox, QLabel
+from PySide6.QtGui import QPixmap
+from PySide6.QtCore import Qt
 import pandas as pd
+import os
 
 class ControllerStart:
     def __init__(self, ui, model_start, controller):
@@ -41,8 +44,12 @@ class ControllerStart:
         self.comboBox_start_options = self.ui.findChild(QComboBox, "comboBox_start_options")
         self.pushButton_start_options = self.ui.findChild(QPushButton, "pushButton_start_options")
         
+        # Tab: Welcome - Get the textEdit widget
+        self.textEdit_start_welcome = self.ui.findChild(QTextEdit, "textEdit_start_welcome")
+        
         self._setup_signals()
         self._set_tabs_disabled()
+        self._add_logo_to_welcome()
 
     def _setup_signals(self):
         """
@@ -71,6 +78,40 @@ class ControllerStart:
 
         for i in range(1, tabs):
             self.tabWidget_start.setTabEnabled(i, False)
+
+    def _add_logo_to_welcome(self):
+        """
+        Adds the Hamelin logo to the Welcome tab.
+        """
+        # Get the path to the logo
+        current_dir = os.path.dirname(os.path.abspath(__file__))
+        project_root = os.path.dirname(os.path.dirname(current_dir))
+        logo_path = os.path.join(project_root, "assets", "Hamelin icono.png")
+        
+        if not os.path.exists(logo_path):
+            print(f"Warning: Logo not found at {logo_path}")
+            return
+        
+        # Create the HTML content with the logo
+        html_content = f"""<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+<html><head><meta name="qrichtext" content="1" /><meta charset="utf-8" /><style type="text/css">
+p, li {{ white-space: pre-wrap; }}
+hr {{ height: 1px; border-width: 0; }}
+li.unchecked::marker {{ content: "\\2610"; }}
+li.checked::marker {{ content: "\\2612"; }}
+</style></head><body style=" font-family:'Sans Serif'; font-size:9pt; font-weight:400; font-style:normal;">
+<p align="center" style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">
+<img src="{logo_path}" width="150" height="150" /></p>
+<p align="center" style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"><br /></p>
+<p align="center" style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"><span style=" font-size:14pt; font-weight:600;">Welcome to Hamelin!</span></p>
+<p align="center" style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"><br /></p>
+<p align="center" style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"><span style=" font-size:11pt;">Hamelin is a user-friendly tool designed for clinical research professionals who want to create predictive models using artificial intelligence.</span></p>
+<p align="center" style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"><br /></p>
+<p align="center" style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"><span style=" font-size:11pt;">With this application, you can analyze medical data and obtain predictions to help with clinical decision-making, without needing advanced programming knowledge.</span></p></body></html>"""
+        
+        # Set the HTML content to the QTextEdit
+        self.textEdit_start_welcome.setHtml(html_content)
+
 
     def _ok(self):
         self.tab = self.tabWidget_start.currentIndex()

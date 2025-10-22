@@ -663,7 +663,7 @@ class ControllerClinicalTrial:
                 results_text += "EVALUATION METRICS:\n"
                 results_text += "-" * 40 + "\n"
                 
-                explanation_text = "\n=== CLINICAL RESULTS EXPLANATION ===\n\n"
+                explanation_text = "\n=== CLINICAL RESULTS INTERPRETATION ===\n\n"
                 
                 for feature_name, metrics in eval_stats.items():
                     if isinstance(metrics, dict) and feature_name != 'combined':
@@ -680,39 +680,52 @@ class ControllerClinicalTrial:
                         
                         if 'accuracy' in metrics:
                             acc_value = metrics['accuracy']
-                            explanation_text += f"• Accuracy: {acc_value:.1%} - This shows how often the trial analysis correctly predicts the primary endpoint.\n"
+                            correct_predictions = int(acc_value * 100)
+                            explanation_text += f"• Accuracy: {acc_value:.1%}\n"
+                            explanation_text += f"  → Out of 100 trial participants, the model correctly predicts the outcome for {correct_predictions} patients.\n"
                             if acc_value >= 0.9:
-                                explanation_text += "  → Excellent predictive power. Strong evidence for treatment efficacy.\n"
+                                explanation_text += "  ✓ Excellent predictive power. Strong evidence for treatment efficacy.\n"
+                                explanation_text += "  → Recommendation: High confidence in treatment effect. Consider advancing to next trial phase.\n"
                             elif acc_value >= 0.8:
-                                explanation_text += "  → Good predictive ability. Promising treatment results.\n"
+                                explanation_text += "  ✓ Good predictive ability. Promising treatment results.\n"
+                                explanation_text += "  → Recommendation: Treatment shows meaningful benefit. Validate with larger cohort.\n"
                             elif acc_value >= 0.7:
-                                explanation_text += "  → Moderate predictive ability. Further validation may be needed.\n"
+                                explanation_text += "  ⚠ Moderate predictive ability. Some treatment effect detected.\n"
+                                explanation_text += "  → Recommendation: Further validation needed. Consider subgroup analysis or protocol adjustments.\n"
                             else:
-                                explanation_text += "  → Low predictive ability. Treatment effect may be limited.\n"
+                                explanation_text += "  ✗ Low predictive ability. Limited or unclear treatment effect.\n"
+                                explanation_text += "  → Recommendation: Review trial design, patient selection criteria, or treatment protocol.\n"
                         
                         if 'roc_auc' in metrics:
                             auc_value = metrics['roc_auc']
-                            explanation_text += f"• ROC AUC: {auc_value:.3f} - Measures ability to distinguish between treatment responders and non-responders.\n"
+                            explanation_text += f"• ROC AUC: {auc_value:.3f}\n"
+                            explanation_text += f"  → Measures ability to distinguish between treatment responders and non-responders.\n"
+                            explanation_text += f"  → Score ranges from 0.5 (random/no discrimination) to 1.0 (perfect discrimination).\n"
                             if auc_value >= 0.9:
-                                explanation_text += "  → Outstanding discrimination. Clear treatment benefit.\n"
+                                explanation_text += "  ✓ Outstanding discrimination. Clear treatment benefit with strong responder identification.\n"
                             elif auc_value >= 0.8:
-                                explanation_text += "  → Good discrimination between treatment groups.\n"
+                                explanation_text += "  ✓ Good discrimination between treatment responders and non-responders.\n"
                             elif auc_value >= 0.7:
-                                explanation_text += "  → Fair discrimination. Moderate treatment effect.\n"
+                                explanation_text += "  ⚠ Fair discrimination. Moderate treatment effect with some responder overlap.\n"
                             else:
-                                explanation_text += "  → Poor discrimination. Treatment may not be significantly different from control.\n"
+                                explanation_text += "  ✗ Poor discrimination. Treatment may not significantly differ from control.\n"
                         
                         if 'loss' in metrics:
                             loss_value = metrics['loss']
-                            explanation_text += f"• Loss: {loss_value:.4f} - Lower values indicate better model fit to trial data.\n"
+                            explanation_text += f"• Loss: {loss_value:.4f}\n"
+                            explanation_text += f"  → Measures prediction errors in trial outcomes. Lower values mean better fit.\n"
                             if loss_value <= 0.3:
-                                explanation_text += "  → Excellent model fit. High confidence in results.\n"
+                                explanation_text += "  ✓ Excellent model fit. High confidence in trial results and predictions.\n"
+                                explanation_text += "  → Recommendation: Model reliably captures treatment effects. Results are trustworthy.\n"
                             elif loss_value <= 0.5:
-                                explanation_text += "  → Good model fit. Reliable results.\n"
+                                explanation_text += "  ✓ Good model fit. Reliable trial outcome predictions.\n"
+                                explanation_text += "  → Recommendation: Acceptable prediction quality for clinical decision-making.\n"
                             elif loss_value <= 0.7:
-                                explanation_text += "  → Acceptable fit. Results should be validated.\n"
+                                explanation_text += "  ⚠ Acceptable fit with some prediction uncertainty.\n"
+                                explanation_text += "  → Recommendation: Results should be validated. Consider additional biomarkers or endpoints.\n"
                             else:
-                                explanation_text += "  → Poor fit. Consider additional data or analysis methods.\n"
+                                explanation_text += "  ✗ Poor fit. High prediction errors in trial outcomes.\n"
+                                explanation_text += "  → Recommendation: Review endpoint definitions, patient heterogeneity, or measurement methods.\n"
                         
                         explanation_text += "\n"
                 
@@ -806,12 +819,11 @@ class ControllerClinicalTrial:
 
     def _open_image_file(self, image_path, title="Visualization"):
         """
-        Open an image file using multiple fallback methods.
+        Open an image file in a Qt dialog.
         """
         from PySide6.QtWidgets import QMessageBox, QDialog, QVBoxLayout, QLabel, QPushButton
-        from PySide6.QtGui import QDesktopServices, QPixmap
-        from PySide6.QtCore import QUrl, Qt
-        import subprocess
+        from PySide6.QtGui import QPixmap
+        from PySide6.QtCore import Qt
         import os
         
         if not os.path.exists(image_path):
@@ -819,29 +831,11 @@ class ControllerClinicalTrial:
                               f"Image file not found:\n{image_path}")
             return
         
-        # Method 1: Try QDesktopServices (default system viewer)
-        try:
-            if QDesktopServices.openUrl(QUrl.fromLocalFile(image_path)):
-                return  # Success
-        except:
-            pass
-        
-        # Method 2: Try common Linux image viewers
-        viewers = ['eog', 'feh', 'gwenview', 'gpicview', 'ristretto', 'display', 'xdg-open']
-        for viewer in viewers:
-            try:
-                subprocess.Popen([viewer, image_path], 
-                               stdout=subprocess.DEVNULL, 
-                               stderr=subprocess.DEVNULL)
-                return  # Success
-            except FileNotFoundError:
-                continue
-        
-        # Method 3: Show image in Qt dialog as fallback
+        # Show image in Qt dialog
         try:
             dialog = QDialog()
             dialog.setWindowTitle(title)
-            dialog.setMinimumSize(800, 600)
+            dialog.setMinimumSize(900, 700)
             
             layout = QVBoxLayout()
             
@@ -850,7 +844,7 @@ class ControllerClinicalTrial:
             pixmap = QPixmap(image_path)
             
             # Scale image to fit dialog while maintaining aspect ratio
-            scaled_pixmap = pixmap.scaled(780, 550, Qt.KeepAspectRatio, Qt.SmoothTransformation)
+            scaled_pixmap = pixmap.scaled(880, 650, Qt.KeepAspectRatio, Qt.SmoothTransformation)
             label.setPixmap(scaled_pixmap)
             label.setAlignment(Qt.AlignCenter)
             
@@ -863,7 +857,6 @@ class ControllerClinicalTrial:
             
             dialog.setLayout(layout)
             dialog.exec()
-            return  # Success
         except Exception as e:
             QMessageBox.critical(None, "Error", 
                                f"Unable to display image.\nError: {str(e)}\n\nFile location:\n{image_path}")

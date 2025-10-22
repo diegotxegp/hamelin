@@ -313,7 +313,7 @@ class ControllerPatientRegistry:
                 results_text += "EVALUATION METRICS:\n"
                 results_text += "-" * 40 + "\n"
                 
-                explanation_text = "\n=== RESULTS EXPLANATION FOR NON-EXPERTS ===\n\n"
+                explanation_text = "\n=== RESULTS INTERPRETATION ===\n\n"
                 
                 for feature_name, metrics in eval_stats.items():
                     if isinstance(metrics, dict) and feature_name != 'combined':
@@ -326,43 +326,56 @@ class ControllerPatientRegistry:
                                 results_text += f"  {metric_name}: {value}\n"
                         
                         # Add user-friendly explanations
-                        explanation_text += f"[RESULTS] {feature_name.upper()} Performance:\n"
+                        explanation_text += f"📊 {feature_name.upper()} Performance:\n"
                         
                         if 'accuracy' in metrics:
                             acc_value = metrics['accuracy']
-                            explanation_text += f"- Accuracy: {acc_value:.1%} - This means the model correctly predicts the outcome {acc_value:.1%} of the time.\n"
+                            correct_predictions = int(acc_value * 100)
+                            explanation_text += f"• Accuracy: {acc_value:.1%}\n"
+                            explanation_text += f"  → Out of 100 predictions, the model gets {correct_predictions} right.\n"
                             if acc_value >= 0.9:
-                                explanation_text += "  > Excellent! The model is very reliable.\n"
+                                explanation_text += "  ✓ Excellent! The model is very reliable for clinical decision support.\n"
+                                explanation_text += "  → Recommendation: Can be used with confidence, but always validate with new data.\n"
                             elif acc_value >= 0.8:
-                                explanation_text += "  > Good performance for most practical applications.\n"
+                                explanation_text += "  ✓ Good performance for most practical applications.\n"
+                                explanation_text += "  → Recommendation: Suitable for clinical use with expert supervision.\n"
                             elif acc_value >= 0.7:
-                                explanation_text += "  > Moderate performance. Consider reviewing the data quality.\n"
+                                explanation_text += "  ⚠ Moderate performance. The model shows some predictive ability.\n"
+                                explanation_text += "  → Recommendation: Use as support tool only. Review data quality and consider adding more relevant variables.\n"
                             else:
-                                explanation_text += "  > Low performance. The model may need improvement or more data.\n"
+                                explanation_text += "  ✗ Low performance. The model struggles with predictions.\n"
+                                explanation_text += "  → Recommendation: DO NOT use for clinical decisions. Collect more data or review feature selection.\n"
                         
                         if 'roc_auc' in metrics:
                             auc_value = metrics['roc_auc']
-                            explanation_text += f"- ROC AUC: {auc_value:.3f} - Measures how well the model distinguishes between different outcomes.\n"
+                            explanation_text += f"• ROC AUC: {auc_value:.3f}\n"
+                            explanation_text += f"  → Measures the model's ability to distinguish between different patient outcomes.\n"
+                            explanation_text += f"  → Score ranges from 0.5 (random/no discrimination) to 1.0 (perfect discrimination).\n"
                             if auc_value >= 0.9:
-                                explanation_text += "  > Outstanding ability to distinguish between outcomes.\n"
+                                explanation_text += "  ✓ Outstanding discrimination ability. The model clearly separates different outcome groups.\n"
                             elif auc_value >= 0.8:
-                                explanation_text += "  > Good discrimination ability.\n"
+                                explanation_text += "  ✓ Good discrimination. The model reliably distinguishes between outcomes.\n"
                             elif auc_value >= 0.7:
-                                explanation_text += "  > Fair discrimination ability.\n"
+                                explanation_text += "  ⚠ Fair discrimination. The model shows some ability to separate outcomes.\n"
                             else:
-                                explanation_text += "  > Poor discrimination. The model struggles to distinguish outcomes.\n"
+                                explanation_text += "  ✗ Poor discrimination. The model barely performs better than random guessing.\n"
                         
                         if 'loss' in metrics:
                             loss_value = metrics['loss']
-                            explanation_text += f"- Loss: {loss_value:.4f} - Lower values indicate better model fit.\n"
+                            explanation_text += f"• Loss: {loss_value:.4f}\n"
+                            explanation_text += f"  → Measures prediction errors. Lower values mean better model fit.\n"
                             if loss_value <= 0.3:
-                                explanation_text += "  → Excellent model fit to the data.\n"
+                                explanation_text += "  ✓ Excellent model fit. Predictions are very close to actual outcomes.\n"
+                                explanation_text += "  → Recommendation: Model is well-calibrated for this dataset.\n"
                             elif loss_value <= 0.5:
-                                explanation_text += "  → Good model fit.\n"
+                                explanation_text += "  ✓ Good model fit. Acceptable prediction accuracy.\n"
+                                explanation_text += "  → Recommendation: Model performs well, minor improvements possible.\n"
                             elif loss_value <= 0.7:
-                                explanation_text += "  → Acceptable fit, but could be improved.\n"
+                                explanation_text += "  ⚠ Acceptable fit, but predictions show noticeable errors.\n"
+                                explanation_text += "  → Recommendation: Consider model tuning or adding more informative features.\n"
                             else:
-                                explanation_text += "  → Poor fit. The model may be struggling with this data.\n"
+                                explanation_text += "  ✗ Poor fit. Large prediction errors detected.\n"
+                                explanation_text += "  → Recommendation: Review data quality, outliers, or try different modeling approach.\n"
                         
                         explanation_text += "\n"
                 
@@ -442,12 +455,11 @@ class ControllerPatientRegistry:
 
     def _open_image_file(self, image_path, title="Visualization"):
         """
-        Open an image file using multiple fallback methods.
+        Open an image file in a Qt dialog.
         """
         from PySide6.QtWidgets import QMessageBox, QDialog, QVBoxLayout, QLabel, QPushButton
-        from PySide6.QtGui import QDesktopServices, QPixmap
-        from PySide6.QtCore import QUrl, Qt
-        import subprocess
+        from PySide6.QtGui import QPixmap
+        from PySide6.QtCore import Qt
         import os
         
         if not os.path.exists(image_path):
@@ -455,29 +467,11 @@ class ControllerPatientRegistry:
                               f"Image file not found:\n{image_path}")
             return
         
-        # Method 1: Try QDesktopServices (default system viewer)
-        try:
-            if QDesktopServices.openUrl(QUrl.fromLocalFile(image_path)):
-                return  # Success
-        except:
-            pass
-        
-        # Method 2: Try common Linux image viewers
-        viewers = ['eog', 'feh', 'gwenview', 'gpicview', 'ristretto', 'display', 'xdg-open']
-        for viewer in viewers:
-            try:
-                subprocess.Popen([viewer, image_path], 
-                               stdout=subprocess.DEVNULL, 
-                               stderr=subprocess.DEVNULL)
-                return  # Success
-            except FileNotFoundError:
-                continue
-        
-        # Method 3: Show image in Qt dialog as fallback
+        # Show image in Qt dialog
         try:
             dialog = QDialog()
             dialog.setWindowTitle(title)
-            dialog.setMinimumSize(800, 600)
+            dialog.setMinimumSize(900, 700)
             
             layout = QVBoxLayout()
             
@@ -486,7 +480,7 @@ class ControllerPatientRegistry:
             pixmap = QPixmap(image_path)
             
             # Scale image to fit dialog while maintaining aspect ratio
-            scaled_pixmap = pixmap.scaled(780, 550, Qt.KeepAspectRatio, Qt.SmoothTransformation)
+            scaled_pixmap = pixmap.scaled(880, 650, Qt.KeepAspectRatio, Qt.SmoothTransformation)
             label.setPixmap(scaled_pixmap)
             label.setAlignment(Qt.AlignCenter)
             
@@ -499,7 +493,6 @@ class ControllerPatientRegistry:
             
             dialog.setLayout(layout)
             dialog.exec()
-            return  # Success
         except Exception as e:
             QMessageBox.critical(None, "Error", 
                                f"Unable to display image.\nError: {str(e)}\n\nFile location:\n{image_path}")

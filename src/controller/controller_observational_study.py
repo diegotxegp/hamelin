@@ -313,7 +313,7 @@ class ControllerObservationalStudy:
                 results_text += "EVALUATION METRICS:\n"
                 results_text += "-" * 40 + "\n"
                 
-                explanation_text = "\n=== RESULTS EXPLANATION FOR NON-EXPERTS ===\n\n"
+                explanation_text = "\n=== RESULTS INTERPRETATION ===\n\n"
                 
                 for feature_name, metrics in eval_stats.items():
                     if isinstance(metrics, dict) and feature_name != 'combined':
@@ -326,43 +326,56 @@ class ControllerObservationalStudy:
                                 results_text += f"  {metric_name}: {value}\n"
                         
                         # Add user-friendly explanations
-                        explanation_text += f"[RESULTS] {feature_name.upper()} Analysis:\n"
+                        explanation_text += f"📊 {feature_name.upper()} Analysis:\n"
                         
                         if 'accuracy' in metrics:
                             acc_value = metrics['accuracy']
-                            explanation_text += f"- Accuracy: {acc_value:.1%} - This shows how often our analysis correctly identifies patterns.\n"
+                            correct_predictions = int(acc_value * 100)
+                            explanation_text += f"• Accuracy: {acc_value:.1%}\n"
+                            explanation_text += f"  → Out of 100 observations, the model correctly identifies patterns in {correct_predictions} cases.\n"
                             if acc_value >= 0.9:
-                                explanation_text += "  → Excellent! The analysis is very reliable for this outcome.\n"
+                                explanation_text += "  ✓ Excellent! The analysis shows strong predictive patterns in your observational data.\n"
+                                explanation_text += "  → Recommendation: Results are reliable for hypothesis generation and further research.\n"
                             elif acc_value >= 0.8:
-                                explanation_text += "  → Good reliability for observational conclusions.\n"
+                                explanation_text += "  ✓ Good reliability for observational conclusions.\n"
+                                explanation_text += "  → Recommendation: Patterns detected can inform clinical practice with appropriate validation.\n"
                             elif acc_value >= 0.7:
-                                explanation_text += "  → Moderate reliability. Consider additional data collection.\n"
+                                explanation_text += "  ⚠ Moderate reliability. Some predictive patterns detected.\n"
+                                explanation_text += "  → Recommendation: Consider additional data collection or confounding variables.\n"
                             else:
-                                explanation_text += "  → Low reliability. Results should be interpreted with caution.\n"
+                                explanation_text += "  ✗ Low reliability. Weak or inconsistent patterns.\n"
+                                explanation_text += "  → Recommendation: Results should be interpreted with caution. May need larger sample or better controls.\n"
                         
                         if 'roc_auc' in metrics:
                             auc_value = metrics['roc_auc']
-                            explanation_text += f"• ROC AUC: {auc_value:.3f} - Measures how well we can distinguish between different study outcomes.\n"
+                            explanation_text += f"• ROC AUC: {auc_value:.3f}\n"
+                            explanation_text += f"  → Measures ability to distinguish between different observed outcomes or groups.\n"
+                            explanation_text += f"  → Score ranges from 0.5 (random/no discrimination) to 1.0 (perfect discrimination).\n"
                             if auc_value >= 0.9:
-                                explanation_text += "  → Outstanding discrimination between groups.\n"
+                                explanation_text += "  ✓ Outstanding discrimination. Clear separation between study groups or outcomes.\n"
                             elif auc_value >= 0.8:
-                                explanation_text += "  → Good ability to distinguish between study groups.\n"
+                                explanation_text += "  ✓ Good discrimination ability between observed groups.\n"
                             elif auc_value >= 0.7:
-                                explanation_text += "  → Fair discrimination ability.\n"
+                                explanation_text += "  ⚠ Fair discrimination. Some overlap between groups exists.\n"
                             else:
-                                explanation_text += "  → Poor discrimination. Groups may be too similar to distinguish.\n"
+                                explanation_text += "  ✗ Poor discrimination. Groups may be too similar or confounded.\n"
                         
                         if 'loss' in metrics:
                             loss_value = metrics['loss']
-                            explanation_text += f"• Loss: {loss_value:.4f} - Lower values indicate better pattern recognition.\n"
+                            explanation_text += f"• Loss: {loss_value:.4f}\n"
+                            explanation_text += f"  → Measures prediction errors. Lower values mean better pattern recognition.\n"
                             if loss_value <= 0.3:
-                                explanation_text += "  → Excellent pattern recognition in the data.\n"
+                                explanation_text += "  ✓ Excellent pattern fit. The model captures observational patterns very well.\n"
+                                explanation_text += "  → Recommendation: Strong evidence of meaningful associations in the data.\n"
                             elif loss_value <= 0.5:
-                                explanation_text += "  → Good pattern recognition.\n"
+                                explanation_text += "  ✓ Good pattern fit. Acceptable prediction accuracy.\n"
+                                explanation_text += "  → Recommendation: Reliable patterns detected, suitable for further investigation.\n"
                             elif loss_value <= 0.7:
-                                explanation_text += "  → Acceptable pattern recognition.\n"
+                                explanation_text += "  ⚠ Acceptable fit with some prediction noise.\n"
+                                explanation_text += "  → Recommendation: Consider adjusting for confounders or collecting more variables.\n"
                             else:
-                                explanation_text += "  → Poor pattern recognition. May need more data or different approach.\n"
+                                explanation_text += "  ✗ Poor fit. High prediction errors suggest weak associations.\n"
+                                explanation_text += "  → Recommendation: Review study design, data quality, or variable selection.\n"
                         
                         explanation_text += "\n"
                 
@@ -444,12 +457,11 @@ class ControllerObservationalStudy:
 
     def _open_image_file(self, image_path, title="Visualization"):
         """
-        Open an image file using multiple fallback methods.
+        Open an image file in a Qt dialog.
         """
         from PySide6.QtWidgets import QMessageBox, QDialog, QVBoxLayout, QLabel, QPushButton
-        from PySide6.QtGui import QDesktopServices, QPixmap
-        from PySide6.QtCore import QUrl, Qt
-        import subprocess
+        from PySide6.QtGui import QPixmap
+        from PySide6.QtCore import Qt
         import os
         
         if not os.path.exists(image_path):
@@ -457,29 +469,11 @@ class ControllerObservationalStudy:
                               f"Image file not found:\n{image_path}")
             return
         
-        # Method 1: Try QDesktopServices (default system viewer)
-        try:
-            if QDesktopServices.openUrl(QUrl.fromLocalFile(image_path)):
-                return  # Success
-        except:
-            pass
-        
-        # Method 2: Try common Linux image viewers
-        viewers = ['eog', 'feh', 'gwenview', 'gpicview', 'ristretto', 'display', 'xdg-open']
-        for viewer in viewers:
-            try:
-                subprocess.Popen([viewer, image_path], 
-                               stdout=subprocess.DEVNULL, 
-                               stderr=subprocess.DEVNULL)
-                return  # Success
-            except FileNotFoundError:
-                continue
-        
-        # Method 3: Show image in Qt dialog as fallback
+        # Show image in Qt dialog
         try:
             dialog = QDialog()
             dialog.setWindowTitle(title)
-            dialog.setMinimumSize(800, 600)
+            dialog.setMinimumSize(900, 700)
             
             layout = QVBoxLayout()
             
@@ -488,7 +482,7 @@ class ControllerObservationalStudy:
             pixmap = QPixmap(image_path)
             
             # Scale image to fit dialog while maintaining aspect ratio
-            scaled_pixmap = pixmap.scaled(780, 550, Qt.KeepAspectRatio, Qt.SmoothTransformation)
+            scaled_pixmap = pixmap.scaled(880, 650, Qt.KeepAspectRatio, Qt.SmoothTransformation)
             label.setPixmap(scaled_pixmap)
             label.setAlignment(Qt.AlignCenter)
             
@@ -501,7 +495,6 @@ class ControllerObservationalStudy:
             
             dialog.setLayout(layout)
             dialog.exec()
-            return  # Success
         except Exception as e:
             QMessageBox.critical(None, "Error", 
                                f"Unable to display image.\nError: {str(e)}\n\nFile location:\n{image_path}")
