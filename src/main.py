@@ -5,6 +5,7 @@ import sys
 os.environ['QT_QPA_PLATFORM'] = 'xcb'
 
 from PySide6.QtWidgets import QApplication
+from PySide6.QtGui import QIcon
 from utils.ui_to_py_converter import convert_ui_to_py
 from controller.controller import Controller
 
@@ -21,6 +22,12 @@ def converter():
 
 def start():
     app = QApplication(sys.argv)
+    
+    # Set application-wide icon (affects taskbar and window decorations)
+    icon_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "assets", "Hamelin icono.png")
+    if os.path.exists(icon_path):
+        app.setWindowIcon(QIcon(icon_path))
+    
     controller = Controller()
     controller.show()
     sys.exit(app.exec())

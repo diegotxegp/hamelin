@@ -39,7 +39,7 @@ class ModelStart:
         self.model.project_name = project_name
 
     def dataset_list(self):
-        """ Returns a list of datasets if the directory exists. """
+        """ Returns a list of datasets (files only, no directories) if the directory exists. """
         project_dir = self.model.project_dir
 
         if project_dir is not None and os.path.isdir(project_dir):
@@ -47,6 +47,9 @@ class ModelStart:
 
             if "status.txt" in list_dir:
                 list_dir.remove("status.txt")
+            
+            # Filter to show only files, not directories
+            list_dir = [item for item in list_dir if os.path.isfile(os.path.join(project_dir, item))]
             
             return list_dir
     

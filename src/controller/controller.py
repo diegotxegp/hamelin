@@ -1,6 +1,8 @@
 # controller/controller.py
 
+import os
 from PySide6.QtWidgets import QMainWindow, QMessageBox
+from PySide6.QtGui import QIcon
 from view.interface_ui import Ui_MainWindow
 
 from controller.controller_start import ControllerStart
@@ -19,6 +21,9 @@ class MainWindow(QMainWindow):
         super().__init__()
         self.ui = Ui_MainWindow()
         self.ui.setupUi(self)
+        
+        # Set window title to help window manager identify the application
+        self.setWindowTitle("HAMELIN")
 
 
 class Controller:
@@ -31,6 +36,11 @@ class Controller:
         """
         self.model = Model()
         self.window = MainWindow()
+
+        # Set window icon
+        icon_path = os.path.join(os.path.dirname(__file__), "..", "..", "assets", "Hamelin icono.png")
+        if os.path.exists(icon_path):
+            self.window.setWindowIcon(QIcon(icon_path))
 
         # Set initial page and tab
         self.window.ui.stackedWidget.setCurrentIndex(0)
