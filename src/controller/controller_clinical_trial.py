@@ -161,6 +161,10 @@ class ControllerClinicalTrial:
         self.tab = self.tabWidget_clinical.currentIndex() + 1
         self.tabWidget_clinical.setTabEnabled(self.tab, True)
         self.tabWidget_clinical.setCurrentIndex(self.tab)
+        
+        # Update process summary when entering the Process tab
+        if self.tab == 6:  # Process tab
+            self._update_process_summary()
 
     def _ok(self):
         self.tab = self.tabWidget_clinical.currentIndex()
@@ -202,15 +206,8 @@ class ControllerClinicalTrial:
             self._next_tab()
             return
         
-        # Tab 6: Settings
+        # Tab 6: Process
         if self.tab == 6:
-            self._read_updated_settings()
-            self._next_tab()
-            return
-        
-        # Tab 7: Process
-        if self.tab == 7:
-            self._update_process_summary()
             if self.model_clinical.is_ready_for_analysis():
                 # Show confirmation dialog before training
                 reply = QMessageBox.question(
@@ -227,6 +224,7 @@ class ControllerClinicalTrial:
                 
                 try:
                     self.model_clinical.model.auto_train() # Train the model
+                    self._update_tab_process() # Update the process tab
                     self._update_tab_outcome() # Update the outcome tab with results
                     self._next_tab() # Switch to outcome tab
                 except Exception as e:
@@ -342,6 +340,25 @@ class ControllerClinicalTrial:
                 summary.append("Analysis Settings:\n" + "\n".join(settings_info))
         
         summary_text = "\n\n".join(summary) if summary else "No information collected yet."
+        self.textEdit_4.setPlainText(summary_text)
+
+    def _update_tab_process(self):
+        """Update the process tab after training with detailed information."""
+        if not hasattr(self.model_clinical, 'model') or not self.model_clinical.model:
+            return
+            
+        summary_text = (f"Project: {self.model_clinical.model.project_dir}\n"
+                f"Dataset: {self.model_clinical.model.dataset_dir}\n"
+                f"Samples: {self.model_clinical.model.ludwig.samples}\n"
+                f"Input features: {self.model_clinical.model.ludwig.input_features}\n"
+                f"Target: {self.model_clinical.model.ludwig.target}\n"
+                f"Separator: {self.model_clinical.model.ludwig.separator}\n"
+                f"Missing data: {self.model_clinical.model.ludwig.missing_data}\n"
+                f"Runtime: {self.model_clinical.model.ludwig.runtime}\n"
+                f"Metric: {self.model_clinical.model.ludwig.metric}\n"
+                f"Time dependable: {self.model_clinical.model.ludwig.timedependable}\n"
+                )
+        
         self.textEdit_4.setPlainText(summary_text)
 
     def _update_tab_criteria(self):
@@ -530,7 +547,7 @@ class ControllerClinicalTrial:
         row = QWidget()
         row_layout = QHBoxLayout(row)
 
-        label = QLabel("runtime")
+        label = QLabel("Runtime")
         line_edit = QLineEdit()
         line_edit.setPlaceholderText("Enter max runtime in seconds (Default: 7200)")
         line_edit.setMaximumWidth(700)
@@ -541,7 +558,7 @@ class ControllerClinicalTrial:
 
     def _read_updated_settings(self):
         """Reads the user-modified settings from the layout."""
-        if not hasattr(self, 'layout_clinical_settings'):
+        if not hasattr(self, 'layout_clinical_settings') or self.layout_clinical_settings is None:
             return
 
         for i in range(self.layout_clinical_settings.count()):
@@ -885,9 +902,8 @@ class ControllerClinicalTrial:
                 project_dir = self.model_clinical.model.project_dir
                 output_dir = os.path.join(project_dir, "visualizations")
                 
-                # Get target name from model config
-                target = self.model_clinical.model.ludwig.model.config["output_features"]
-                target_name = list(target[0].keys())[0] if isinstance(target, list) else list(target.keys())[0]
+                # Get target name - use the primary variable
+                target_name = self.model_clinical.model.primary_variable
                 
                 # Construct path to pre-generated performance chart
                 chart_path = os.path.join(output_dir, f"compare_performance_{target_name}.png")
@@ -916,9 +932,8 @@ class ControllerClinicalTrial:
                 project_dir = self.model_clinical.model.project_dir
                 output_dir = os.path.join(project_dir, "visualizations")
                 
-                # Get target name from model config
-                target = self.model_clinical.model.ludwig.model.config["output_features"]
-                target_name = list(target[0].keys())[0] if isinstance(target, list) else list(target.keys())[0]
+                # Get target name - use the primary variable
+                target_name = self.model_clinical.model.primary_variable
                 
                 # Find pre-generated confusion matrix using glob pattern
                 pattern = os.path.join(output_dir, f"confusion_matrix__{target_name}_top*.png")

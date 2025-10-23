@@ -259,7 +259,7 @@ class ControllerPatientRegistry:
         row = QWidget()
         row_layout = QHBoxLayout(row)
 
-        label = QLabel("runtime")
+        label = QLabel("Runtime")
         line_edit = QLineEdit()
         line_edit.setPlaceholderText("Enter max runtime in seconds (Default: 7200)")
         line_edit.setMaximumWidth(700)
