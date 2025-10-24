@@ -270,6 +270,16 @@ class ControllerObservationalStudy:
 
     def _read_updated_settings(self):
         """Reads the user-modified settings from the layout."""
+        
+        # Map UI label text to ludwig attribute names
+        label_to_attr = {
+            "Separator": "separator",
+            "Missing-data": "missing_data",
+            "Metric": "metric",
+            "Goal": "goal",
+            "Time-dependable": "timedependable",
+            "Runtime": "runtime"
+        }
 
         for i in range(self.layout_observational_settings.count()):
             row_widget = self.layout_observational_settings.itemAt(i).widget()
@@ -282,7 +292,9 @@ class ControllerObservationalStudy:
             label = row_layout.itemAt(0).widget()
             input_widget = row_layout.itemAt(1).widget()
 
-            key = label.text()
+            label_text = label.text()
+            # Use mapping to get the correct attribute name
+            key = label_to_attr.get(label_text, label_text.lower())
 
             if isinstance(input_widget, QComboBox):
                 value = input_widget.currentText()
