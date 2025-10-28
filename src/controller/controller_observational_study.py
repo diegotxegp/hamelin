@@ -1,10 +1,112 @@
 # controller/controller_observational_study.py
 
-from PySide6.QtWidgets import QPushButton, QTabWidget, QListWidget, QLabel, QComboBox, QWidget, QHBoxLayout, QScrollArea, QTextEdit, QLineEdit, QSizePolicy, QMessageBox
+from PySide6.QtWidgets import QPushButton, QTabWidget, QListWidget, QLabel, QComboBox, QWidget, QHBoxLayout, QScrollArea, QTextEdit, QLineEdit, QSizePolicy, QMessageBox, QProgressDialog
+from PySide6.QtCore import Qt, QThread, Signal
 from datetime import datetime
 
 from my_ludwig.ludwig_data import input_feature_types, output_feature_types, separators, missing_data_options, metrics, goals
 from texts import text_manager
+
+class AutoConfigWorker(QThread):
+    """Worker thread for model auto-configuration."""
+    finished = Signal()
+    error = Signal(str)
+    cancelled = Signal()
+    
+    def __init__(self, model):
+        super().__init__()
+        self.model = model
+        self._is_cancelled = False
+        
+    def cancel(self):
+        """Cancel the operation."""
+        self._is_cancelled = True
+        
+    def run(self):
+        """Execute autoconfig in background."""
+        try:
+            if self._is_cancelled:
+                self.cancelled.emit()
+                return
+            
+            self.model.autoconfig()
+            
+            if self._is_cancelled:
+                self.cancelled.emit()
+                return
+            
+            self.finished.emit()
+        except Exception as e:
+            if not self._is_cancelled:
+                self.error.emit(str(e))
+
+class TrainingWorker(QThread):
+    """Worker thread for model training and visualization generation."""
+    finished = Signal()
+    error = Signal(str)
+    cancelled = Signal()
+    progress_update = Signal(str)
+    
+    def __init__(self, model):
+        super().__init__()
+        self.model = model
+        self._is_cancelled = False
+        
+    def cancel(self):
+        """Cancel the operation."""
+        self._is_cancelled = True
+        
+    def run(self):
+        """Execute training and visualizations in background."""
+        try:
+            if self._is_cancelled:
+                self._cleanup_ray()
+                self.cancelled.emit()
+                return
+            
+            # Step 1: Train the model
+            self.progress_update.emit("Training model...")
+            self.model.auto_train()
+            
+            if self._is_cancelled:
+                self._cleanup_ray()
+                self.cancelled.emit()
+                return
+            
+            # Step 2: Generate performance visualization
+            self.progress_update.emit("Generating performance chart...")
+            self.model.ludwig.compare_performance()
+            
+            if self._is_cancelled:
+                self._cleanup_ray()
+                self.cancelled.emit()
+                return
+            
+            # Step 3: Generate confusion matrix
+            self.progress_update.emit("Generating confusion matrix...")
+            target_name = self.model.primary_variable
+            self.model.ludwig.confusion_matrix(target_name)
+            
+            if self._is_cancelled:
+                self._cleanup_ray()
+                self.cancelled.emit()
+                return
+            
+            self._cleanup_ray()
+            self.finished.emit()
+        except Exception as e:
+            self._cleanup_ray()
+            if not self._is_cancelled:
+                self.error.emit(str(e))
+    
+    def _cleanup_ray(self):
+        """Clean up Ray resources."""
+        try:
+            import ray
+            if ray.is_initialized():
+                ray.shutdown()
+        except Exception:
+            pass
 
 class ControllerObservationalStudy:
     def __init__(self, ui, model_observational, controller):
@@ -101,9 +203,26 @@ class ControllerObservationalStudy:
         if self.tab == 1:
             if not self._set_primary_variable():
                 return  # Don't proceed if validation failed
-            self.model_observational.model.autoconfig()
-            self._update_tab_criteria()
-            self._next_tab() # Switches to the next tab
+            
+            # Store current tab before async operation
+            self.config_source_tab = self.tab
+            
+            # Create progress dialog
+            self.config_progress = QProgressDialog("Configuring model, please wait...", "Cancel", 0, 0, None)
+            self.config_progress.setWindowTitle("Auto Configuration")
+            self.config_progress.setWindowModality(Qt.WindowModal)
+            self.config_progress.setMinimumDuration(0)
+            
+            # Create worker
+            self.config_worker = AutoConfigWorker(self.model_observational.model)
+            self.config_worker.finished.connect(self._on_config_finished)
+            self.config_worker.error.connect(self._on_config_error)
+            self.config_worker.cancelled.connect(self._on_config_cancelled)
+            self.config_progress.canceled.connect(self.config_worker.cancel)
+            
+            # Start worker and show dialog
+            self.config_worker.start()
+            self.config_progress.exec()
             return
 
         # Tab 2: Inclusion/Exclusion criteria
@@ -135,10 +254,26 @@ class ControllerObservationalStudy:
             if reply == QMessageBox.No:
                 return  # User cancelled, don't proceed
             
-            self.model_observational.model.auto_train() # Train the model
-            self._update_tab_process() # Update the process tab
-            self._update_tab_outcome() # Update the outcome tab with results
-            self._next_tab() # Switches to the next tab
+            # Store current tab before async operation
+            self.training_source_tab = self.tab
+            
+            # Create progress dialog
+            self.training_progress = QProgressDialog("Training model, please wait...", "Cancel", 0, 0, None)
+            self.training_progress.setWindowTitle("Model Training")
+            self.training_progress.setWindowModality(Qt.WindowModal)
+            self.training_progress.setMinimumDuration(0)
+            
+            # Create worker
+            self.training_worker = TrainingWorker(self.model_observational.model)
+            self.training_worker.finished.connect(self._on_training_finished)
+            self.training_worker.error.connect(self._on_training_error)
+            self.training_worker.cancelled.connect(self._on_training_cancelled)
+            self.training_worker.progress_update.connect(self._on_progress_update)
+            self.training_progress.canceled.connect(self.training_worker.cancel)
+            
+            # Start worker and show dialog
+            self.training_worker.start()
+            self.training_progress.exec()
             return
         
     def update_page(self):
@@ -550,6 +685,67 @@ class ControllerObservationalStudy:
             from PySide6.QtWidgets import QMessageBox
             QMessageBox.warning(None, "No Model", 
                               "No trained model available. Please complete the training process first.")
+
+    # Signal handlers for auto-configuration
+    def _on_config_finished(self):
+        """Handle successful auto-configuration completion."""
+        self.config_progress.close()
+        self._update_tab_criteria()
+        # Navigate to Inclusion/Exclusion (tab 2), NOT Settings (tab 3)
+        next_tab = self.config_source_tab + 1
+        self.tabWidget_observational.setTabEnabled(next_tab, True)
+        self.tabWidget_observational.setCurrentIndex(next_tab)
+    
+    def _on_config_error(self, error_msg):
+        """Handle auto-configuration error."""
+        self.config_progress.close()
+        QMessageBox.critical(None, "Configuration Error", 
+                           f"Error during model configuration:\n{error_msg}")
+    
+    def _on_config_cancelled(self):
+        """Handle auto-configuration cancellation."""
+        self.config_progress.close()
+        QMessageBox.information(None, "Cancelled", 
+                              "Model configuration was cancelled.")
+    
+    # Signal handlers for training
+    def _on_training_finished(self):
+        """Handle successful training completion."""
+        # Wait for worker to fully finish
+        if hasattr(self, 'training_worker'):
+            self.training_worker.wait()
+        
+        self.training_progress.close()
+        self._update_tab_process()
+        self._update_tab_outcome()
+        # Navigate to Outcome tab
+        next_tab = self.training_source_tab + 1
+        self.tabWidget_observational.setTabEnabled(next_tab, True)
+        self.tabWidget_observational.setCurrentIndex(next_tab)
+    
+    def _on_training_error(self, error_msg):
+        """Handle training error."""
+        # Wait for worker to fully finish
+        if hasattr(self, 'training_worker'):
+            self.training_worker.wait()
+        
+        self.training_progress.close()
+        QMessageBox.critical(None, "Training Error", 
+                           f"Error during model training:\n{error_msg}")
+    
+    def _on_training_cancelled(self):
+        """Handle training cancellation."""
+        # Wait for worker to fully finish
+        if hasattr(self, 'training_worker'):
+            self.training_worker.wait()
+        
+        self.training_progress.close()
+        QMessageBox.information(None, "Cancelled", 
+                              "Model training was cancelled.")
+    
+    def _on_progress_update(self, message):
+        """Update progress dialog with current step."""
+        self.training_progress.setLabelText(message)
 
     def _show_confusion_matrix(self):
         """Display the confusion matrix generated by Ludwig."""
