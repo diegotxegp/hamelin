@@ -52,12 +52,41 @@ class Model:
         self.ludwig.train()
 
     def acceptable_stratify_variables(self, min_samples=5, max_categories=10):
-        """ Returns a list of variables that are categorical and have at least min_samples and at most max_categories. """
+        """ Returns a list of variables that are categorical or numeric (suitable for classification or regression). 
+        Ensures all variables meet Ludwig's requirements for cross-validation (min 2 samples per class/value).
+        """
         acceptable_variables = []
+        total_rows = len(self.df)
+        
         for col in self.df.columns:
+            # Include categorical variables (for classification)
             if pd.api.types.is_categorical_dtype(self.df[col]) or self.df[col].dtype == object:
                 counts = self.df[col].value_counts(dropna=True)
                 if len(counts) <= max_categories and (counts >= min_samples).all():
+                    acceptable_variables.append(col)
+            # Include numeric variables (for regression or discrete classification)
+            elif self.df[col].dtype in ['int64', 'float64']:
+                unique_count = self.df[col].nunique(dropna=True)
+                
+                # Check if variable has real decimal values (not just .0)
+                has_decimals = False
+                if self.df[col].dtype == 'float64':
+                    # Check if any value has non-zero decimal part
+                    has_decimals = (self.df[col].dropna() % 1 != 0).any()
+                
+                # Treat as continuous if: has real decimals OR >50% values are unique
+                if has_decimals or unique_count > total_rows * 0.5:
+                    acceptable_variables.append(col)
+                # Otherwise, it's discrete/categorical - check for min 2 samples per value
+                else:
+                    counts = self.df[col].value_counts(dropna=True)
+                    min_count = counts.min()
+                    if min_count >= 2:
+                        acceptable_variables.append(col)
+            # Include boolean variables (for binary classification)
+            elif self.df[col].dtype == 'bool':
+                counts = self.df[col].value_counts(dropna=True)
+                if (counts >= 2).all():  # Both True and False must have at least 2 samples
                     acceptable_variables.append(col)
         return acceptable_variables
     

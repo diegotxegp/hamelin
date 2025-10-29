@@ -5,6 +5,7 @@ import pandas as pd
 from ludwig.automl import auto_train, create_auto_config
 from ludwig.api import LudwigModel
 from ludwig.utils.dataset_utils import get_repeatable_train_val_test_split
+from sklearn.model_selection import train_test_split
 from ludwig.visualize import compare_performance
 from ludwig.visualize import confusion_matrix
 
@@ -98,7 +99,76 @@ class Ludwig:
         """
         self.target = target
 
-        self.split_df = get_repeatable_train_val_test_split(self.df, self.target, random_seed=42)
+        # Determine if target is continuous or discrete
+        is_continuous = False
+        
+        # Validate that target variable has enough samples per class/value
+        # Check if variable is numeric
+        if pd.api.types.is_numeric_dtype(self.df[target]):
+            unique_count = self.df[target].nunique(dropna=True)
+            total_count = len(self.df[target].dropna())
+            
+            print(f"DEBUG: Target '{target}' has {unique_count} unique values out of {total_count} total samples")
+            print(f"DEBUG: Uniqueness ratio: {unique_count/total_count:.2%}")
+            print(f"DEBUG: Data type: {self.df[target].dtype}")
+            
+            # Check if variable has real decimal values (not just .0)
+            has_decimals = False
+            if self.df[target].dtype == 'float64':
+                has_decimals = (self.df[target].dropna() % 1 != 0).any()
+                print(f"DEBUG: Has real decimal values: {has_decimals}")
+            
+            # Treat as continuous if: has real decimals OR >50% values are unique
+            if has_decimals or unique_count > total_count * 0.5:
+                print(f"DEBUG: Variable treated as continuous (regression) - using random split")
+                is_continuous = True
+            else:
+                # It's discrete/categorical - check for values with only 1 sample
+                counts = self.df[target].value_counts(dropna=True)
+                min_count = counts.min()
+                values_with_one = (counts == 1).sum()
+                
+                print(f"DEBUG: Minimum count per value: {min_count}")
+                print(f"DEBUG: Values with only 1 sample: {values_with_one}")
+                
+                if min_count < 2:
+                    raise ValueError(
+                        f"The target variable '{target}' has {values_with_one} value(s) with only 1 sample. "
+                        f"All values must have at least 2 samples for cross-validation. "
+                        f"Please review your inclusion/exclusion criteria or choose a different target variable."
+                    )
+        else:
+            # For categorical/object types
+            unique_count = self.df[target].nunique(dropna=True)
+            print(f"DEBUG: Target '{target}' has {unique_count} unique categories")
+            
+            counts = self.df[target].value_counts(dropna=True)
+            min_count = counts.min()
+            print(f"DEBUG: Minimum count per category: {min_count}")
+            
+            if min_count < 2:
+                raise ValueError(
+                    f"The target variable '{target}' has at least one category with only {min_count} sample(s). "
+                    f"All categories must have at least 2 samples for cross-validation. "
+                    f"Please review your inclusion/exclusion criteria or choose a different target variable."
+                )
+
+        # Use different split strategy based on variable type
+        if is_continuous:
+            # For continuous variables, use random split (no stratification)
+            # Split: 70% train, 15% validation, 15% test
+            train_val, test = train_test_split(self.df, test_size=0.15, random_state=42)
+            train, val = train_test_split(train_val, test_size=0.1765, random_state=42)  # 0.1765 * 0.85 ≈ 0.15
+            
+            # Add split column
+            train['split'] = 0
+            val['split'] = 1
+            test['split'] = 2
+            
+            self.split_df = pd.concat([train, val, test], ignore_index=True)
+        else:
+            # For discrete/categorical variables, use stratified split
+            self.split_df = get_repeatable_train_val_test_split(self.df, self.target, random_seed=42)
 
         # Use configured runtime or default to 7200 seconds
         runtime_limit = int(self.runtime) if self.runtime else 7200
@@ -112,6 +182,9 @@ class Ludwig:
         )
 
         print("Config generated successfully")
+        
+        # CRITICAL: Fix metric goal IMMEDIATELY after config generation
+        self._fix_metric_goal()
 
         self.input_features_from_config()
         self.target_from_config()
@@ -212,13 +285,68 @@ class Ludwig:
         self.target = {o_f["column"]: o_f['type'] for o_f in self.config["output_features"]}
     
     def metric_from_config(self):
-        self.metric = {self.config["hyperopt"]["metric"]:self.config["hyperopt"]["goal"]}
+        """Extract metric and goal from config (goal should already be corrected by _fix_metric_goal)."""
+        metric_name = self.config["hyperopt"]["metric"]
+        goal = self.config["hyperopt"]["goal"]
+        self.metric = {metric_name: goal}
     
     def runtime_from_config(self):
         self.runtime = self.config["hyperopt"]["executor"]["time_budget_s"]
     
     def samples_from_config(self):
         self.samples = self.config["hyperopt"]["executor"]["num_samples"]
+    
+    def is_classification(self):
+        """Check if the target is a classification task (category/binary) or regression (number)."""
+        if self.target is None or self.config is None:
+            return False
+        
+        # Get the output feature type
+        output_type = self.config["output_features"][0].get("type", "")
+        
+        # Classification types: category, binary, set
+        # Regression types: number
+        return output_type in ["category", "binary", "set"]
+    
+    def _fix_metric_goal(self):
+        """Fix the hyperopt goal based on the metric type. Called immediately after config generation."""
+        if self.config is None or "hyperopt" not in self.config:
+            return
+        
+        metric_name = self.config["hyperopt"].get("metric", "")
+        current_goal = self.config["hyperopt"].get("goal", "")
+        
+        # Metrics that should be MINIMIZED (lower is better)
+        minimize_metrics = [
+            "mean_squared_error",
+            "mean_absolute_error", 
+            "root_mean_squared_error",
+            "root_mean_squared_percentage_error",
+            "loss"
+        ]
+        
+        # Metrics that should be MAXIMIZED (higher is better)
+        maximize_metrics = [
+            "accuracy",
+            "precision",
+            "recall",
+            "roc_auc",
+            "specificity",
+            "hits_at_k"
+        ]
+        
+        # Determine correct goal
+        correct_goal = None
+        if metric_name in minimize_metrics:
+            correct_goal = "minimize"
+        elif metric_name in maximize_metrics:
+            correct_goal = "maximize"
+        
+        # Apply correction if needed
+        if correct_goal and current_goal != correct_goal:
+            print(f"⚠️  Ludwig set goal='{current_goal}' for metric '{metric_name}'")
+            print(f"✅ Auto-correcting to goal='{correct_goal}'")
+            self.config["hyperopt"]["goal"] = correct_goal
 
     def configuration_to_config(self):
         self.features_to_config()

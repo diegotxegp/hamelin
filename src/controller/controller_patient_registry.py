@@ -53,41 +53,112 @@ class TrainingWorker(QThread):
         self._is_cancelled = False
         
     def cancel(self):
-        """Cancel the operation."""
+        """Cancel the operation immediately by killing Ray processes."""
         self._is_cancelled = True
+        self.requestInterruption()
+        
+        # Kill Ray processes immediately
+        import subprocess
+        import signal
+        import os
+        
+        try:
+            # First, try graceful Ray shutdown
+            import ray
+            if ray.is_initialized():
+                ray.shutdown()
+        except Exception:
+            pass
+        
+        try:
+            # Kill all Ray-related processes forcefully
+            if os.name == 'posix':  # Linux/Mac
+                # Find and kill raylet processes
+                subprocess.run(['pkill', '-9', '-f', 'raylet'], 
+                             stderr=subprocess.DEVNULL, 
+                             stdout=subprocess.DEVNULL)
+                # Find and kill ray processes
+                subprocess.run(['pkill', '-9', '-f', 'ray::'], 
+                             stderr=subprocess.DEVNULL, 
+                             stdout=subprocess.DEVNULL)
+                # Find and kill GCS server
+                subprocess.run(['pkill', '-9', '-f', 'gcs_server'], 
+                             stderr=subprocess.DEVNULL, 
+                             stdout=subprocess.DEVNULL)
+        except Exception:
+            pass
         
     def run(self):
         """Execute training and visualizations in background."""
         try:
-            if self._is_cancelled:
+            if self.isInterruptionRequested() or self._is_cancelled:
                 self._cleanup_ray()
                 self.cancelled.emit()
                 return
             
             # Step 1: Train the model
             self.progress_update.emit("Training model...")
-            self.model.auto_train()
             
-            if self._is_cancelled:
+            try:
+                self.model.auto_train()
+            except Exception as train_error:
+                # If cancelled during training, treat as cancellation
+                if self._is_cancelled or self.isInterruptionRequested():
+                    self._cleanup_ray()
+                    self.cancelled.emit()
+                    return
+                raise  # Re-raise if it's a real error
+            
+            # Check for cancellation after training
+            if self.isInterruptionRequested() or self._is_cancelled:
                 self._cleanup_ray()
                 self.cancelled.emit()
                 return
             
             # Step 2: Generate performance visualization
             self.progress_update.emit("Generating performance chart...")
-            self.model.ludwig.compare_performance()
             
-            if self._is_cancelled:
+            if self.isInterruptionRequested() or self._is_cancelled:
                 self._cleanup_ray()
                 self.cancelled.emit()
                 return
             
-            # Step 3: Generate confusion matrix
-            self.progress_update.emit("Generating confusion matrix...")
-            target_name = self.model.primary_variable
-            self.model.ludwig.confusion_matrix(target_name)
+            try:
+                self.model.ludwig.compare_performance()
+            except Exception:
+                if self._is_cancelled or self.isInterruptionRequested():
+                    self._cleanup_ray()
+                    self.cancelled.emit()
+                    return
+                raise
             
-            if self._is_cancelled:
+            if self.isInterruptionRequested() or self._is_cancelled:
+                self._cleanup_ray()
+                self.cancelled.emit()
+                return
+            
+            # Step 3: Generate confusion matrix (only for classification tasks)
+            if self.model.ludwig.is_classification():
+                self.progress_update.emit("Generating confusion matrix...")
+                
+                if self.isInterruptionRequested() or self._is_cancelled:
+                    self._cleanup_ray()
+                    self.cancelled.emit()
+                    return
+                
+                try:
+                    target_name = self.model.primary_variable
+                    self.model.ludwig.confusion_matrix(target_name)
+                except Exception:
+                    if self._is_cancelled or self.isInterruptionRequested():
+                        self._cleanup_ray()
+                        self.cancelled.emit()
+                        return
+                    raise
+            else:
+                print("DEBUG: Skipping confusion matrix - regression task")
+            
+            if self.isInterruptionRequested() or self._is_cancelled:
                 self._cleanup_ray()
                 self.cancelled.emit()
                 return
@@ -96,8 +167,10 @@ class TrainingWorker(QThread):
             self.finished.emit()
         except Exception as e:
             self._cleanup_ray()
-            if not self._is_cancelled:
+            if not (self.isInterruptionRequested() or self._is_cancelled):
                 self.error.emit(str(e))
+            else:
+                self.cancelled.emit()
     
     def _cleanup_ray(self):
         """Clean up Ray resources."""
@@ -304,6 +377,11 @@ class ControllerPatientRegistry:
 
     def _update_tab_criteria(self):
         """ Updates the criteria tab."""
+        # Check if autoconfig completed successfully
+        if self.model_registry.model.ludwig.input_features is None or self.model_registry.model.ludwig.target is None:
+            print("WARNING: Cannot update criteria tab - autoconfig not completed successfully")
+            return
+            
         criteria = self.model_registry.model.ludwig.input_features | self.model_registry.model.ludwig.target
         io = ["", "input", "output"]
 
@@ -379,6 +457,10 @@ class ControllerPatientRegistry:
             if item.widget():
                 item.widget().deleteLater()
 
+        # Get current values from ludwig config (after autoconfig)
+        current_metric = list(self.model_registry.model.ludwig.metric.keys())[0] if self.model_registry.model.ludwig.metric else ""
+        current_goal = list(self.model_registry.model.ludwig.metric.values())[0] if self.model_registry.model.ludwig.metric else ""
+
         for label_text, options in settings.items():
             row = QWidget()
             row_layout = QHBoxLayout(row)
@@ -386,6 +468,16 @@ class ControllerPatientRegistry:
             label = QLabel(label_text)
             combo = QComboBox()
             combo.addItems(options)
+            
+            # Set current value from config
+            if label_text == "Metric" and current_metric:
+                index = combo.findText(current_metric)
+                if index >= 0:
+                    combo.setCurrentIndex(index)
+            elif label_text == "Goal" and current_goal:
+                index = combo.findText(current_goal)
+                if index >= 0:
+                    combo.setCurrentIndex(index)
 
             row_layout.addWidget(label)
             row_layout.addWidget(combo)
@@ -733,13 +825,17 @@ class ControllerPatientRegistry:
     
     def _on_training_cancelled(self):
         """Handle training cancellation."""
-        # Wait for worker to fully finish
+        # Wait for worker to finish with timeout
         if hasattr(self, 'training_worker'):
-            self.training_worker.wait()
+            # Try to wait for 2 seconds
+            if not self.training_worker.wait(2000):  # 2000 ms = 2 seconds
+                # If still running after 2 seconds, terminate forcefully
+                self.training_worker.terminate()
+                self.training_worker.wait()
         
         self.training_progress.close()
         QMessageBox.information(None, "Cancelled", 
-                              "Model training was cancelled.")
+                              "Model training was cancelled. The process may take a moment to fully stop.")
     
     def _on_progress_update(self, message):
         """Update progress dialog with current step."""
