@@ -28,27 +28,50 @@ PATIENT_REGISTRY_TEXTS = {
         </p>
         
         <p style="font-weight: bold; margin-bottom: 10px;">
-            Common Primary Variables in Registries:
+            HAMELIN supports both Classification and Regression:
         </p>
         
         <p style="margin-left: 20px; margin-bottom: 8px;">
-            <strong>Clinical Outcomes:</strong><br/>
-            Disease progression, treatment response, mortality, complications, remission status
+            <strong>Categorical Outcomes (Classification):</strong><br/>
+            Disease progression stages, treatment response categories, mortality risk levels, 
+            remission status (complete/partial/none)
         </p>
         
         <p style="margin-left: 20px; margin-bottom: 8px;">
-            <strong>Patient Status:</strong><br/>
-            Disease severity levels, risk categories, functional status, quality of life scores
+            <strong>Binary Outcomes (Classification):</strong><br/>
+            Survival (yes/no), hospital readmission (yes/no), adverse events (present/absent), 
+            treatment adherence (compliant/non-compliant)
         </p>
         
         <p style="margin-left: 20px; margin-bottom: 8px;">
-            <strong>Healthcare Events:</strong><br/>
-            Hospital admissions, emergency visits, surgical interventions, adverse events
+            <strong>Continuous Numerical Outcomes (Regression):</strong><br/>
+            Quality of life scores (0-100), pain intensity (0.0-10.0), lab values (glucose, cholesterol), 
+            functional capacity measurements, survival time (in months)
         </p>
         
         <p style="margin-left: 20px; margin-bottom: 15px;">
-            <strong>Long-term Follow-up:</strong><br/>
-            Survival status, disease recurrence, treatment adherence, patient-reported outcomes
+            <strong>Discrete Numerical Outcomes:</strong><br/>
+            Number of hospitalizations, number of complications, disease recurrence count
+        </p>
+        
+        <p style="font-weight: bold; margin-bottom: 10px; background-color: #e8f4f8; padding: 10px;">
+            ✓ Intelligent Variable Detection:
+        </p>
+        
+        <p style="margin-left: 20px; margin-bottom: 8px;">
+            The system automatically identifies:
+        </p>
+        
+        <p style="margin-left: 40px; margin-bottom: 5px;">
+            • <strong>Categorical variables</strong>: Text labels or limited distinct values (2-10 categories)
+        </p>
+        
+        <p style="margin-left: 40px; margin-bottom: 5px;">
+            • <strong>Continuous variables</strong>: Numbers with significant decimal places (e.g., 7.2, 98.6, 145.3)
+        </p>
+        
+        <p style="margin-left: 40px; margin-bottom: 15px;">
+            • <strong>Discrete variables</strong>: Integers with repeated values (treated appropriately for the task)
         </p>
         
         <p style="font-weight: bold; margin-bottom: 10px;">
@@ -56,20 +79,21 @@ PATIENT_REGISTRY_TEXTS = {
         </p>
         
         <p style="margin-left: 20px; margin-bottom: 8px;">
-            • The variable must be <strong>categorical</strong> (represents categories or groups)
+            • <strong>For categorical variables:</strong> Between 2 to 10 different categories
         </p>
         
         <p style="margin-left: 20px; margin-bottom: 8px;">
-            • Should have between <strong>2 to 10 different categories</strong>
+            • <strong>For categorical variables:</strong> Each category must have at least 5 examples
         </p>
         
         <p style="margin-left: 20px; margin-bottom: 15px;">
-            • Each category must have <strong>at least 5 examples</strong> in your data
+            • <strong>For continuous variables:</strong> Sufficient variation in values (not all identical)
         </p>
         
         <p style="margin-top: 15px; font-style: italic; background-color: #f0f8ff; padding: 10px; border-left: 4px solid #4a90e2;">
             <strong>Tip:</strong> Choose a variable that represents a clinically meaningful outcome 
-            or characteristic that you want to predict or better understand in your patient population.
+            or characteristic. HAMELIN will automatically determine if classification or regression 
+            is more appropriate based on your variable type.
         </p>
         """
     },

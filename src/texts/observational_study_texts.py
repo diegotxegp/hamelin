@@ -19,27 +19,54 @@ OBSERVATIONAL_STUDY_TEXTS = {
         </p>
         
         <p style="font-weight: bold; margin-bottom: 10px;">
-            Types of outcomes in observational studies:
+            HAMELIN supports both Classification and Regression for observational studies:
         </p>
         
         <p style="margin-left: 20px; margin-bottom: 8px;">
-            <strong>• Health outcomes:</strong> Disease incidence, mortality, morbidity rates
+            <strong>• Categorical outcomes (Classification):</strong> Disease incidence categories, health status levels, 
+            behavior categories (e.g., smoking status: never/former/current)
         </p>
         
         <p style="margin-left: 20px; margin-bottom: 8px;">
-            <strong>• Behavioral outcomes:</strong> Treatment adherence, lifestyle changes, health behaviors
+            <strong>• Binary outcomes (Classification):</strong> Disease presence/absence, mortality (yes/no), 
+            treatment adherence (compliant/non-compliant), adverse event occurrence
         </p>
         
         <p style="margin-left: 20px; margin-bottom: 8px;">
-            <strong>• Clinical measurements:</strong> Biomarker levels, functional assessments, symptom scores
+            <strong>• Continuous outcomes (Regression):</strong> BMI values, blood pressure measurements, 
+            biomarker levels (cholesterol, glucose), quality of life scores (continuous scale), 
+            symptom severity scores (0.0-10.0)
         </p>
         
         <p style="margin-left: 20px; margin-bottom: 15px;">
-            <strong>• Social outcomes:</strong> Quality of life, disability, social functioning
+            <strong>• Time-related outcomes (Regression):</strong> Years of exposure, duration of symptoms, 
+            time to event (in days/months), age at diagnosis
         </p>
         
-        <p style="margin-top: 15px; font-style: italic;">
-            Important: Observational studies can identify associations but cannot establish causation.
+        <p style="font-weight: bold; margin-top: 15px; margin-bottom: 10px; background-color: #e8f4f8; padding: 10px;">
+            ✓ Intelligent Detection System:
+        </p>
+        
+        <p style="margin-left: 20px; margin-bottom: 8px;">
+            HAMELIN automatically detects the appropriate analysis type:
+        </p>
+        
+        <p style="margin-left: 40px; margin-bottom: 5px;">
+            • <strong>Categorical variables</strong> → Classification task (predicts categories)
+        </p>
+        
+        <p style="margin-left: 40px; margin-bottom: 5px;">
+            • <strong>Continuous numerical variables</strong> → Regression task (predicts values)
+        </p>
+        
+        <p style="margin-left: 40px; margin-bottom: 15px;">
+            • <strong>Detection criteria</strong>: Uses decimal analysis and uniqueness ratio to classify variables
+        </p>
+        
+        <p style="margin-top: 15px; font-style: italic; background-color: #fff3cd; padding: 10px; border-left: 4px solid #ffc107;">
+            <strong>Important:</strong> Observational studies can identify associations but cannot establish causation. 
+            Variables with insufficient samples are automatically filtered. For classification, each category needs 
+            at least 5 samples. For regression with discrete values, at least 2 samples per value are required.
         </p>
         """
     },

@@ -19,27 +19,49 @@ CLINICAL_TRIAL_TEXTS = {
         </p>
         
         <p style="font-weight: bold; margin-bottom: 10px;">
-            Examples of primary outcome variables:
+            HAMELIN supports both Classification and Regression tasks:
         </p>
         
         <p style="margin-left: 20px; margin-bottom: 8px;">
-            <strong>• Binary outcomes:</strong> Treatment success/failure, presence/absence of disease, cure/no cure
+            <strong>• Binary outcomes (Classification):</strong> Treatment success/failure, presence/absence of disease, cure/no cure
         </p>
         
         <p style="margin-left: 20px; margin-bottom: 8px;">
-            <strong>• Continuous outcomes:</strong> Blood pressure levels, pain scores, quality of life indices
+            <strong>• Categorical outcomes (Classification):</strong> Disease severity levels, treatment response categories (mild/moderate/severe)
         </p>
         
         <p style="margin-left: 20px; margin-bottom: 8px;">
-            <strong>• Categorical outcomes:</strong> Disease severity levels, treatment response categories
+            <strong>• Continuous numerical outcomes (Regression):</strong> Blood pressure levels, pain scores (0-10), quality of life indices, lab values
         </p>
         
         <p style="margin-left: 20px; margin-bottom: 15px;">
-            <strong>• Time-related outcomes:</strong> Survival time, time to recovery, duration of symptoms
+            <strong>• Time-related outcomes (Regression):</strong> Survival time, time to recovery, duration of symptoms (in days/weeks)
         </p>
         
-        <p style="margin-top: 15px; font-style: italic;">
-            Note: This variable will be used as the target for all predictive analyses and treatment effect comparisons.
+        <p style="font-weight: bold; margin-top: 15px; margin-bottom: 10px; background-color: #e8f4f8; padding: 10px;">
+            ✓ Intelligent Variable Detection:
+        </p>
+        
+        <p style="margin-left: 20px; margin-bottom: 8px;">
+            The system automatically detects:
+        </p>
+        
+        <p style="margin-left: 40px; margin-bottom: 5px;">
+            • <strong>Categorical variables</strong>: Text categories, limited distinct values
+        </p>
+        
+        <p style="margin-left: 40px; margin-bottom: 5px;">
+            • <strong>Continuous variables</strong>: Real numbers with decimals (e.g., 72.5, 98.6)
+        </p>
+        
+        <p style="margin-left: 40px; margin-bottom: 15px;">
+            • <strong>Discrete numerical variables</strong>: Integers with repeated values (treated as categorical if appropriate)
+        </p>
+        
+        <p style="margin-top: 15px; font-style: italic; background-color: #fff3cd; padding: 10px; border-left: 4px solid #ffc107;">
+            <strong>Note:</strong> Variables with insufficient sample distribution are automatically filtered out. 
+            For classification, each category needs at least 5 samples. For regression with discrete values, 
+            at least 2 samples per value are required.
         </p>
         """
     },

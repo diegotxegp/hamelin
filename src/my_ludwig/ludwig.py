@@ -108,28 +108,19 @@ class Ludwig:
             unique_count = self.df[target].nunique(dropna=True)
             total_count = len(self.df[target].dropna())
             
-            print(f"DEBUG: Target '{target}' has {unique_count} unique values out of {total_count} total samples")
-            print(f"DEBUG: Uniqueness ratio: {unique_count/total_count:.2%}")
-            print(f"DEBUG: Data type: {self.df[target].dtype}")
-            
             # Check if variable has real decimal values (not just .0)
             has_decimals = False
             if self.df[target].dtype == 'float64':
                 has_decimals = (self.df[target].dropna() % 1 != 0).any()
-                print(f"DEBUG: Has real decimal values: {has_decimals}")
             
             # Treat as continuous if: has real decimals OR >50% values are unique
             if has_decimals or unique_count > total_count * 0.5:
-                print(f"DEBUG: Variable treated as continuous (regression) - using random split")
                 is_continuous = True
             else:
                 # It's discrete/categorical - check for values with only 1 sample
                 counts = self.df[target].value_counts(dropna=True)
                 min_count = counts.min()
                 values_with_one = (counts == 1).sum()
-                
-                print(f"DEBUG: Minimum count per value: {min_count}")
-                print(f"DEBUG: Values with only 1 sample: {values_with_one}")
                 
                 if min_count < 2:
                     raise ValueError(
@@ -140,11 +131,9 @@ class Ludwig:
         else:
             # For categorical/object types
             unique_count = self.df[target].nunique(dropna=True)
-            print(f"DEBUG: Target '{target}' has {unique_count} unique categories")
             
             counts = self.df[target].value_counts(dropna=True)
             min_count = counts.min()
-            print(f"DEBUG: Minimum count per category: {min_count}")
             
             if min_count < 2:
                 raise ValueError(

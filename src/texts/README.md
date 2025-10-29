@@ -12,7 +12,8 @@ src/texts/
 ├── text_manager.py                 # Main text manager
 ├── clinical_trial_texts.py         # Texts for Clinical Trial
 ├── patient_registry_texts.py       # Texts for Patient Registry
-└── observational_study_texts.py    # Texts for Observational Study
+├── observational_study_texts.py    # Texts for Observational Study
+└── README.md                       # This file
 ```
 
 ## 🔧 How to Modify Texts

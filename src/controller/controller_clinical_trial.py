@@ -156,8 +156,6 @@ class TrainingWorker(QThread):
                         self.cancelled.emit()
                         return
                     raise
-            else:
-                print("DEBUG: Skipping confusion matrix - regression task")
             
             if self.isInterruptionRequested() or self._is_cancelled:
                 self._cleanup_ray()
