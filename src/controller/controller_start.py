@@ -126,7 +126,7 @@ li.checked::marker {{ content: "\\2612"; }}
             current_option = self.comboBox_start_options.currentText()
             if not current_option or current_option == "":
                 QMessageBox.warning(
-                    None,
+                    self.controller.window,
                     "No Study Type Selected",
                     "Please select a study type from the dropdown menu before continuing."
                 )
@@ -142,7 +142,7 @@ li.checked::marker {{ content: "\\2612"; }}
             current_project = self.listWidget_start_project.currentItem()
             if current_project is None:
                 QMessageBox.warning(
-                    None,
+                    self.controller.window,
                     "No Project Selected",
                     "Please select a project from the list or create a new one before continuing."
                 )
@@ -161,7 +161,7 @@ li.checked::marker {{ content: "\\2612"; }}
             current_data = self.listWidget_start_data.currentItem()
             if current_data is None:
                 QMessageBox.warning(
-                    None,
+                    self.controller.window,
                     "No Dataset Selected",
                     "Please select a dataset from the list or upload a new one before continuing."
                 )
@@ -179,7 +179,7 @@ li.checked::marker {{ content: "\\2612"; }}
         if self.tab == 4:
             # Optional confirmation before proceeding to analysis
             reply = QMessageBox.question(
-                None,
+                self.controller.window,
                 "Ready to Begin Analysis",
                 f"You are about to start a {self.comboBox_start_options.currentText()} analysis.\n\n"
                 f"Project: {self.model_start.model.project_name if hasattr(self.model_start.model, 'project_name') else 'Unknown'}\n"
@@ -228,7 +228,7 @@ li.checked::marker {{ content: "\\2612"; }}
             np = self.model_start.new_project(name.strip())
             if np == None:
                 QMessageBox.warning(
-                    None,
+                    self.controller.window,
                     "Project Name Exists",
                     "This project name already exists. Please choose a different name."
                 )
@@ -241,7 +241,7 @@ li.checked::marker {{ content: "\\2612"; }}
                         break
         elif ok and not name.strip():
             QMessageBox.warning(
-                None,
+                self.controller.window,
                 "Invalid Project Name",
                 "Project name cannot be empty. Please enter a valid name."
             )
@@ -270,20 +270,20 @@ li.checked::marker {{ content: "\\2612"; }}
 
     def _load_dataset(self):
         # Open file dialog to select the CSV file
-        origin_path, _ = QFileDialog.getOpenFileName(None, "Open CSV File", "", "CSV Files (*.csv)")
+        origin_path, _ = QFileDialog.getOpenFileName(self.controller.window, "Open CSV File", "", "CSV Files (*.csv)")
         if origin_path:
             try:
                 self.model_start.load_dataset(origin_path)
                 self._update_tab_data()
             except Exception as e:
                 QMessageBox.critical(
-                    None,
+                    self.controller.window,
                     "Error Loading Dataset",
                     f"Failed to load the selected CSV file.\n\nError: {str(e)}\n\nPlease ensure the file is a valid CSV format."
                 )
         else:
             QMessageBox.information(
-                None,
+                self.controller.window,
                 "No File Selected",
                 "Please select a CSV file to upload or choose an existing dataset from the list."
             )

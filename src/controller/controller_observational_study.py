@@ -7,15 +7,16 @@ from datetime import datetime
 from my_ludwig.ludwig_data import input_feature_types, output_feature_types, separators, missing_data_options, metrics, goals
 from texts import text_manager
 
-class AutoConfigWorker(QThread):
-    """Worker thread for model auto-configuration."""
+class AutoconfigWorker(QThread):
+    """Worker thread for autoconfig."""
     finished = Signal()
     error = Signal(str)
     cancelled = Signal()
     
-    def __init__(self, model):
+    def __init__(self, model, parent_window=None):
         super().__init__()
         self.model = model
+        self.parent_window = parent_window
         self._is_cancelled = False
         
     def cancel(self):
@@ -47,9 +48,10 @@ class TrainingWorker(QThread):
     cancelled = Signal()
     progress_update = Signal(str)
     
-    def __init__(self, model):
+    def __init__(self, model, parent_window=None):
         super().__init__()
         self.model = model
+        self.parent_window = parent_window
         self._is_cancelled = False
         
     def cancel(self):
@@ -279,13 +281,13 @@ class ControllerObservationalStudy:
             self.config_source_tab = self.tab
             
             # Create progress dialog
-            self.config_progress = QProgressDialog("Configuring model, please wait...", "Cancel", 0, 0, None)
+            self.config_progress = QProgressDialog("Configuring model, please wait...", "Cancel", 0, 0, self.controller.window)
             self.config_progress.setWindowTitle("Auto Configuration")
             self.config_progress.setWindowModality(Qt.WindowModal)
             self.config_progress.setMinimumDuration(0)
             
             # Create worker
-            self.config_worker = AutoConfigWorker(self.model_observational.model)
+            self.config_worker = AutoconfigWorker(self.model_observational.model, self.controller.window)
             self.config_worker.finished.connect(self._on_config_finished)
             self.config_worker.error.connect(self._on_config_error)
             self.config_worker.cancelled.connect(self._on_config_cancelled)
@@ -314,7 +316,7 @@ class ControllerObservationalStudy:
         if self.tab == 4:
             # Show confirmation dialog before training
             reply = QMessageBox.question(
-                None,
+                self.controller.window,
                 "Confirm Training",
                 "Are you sure you want to start the model training?\n\n"
                 "This process may take several minutes depending on your data size and settings.",
@@ -329,13 +331,13 @@ class ControllerObservationalStudy:
             self.training_source_tab = self.tab
             
             # Create progress dialog
-            self.training_progress = QProgressDialog("Training model, please wait...", "Cancel", 0, 0, None)
+            self.training_progress = QProgressDialog("Training model, please wait...", "Cancel", 0, 0, self.controller.window)
             self.training_progress.setWindowTitle("Model Training")
             self.training_progress.setWindowModality(Qt.WindowModal)
             self.training_progress.setMinimumDuration(0)
             
             # Create worker
-            self.training_worker = TrainingWorker(self.model_observational.model)
+            self.training_worker = TrainingWorker(self.model_observational.model, self.controller.window)
             self.training_worker.finished.connect(self._on_training_finished)
             self.training_worker.error.connect(self._on_training_error)
             self.training_worker.cancelled.connect(self._on_training_cancelled)
@@ -363,7 +365,7 @@ class ControllerObservationalStudy:
         current_item = self.listWidget_observational_variable.currentItem()
         if current_item is None:
             QMessageBox.warning(
-                None, 
+                self.controller.window, 
                 "No Variable Selected", 
                 "Please select a primary variable from the list before continuing."
             )
@@ -715,13 +717,13 @@ class ControllerObservationalStudy:
         import os
         
         if not os.path.exists(image_path):
-            QMessageBox.warning(None, "File Not Found", 
+            QMessageBox.warning(self.controller.window, "File Not Found", 
                               f"Image file not found:\n{image_path}")
             return
         
         # Show image in Qt dialog
         try:
-            dialog = QDialog()
+            dialog = QDialog(self.controller.window)
             dialog.setWindowTitle(title)
             dialog.setMinimumSize(900, 700)
             
@@ -746,7 +748,7 @@ class ControllerObservationalStudy:
             dialog.setLayout(layout)
             dialog.exec()
         except Exception as e:
-            QMessageBox.critical(None, "Error", 
+            QMessageBox.critical(self.controller.window, "Error", 
                                f"Unable to display image.\nError: {str(e)}\n\nFile location:\n{image_path}")
 
     def _show_performance_chart(self):
@@ -769,11 +771,11 @@ class ControllerObservationalStudy:
                 
             except Exception as e:
                 from PySide6.QtWidgets import QMessageBox
-                QMessageBox.critical(None, "Error", 
+                QMessageBox.critical(self.controller.window, "Error", 
                                    f"Error opening performance chart:\n{str(e)}")
         else:
             from PySide6.QtWidgets import QMessageBox
-            QMessageBox.warning(None, "No Model", 
+            QMessageBox.warning(self.controller.window, "No Model", 
                               "No trained model available. Please complete the training process first.")
 
     # Signal handlers for auto-configuration
@@ -789,13 +791,13 @@ class ControllerObservationalStudy:
     def _on_config_error(self, error_msg):
         """Handle auto-configuration error."""
         self.config_progress.close()
-        QMessageBox.critical(None, "Configuration Error", 
+        QMessageBox.critical(self.controller.window, "Configuration Error", 
                            f"Error during model configuration:\n{error_msg}")
     
     def _on_config_cancelled(self):
         """Handle auto-configuration cancellation."""
         self.config_progress.close()
-        QMessageBox.information(None, "Cancelled", 
+        QMessageBox.information(self.controller.window, "Cancelled", 
                               "Model configuration was cancelled.")
     
     # Signal handlers for training
@@ -820,7 +822,7 @@ class ControllerObservationalStudy:
             self.training_worker.wait()
         
         self.training_progress.close()
-        QMessageBox.critical(None, "Training Error", 
+        QMessageBox.critical(self.controller.window, "Training Error", 
                            f"Error during model training:\n{error_msg}")
     
     def _on_training_cancelled(self):
@@ -834,7 +836,7 @@ class ControllerObservationalStudy:
                 self.training_worker.wait()
         
         self.training_progress.close()
-        QMessageBox.information(None, "Cancelled", 
+        QMessageBox.information(self.controller.window, "Cancelled", 
                               "Model training was cancelled. The process may take a moment to fully stop.")
     
     def _on_progress_update(self, message):
@@ -871,9 +873,9 @@ class ControllerObservationalStudy:
                 
             except Exception as e:
                 from PySide6.QtWidgets import QMessageBox
-                QMessageBox.critical(None, "Error", 
+                QMessageBox.critical(self.controller.window, "Error", 
                                    f"Error opening confusion matrix:\n{str(e)}")
         else:
             from PySide6.QtWidgets import QMessageBox
-            QMessageBox.warning(None, "No Model", 
+            QMessageBox.warning(self.controller.window, "No Model", 
                               "No trained model available. Please complete the training process first.")
