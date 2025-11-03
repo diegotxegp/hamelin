@@ -383,20 +383,74 @@ li.checked::marker {{ content: "\\2612"; }}
             # Potential target variables
             status_info.append("\n--- SUITABLE OUTCOME VARIABLES ---")
             status_info.append("  (Variables that could be predicted)")
-            potential_targets = []
+            potential_categorical = []
+            potential_numerical = []
+            potential_boolean = []
+            
+            total_rows = len(df)
+            
             for col in df.columns:
-                # Only consider categorical variables
+                # Categorical variables for classification
                 if pd.api.types.is_categorical_dtype(df[col]) or df[col].dtype == object:
                     counts = df[col].value_counts(dropna=True)
                     if len(counts) <= 10 and (counts >= 5).all():  # max_categories=10, min_samples=5
-                        potential_targets.append((col, len(counts)))
+                        potential_categorical.append((col, len(counts)))
+                
+                # Numerical variables
+                elif df[col].dtype in ['int64', 'float64']:
+                    unique_count = df[col].nunique(dropna=True)
+                    
+                    # Check if variable has real decimal values (not just .0)
+                    has_decimals = False
+                    if df[col].dtype == 'float64':
+                        has_decimals = (df[col].dropna() % 1 != 0).any()
+                    
+                    # Continuous variable: has real decimals OR >50% values are unique
+                    if has_decimals or unique_count > total_rows * 0.5:
+                        potential_numerical.append(col)
+                    # Discrete numerical (treated as categorical): check min 2 samples per value
+                    else:
+                        counts = df[col].value_counts(dropna=True)
+                        min_count = counts.min()
+                        if min_count >= 2 and unique_count <= 10:
+                            potential_categorical.append((col, unique_count))
+                
+                # Boolean variables for binary classification
+                elif df[col].dtype == 'bool':
+                    counts = df[col].value_counts(dropna=True)
+                    if len(counts) == 2 and (counts >= 2).all():  # Both True and False with at least 2 samples
+                        potential_boolean.append(col)
             
-            if potential_targets:
-                for col, unique_count in sorted(potential_targets, key=lambda x: x[1])[:3]:
+            if potential_categorical:
+                status_info.append("  Classification (categorical outcomes):")
+                for col, unique_count in sorted(potential_categorical, key=lambda x: x[1])[:3]:
                     status_info.append(f"    > {col} ({unique_count} categories)")
-            else:
-                status_info.append("    [!] No suitable categorical variables found")
-                status_info.append("    Note: Outcome variable needs 2-10 categories with at least 5 examples each")
+                if len(potential_categorical) > 3:
+                    status_info.append(f"    ... and {len(potential_categorical) - 3} more")
+            
+            if potential_boolean:
+                status_info.append("  Binary classification (boolean outcomes):")
+                for col in potential_boolean[:3]:
+                    status_info.append(f"    > {col} (True/False)")
+                if len(potential_boolean) > 3:
+                    status_info.append(f"    ... and {len(potential_boolean) - 3} more")
+            
+            if potential_numerical:
+                status_info.append("  Regression (continuous numerical outcomes):")
+                for col in potential_numerical[:3]:
+                    min_val = df[col].min()
+                    max_val = df[col].max()
+                    status_info.append(f"    > {col} (range: {min_val:.2f} to {max_val:.2f})")
+                if len(potential_numerical) > 3:
+                    status_info.append(f"    ... and {len(potential_numerical) - 3} more")
+            
+            if not potential_categorical and not potential_numerical and not potential_boolean:
+                status_info.append("    [!] No suitable outcome variables found")
+                status_info.append("    Requirements:")
+                status_info.append("      - Categorical: 2-10 categories, each with ≥5 examples")
+                status_info.append("      - Numerical (continuous): >50% unique values or real decimals")
+                status_info.append("      - Numerical (discrete): ≤10 unique values, each with ≥2 examples")
+                status_info.append("      - Boolean: Both True and False with ≥2 examples")
             
             # Data quality assessment
             status_info.append("\n--- OVERALL DATA QUALITY ---")
