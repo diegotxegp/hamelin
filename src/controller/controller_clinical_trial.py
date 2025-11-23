@@ -1,6 +1,6 @@
 # controller/controller_clinical_trial.py
 
-from PySide6.QtWidgets import QPushButton, QTabWidget, QListWidget, QLabel, QComboBox, QWidget, QHBoxLayout, QScrollArea, QTextEdit, QLineEdit, QSizePolicy, QMessageBox, QProgressDialog
+from PySide6.QtWidgets import QPushButton, QTabWidget, QListWidget, QLabel, QComboBox, QWidget, QHBoxLayout, QVBoxLayout, QScrollArea, QTextEdit, QLineEdit, QSizePolicy, QMessageBox, QProgressDialog, QFrame
 from PySide6.QtCore import Qt, QThread, Signal
 from datetime import datetime
 from datetime import datetime
@@ -374,6 +374,9 @@ class ControllerClinicalTrial:
 
         # Tab 2: Inclusion/Exclusion criteria
         if self.tab == 2:
+            # Validate and apply criteria before proceeding
+            if not self._read_updated_criteria():
+                return  # Stay on tab if validation failed
             self._set_criteria()
             self._next_tab()
             return
@@ -567,7 +570,10 @@ class ControllerClinicalTrial:
         self.textEdit_4.setPlainText(summary_text)
 
     def _update_tab_criteria(self):
-        """Setup the criteria tab with dynamic feature selection widgets."""
+        """
+        Updates the criteria tab with instance selection and removal functionality.
+        Implements [IS2] Select subpopulations and [IS3] Remove specific instances HGML tasks.
+        """
         if not hasattr(self.model_clinical, 'model') or not self.model_clinical.model or self.model_clinical.model.df is None:
             return
 
@@ -576,40 +582,203 @@ class ControllerClinicalTrial:
             print("WARNING: Cannot update criteria tab - autoconfig not completed successfully")
             return
 
-        # Exact same logic as Patient Registry
-        criteria = self.model_clinical.model.ludwig.input_features | self.model_clinical.model.ludwig.target
-        io = ["", "input", "output"]
-
-        # Clear existing widgets - identical to Patient Registry
+        # Clear the layout
         while self.layout_clinical_criteria.count():
             item = self.layout_clinical_criteria.takeAt(0)
             if item.widget():
                 item.widget().deleteLater()
 
-        # Add rows to the layout - identical to Patient Registry
-        for name, type in criteria.items():
-            row = QWidget()
-            row_layout = QHBoxLayout(row)
+        # Header section
+        header = QLabel("INSTANCE SELECTION CRITERIA\n\n"
+                       "Define inclusion and exclusion criteria for patient selection:\n"
+                       "• Inclusion: Select subpopulations meeting specific conditions (OR logic)\n"
+                       "• Exclusion: Remove instances matching specific conditions (AND logic)")
+        header.setStyleSheet("font-weight: bold; color: #2C5F7C; padding: 10px;")
+        header.setWordWrap(True)
+        self.layout_clinical_criteria.addWidget(header)
 
-            label_criterium = QLabel(name)
-            combo_io = QComboBox()
-            combo_type = QComboBox()
-            ift = [""] + input_feature_types # Empty string for the first item
-            if name != self.model_clinical.model.primary_variable:
-                combo_io.addItems(io)
-                combo_io.setCurrentText("input")
-                combo_type.addItems(ift)
+        # Buttons section
+        buttons_widget = QWidget()
+        buttons_layout = QHBoxLayout(buttons_widget)
+        
+        btn_add_inclusion = QPushButton("✓ Add Inclusion Rule")
+        btn_add_inclusion.setStyleSheet("background-color: #4CAF50; color: white; padding: 8px; font-weight: bold;")
+        btn_add_inclusion.clicked.connect(lambda: self._add_criteria_rule("inclusion"))
+        
+        btn_add_exclusion = QPushButton("✗ Add Exclusion Rule")
+        btn_add_exclusion.setStyleSheet("background-color: #F44336; color: white; padding: 8px; font-weight: bold;")
+        btn_add_exclusion.clicked.connect(lambda: self._add_criteria_rule("exclusion"))
+        
+        btn_clear = QPushButton("Clear All")
+        btn_clear.setStyleSheet("background-color: #9E9E9E; color: white; padding: 8px;")
+        btn_clear.clicked.connect(self._clear_all_criteria)
+        
+        buttons_layout.addWidget(btn_add_inclusion)
+        buttons_layout.addWidget(btn_add_exclusion)
+        buttons_layout.addWidget(btn_clear)
+        buttons_layout.addStretch()
+        
+        self.layout_clinical_criteria.addWidget(buttons_widget)
+
+        # Existing rules section
+        self._display_criteria_rules()
+        
+        # Statistics summary at bottom
+        self._update_criteria_summary()
+
+    def _add_criteria_rule(self, rule_type):
+        """Adds a new criteria rule row to the UI."""
+        # Get all available columns from the dataset
+        columns = list(self.model_clinical.model.df.columns)
+        
+        # Create rule widget
+        rule_widget = QWidget()
+        rule_layout = QHBoxLayout(rule_widget)
+        rule_layout.setContentsMargins(5, 5, 5, 5)
+        
+        # Store rule type as widget property for later retrieval
+        rule_widget.setProperty("rule_type", rule_type)
+        
+        # Rule type indicator
+        if rule_type == "inclusion":
+            type_label = QLabel("✓ INCLUDE IF:")
+            type_label.setStyleSheet("color: #4CAF50; font-weight: bold; min-width: 120px;")
+        else:
+            type_label = QLabel("✗ EXCLUDE IF:")
+            type_label.setStyleSheet("color: #F44336; font-weight: bold; min-width: 120px;")
+        
+        # Variable selector
+        combo_variable = QComboBox()
+        combo_variable.addItems(columns)
+        combo_variable.setMinimumWidth(150)
+        
+        # Operator selector
+        combo_operator = QComboBox()
+        combo_operator.addItems(["equals", "not equals", "greater than", "less than", 
+                                "greater or equal", "less or equal", "contains", "not contains"])
+        combo_operator.setMinimumWidth(120)
+        
+        # Value input
+        line_value = QLineEdit()
+        line_value.setPlaceholderText("Enter value...")
+        line_value.setMinimumWidth(150)
+        
+        # Remove button
+        btn_remove = QPushButton("✗")
+        btn_remove.setStyleSheet("background-color: #F44336; color: white; font-weight: bold; max-width: 30px;")
+        btn_remove.clicked.connect(lambda: self._remove_criteria_rule(rule_widget))
+        
+        # Add widgets to layout
+        rule_layout.addWidget(type_label)
+        rule_layout.addWidget(combo_variable)
+        rule_layout.addWidget(combo_operator)
+        rule_layout.addWidget(line_value)
+        rule_layout.addWidget(btn_remove)
+        rule_layout.addStretch()
+        
+        # Insert before the stretch item (which is second to last, before summary)
+        insert_position = max(0, self.layout_clinical_criteria.count() - 2)
+        self.layout_clinical_criteria.insertWidget(insert_position, rule_widget)
+
+    def _remove_criteria_rule(self, rule_widget):
+        """Removes a specific rule from the UI."""
+        self.layout_clinical_criteria.removeWidget(rule_widget)
+        rule_widget.deleteLater()
+
+    def _clear_all_criteria(self):
+        """Clears all criteria rules with confirmation."""
+        reply = QMessageBox.question(
+            self.controller.window,
+            "Clear All Criteria",
+            "Are you sure you want to remove all inclusion and exclusion rules?",
+            QMessageBox.Yes | QMessageBox.No,
+            QMessageBox.No
+        )
+        
+        if reply == QMessageBox.Yes:
+            # Clear criteria manager
+            self.model_clinical.model.criteria_manager.rules.clear()
+            self.model_clinical.model.filtered_df = None
+            
+            # Refresh the UI
+            self._update_tab_criteria()
+
+    def _display_criteria_rules(self):
+        """Displays existing rules from the criteria manager."""
+        for rule in self.model_clinical.model.criteria_manager.rules:
+            # Get all columns
+            columns = list(self.model_clinical.model.df.columns)
+            
+            # Create rule widget
+            rule_widget = QWidget()
+            rule_layout = QHBoxLayout(rule_widget)
+            rule_layout.setContentsMargins(5, 5, 5, 5)
+            
+            # Store rule type
+            rule_widget.setProperty("rule_type", rule.rule_type)
+            
+            # Rule type indicator
+            if rule.rule_type == "inclusion":
+                type_label = QLabel("✓ INCLUDE IF:")
+                type_label.setStyleSheet("color: #4CAF50; font-weight: bold; min-width: 120px;")
             else:
-                combo_io.addItems(io)
-                combo_io.setCurrentText("output")
-                combo_type.addItems(output_feature_types)
-                
-            combo_type.setCurrentText(type)
+                type_label = QLabel("✗ EXCLUDE IF:")
+                type_label.setStyleSheet("color: #F44336; font-weight: bold; min-width: 120px;")
+            
+            # Variable selector
+            combo_variable = QComboBox()
+            combo_variable.addItems(columns)
+            combo_variable.setCurrentText(rule.variable)
+            combo_variable.setMinimumWidth(150)
+            
+            # Operator selector
+            combo_operator = QComboBox()
+            combo_operator.addItems(["equals", "not equals", "greater than", "less than",
+                                    "greater or equal", "less or equal", "contains", "not contains"])
+            combo_operator.setCurrentText(rule.operator)
+            combo_operator.setMinimumWidth(120)
+            
+            # Value input
+            line_value = QLineEdit()
+            line_value.setText(str(rule.value))
+            line_value.setMinimumWidth(150)
+            
+            # Remove button
+            btn_remove = QPushButton("✗")
+            btn_remove.setStyleSheet("background-color: #F44336; color: white; font-weight: bold; max-width: 30px;")
+            btn_remove.clicked.connect(lambda w=rule_widget: self._remove_criteria_rule(w))
+            
+            # Add widgets
+            rule_layout.addWidget(type_label)
+            rule_layout.addWidget(combo_variable)
+            rule_layout.addWidget(combo_operator)
+            rule_layout.addWidget(line_value)
+            rule_layout.addWidget(btn_remove)
+            rule_layout.addStretch()
+            
+            # Insert before stretch
+            insert_position = max(0, self.layout_clinical_criteria.count() - 1)
+            self.layout_clinical_criteria.insertWidget(insert_position, rule_widget)
 
-            row_layout.addWidget(label_criterium)
-            row_layout.addWidget(combo_io)
-            row_layout.addWidget(combo_type)
-            self.layout_clinical_criteria.addWidget(row)
+    def _update_criteria_summary(self):
+        """Updates the summary statistics at the bottom of the criteria tab."""
+        summary_widget = QWidget()
+        summary_layout = QHBoxLayout(summary_widget)
+        
+        original_size = len(self.model_clinical.model.df)
+        filtered_size = len(self.model_clinical.model.filtered_df) if self.model_clinical.model.filtered_df is not None else original_size
+        removed_count = original_size - filtered_size
+        removed_percent = (removed_count / original_size * 100) if original_size > 0 else 0
+        
+        summary_text = f"📊 Dataset: {original_size} instances | Filtered: {filtered_size} instances | Removed: {removed_count} ({removed_percent:.1f}%)"
+        summary_label = QLabel(summary_text)
+        summary_label.setStyleSheet("background-color: #E8F4F8; padding: 10px; border-radius: 5px; font-weight: bold;")
+        
+        summary_layout.addWidget(summary_label)
+        summary_layout.addStretch()
+        
+        # Add at the end
+        self.layout_clinical_criteria.addWidget(summary_widget)
 
     def _update_tab_investigational(self):
         """Setup the investigational drug tab with dynamic feature selection widgets."""
@@ -823,30 +992,123 @@ class ControllerClinicalTrial:
             setattr(self.model_clinical.model.ludwig, key, value)
 
     def _read_updated_criteria(self):
-        """Reads the user-modified criteria from the layout."""
+        """
+        Reads and applies the user-defined inclusion/exclusion criteria.
+        Implements [IS2] Select subpopulations and [IS3] Remove specific instances HGML tasks.
+        Returns True if criteria are valid and applied successfully, False otherwise.
+        """
         if not hasattr(self.model_clinical, 'model') or not self.model_clinical.model or self.model_clinical.model.df is None:
-            return
-
+            return True  # No validation needed if no model
+        
+        # Clear existing rules
+        self.model_clinical.model.criteria_manager.rules.clear()
+        
+        # Iterate through layout to find rule widgets
+        incomplete_rules = []
         for i in range(self.layout_clinical_criteria.count()):
-            row_widget = self.layout_clinical_criteria.itemAt(i).widget()
-            if not row_widget:
+            widget = self.layout_clinical_criteria.itemAt(i).widget()
+            if not widget:
                 continue
-            row_layout = row_widget.layout()
-            if not row_layout or row_layout.count() < 3:
+            
+            # Check if this is a rule widget (has rule_type property)
+            rule_type = widget.property("rule_type")
+            if rule_type not in ["inclusion", "exclusion"]:
                 continue
-
-            label = row_layout.itemAt(0).widget()
-            combo_io = row_layout.itemAt(1).widget()
-            combo_type = row_layout.itemAt(2).widget()
-
-            name = label.text()
-            io_value = combo_io.currentText()
-            type_value = combo_type.currentText()
-
-            if io_value == "input":
-                self.model_clinical.model.ludwig.input_features[name] = type_value
-            else:
-                self.model_clinical.model.ludwig.target[name] = type_value
+            
+            # Extract rule components
+            layout = widget.layout()
+            if not layout or layout.count() < 4:
+                continue
+            
+            combo_variable = layout.itemAt(1).widget()  # Variable combo
+            combo_operator = layout.itemAt(2).widget()  # Operator combo
+            line_value = layout.itemAt(3).widget()      # Value input
+            
+            if not isinstance(combo_variable, QComboBox) or not isinstance(combo_operator, QComboBox) or not isinstance(line_value, QLineEdit):
+                continue
+            
+            variable = combo_variable.currentText()
+            operator = combo_operator.currentText()
+            value_text = line_value.text().strip()
+            
+            # Validate rule completeness
+            if not value_text:
+                incomplete_rules.append(f"{rule_type.title()}: {variable} {operator} [empty value]")
+                continue
+            
+            # Try to convert value to appropriate type
+            try:
+                # Check if the column is numeric
+                if variable in self.model_clinical.model.df.columns:
+                    col_dtype = self.model_clinical.model.df[variable].dtype
+                    if col_dtype in ['int64', 'float64']:
+                        value = float(value_text)
+                    else:
+                        value = value_text
+                else:
+                    value = value_text
+            except ValueError:
+                # If conversion fails, use as string
+                value = value_text
+            
+            # Add rule to criteria manager
+            self.model_clinical.model.criteria_manager.add_rule(
+                variable=variable,
+                operator=operator,
+                value=value,
+                rule_type=rule_type
+            )
+        
+        # Check for incomplete rules
+        if incomplete_rules:
+            QMessageBox.warning(
+                self.controller.window,
+                "Incomplete Rules",
+                f"The following rules have empty values and will be ignored:\n\n" + "\n".join(incomplete_rules),
+                QMessageBox.Ok
+            )
+        
+        # Apply criteria if there are any rules
+        if len(self.model_clinical.model.criteria_manager.rules) > 0:
+            try:
+                stats = self.model_clinical.model.apply_criteria()
+                
+                # Show statistics dialog
+                QMessageBox.information(
+                    self.controller.window,
+                    "Criteria Applied",
+                    f"Instance selection criteria applied successfully:\n\n"
+                    f"Original dataset: {stats['original_count']} instances\n"
+                    f"Filtered dataset: {stats['filtered_count']} instances\n"
+                    f"Removed: {stats['removed_count']} instances ({stats['removed_percent']:.1f}%)\n\n"
+                    f"The filtered dataset will be used for training.",
+                    QMessageBox.Ok
+                )
+                
+                # Validate minimum sample size
+                if stats['filtered_count'] < 10:
+                    QMessageBox.warning(
+                        self.controller.window,
+                        "Low Sample Size",
+                        f"Warning: Only {stats['filtered_count']} instances remain after filtering.\n\n"
+                        f"This may not be sufficient for reliable model training.\n"
+                        f"Consider relaxing your criteria.",
+                        QMessageBox.Ok
+                    )
+                
+            except Exception as e:
+                QMessageBox.critical(
+                    self.controller.window,
+                    "Error Applying Criteria",
+                    f"An error occurred while applying the selection criteria:\n\n{str(e)}",
+                    QMessageBox.Ok
+                )
+                return False
+        else:
+            # No rules defined - use full dataset
+            self.model_clinical.model.filtered_df = None
+        
+        return True
 
     def _read_updated_investigational(self):
         """Read the updated investigational drug configuration from the UI."""

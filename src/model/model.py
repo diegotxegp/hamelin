@@ -9,6 +9,7 @@ from model.model_observational_study import ModelObservationalStudy
 from model.model_clinical_trial import ModelClinicalTrial
 
 from my_ludwig.ludwig import Ludwig
+from utils.criteria_manager import CriteriaManager
 
 class Model:
     def __init__(self):
@@ -23,6 +24,8 @@ class Model:
 
         self.primary_variable = None
         self.criteria = None
+        self.criteria_manager = CriteriaManager()
+        self.filtered_df = None  # Store filtered dataset after applying criteria
 
         self.model_start = ModelStart(self)
         self.model_registry = ModelPatientRegistry(self)
@@ -35,8 +38,22 @@ class Model:
         self.df = self.ludwig.read_file(self.dataset_dir)
 
     def autoconfig(self):
-        """ Automatically generates a configuration file. """
-        return self.ludwig.autoconfig(self.primary_variable)
+        """
+        Automatically generates a configuration file using the filtered dataset.
+        Implements [IS2] Select subpopulations and [IS3] Remove specific instances.
+        """
+        # Use filtered dataset if criteria were applied, otherwise use original
+        working_dataset = self.get_working_dataset()
+        
+        # Temporarily update Ludwig's dataframe to the working dataset
+        original_df = self.ludwig.df
+        self.ludwig.df = working_dataset
+        
+        try:
+            self.ludwig.autoconfig(self.primary_variable)
+        finally:
+            # Restore original dataframe
+            self.ludwig.df = original_df
     
     def train_config(self):
         """ Train the model. """
@@ -44,8 +61,23 @@ class Model:
         return self.ludwig.train()
     
     def auto_train(self):
-        """ Train the model. """
-        return self.ludwig.auto_train(self.primary_variable)
+        """
+        Train the model using the filtered dataset (if criteria applied).
+        Implements [IS2] Select subpopulations and [IS3] Remove specific instances.
+        """
+        # Use filtered dataset if criteria were applied, otherwise use original
+        working_dataset = self.get_working_dataset()
+        
+        # Temporarily update Ludwig's dataframe to the working dataset
+        original_df = self.ludwig.df
+        self.ludwig.df = working_dataset
+        
+        try:
+            result = self.ludwig.auto_train(self.primary_variable)
+            return result
+        finally:
+            # Restore original dataframe
+            self.ludwig.df = original_df
     
     def train(self):
         """ Train the model. """
@@ -89,4 +121,31 @@ class Model:
                 if (counts >= 2).all():  # Both True and False must have at least 2 samples
                     acceptable_variables.append(col)
         return acceptable_variables
+    
+    def apply_criteria(self):
+        """
+        Apply inclusion/exclusion criteria to the dataset.
+        Implements [IS2] Select subpopulations and [IS3] Remove specific instances.
+        
+        Returns:
+            dict: Statistics about the filtering operation
+        """
+        if self.df is None:
+            raise ValueError("No dataset loaded. Cannot apply criteria.")
+        
+        # Apply criteria and get filtered dataset
+        self.filtered_df, statistics = self.criteria_manager.apply_criteria(self.df)
+        
+        return statistics
+    
+    def get_working_dataset(self):
+        """
+        Get the dataset to use for training (filtered if criteria applied, original otherwise).
+        
+        Returns:
+            pd.DataFrame: The dataset to use
+        """
+        if self.filtered_df is not None and len(self.filtered_df) > 0:
+            return self.filtered_df
+        return self.df
     

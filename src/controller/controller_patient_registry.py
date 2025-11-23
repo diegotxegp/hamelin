@@ -1,6 +1,6 @@
 # controller/controller_registro.py
 
-from PySide6.QtWidgets import QPushButton, QTabWidget, QListWidget, QLabel, QComboBox, QWidget, QHBoxLayout, QScrollArea, QTextEdit, QLineEdit, QSizePolicy, QMessageBox, QProgressDialog
+from PySide6.QtWidgets import QPushButton, QTabWidget, QListWidget, QLabel, QComboBox, QWidget, QHBoxLayout, QVBoxLayout, QScrollArea, QTextEdit, QLineEdit, QSizePolicy, QMessageBox, QProgressDialog, QFrame
 from PySide6.QtCore import Qt, QThread, Signal
 from datetime import datetime
 
@@ -300,7 +300,10 @@ class ControllerPatientRegistry:
 
         # Tab 2: Inclusion/Exclusion criteria
         if self.tab == 2:
-            self._read_updated_criteria()
+            # Apply criteria and validate
+            if not self._read_updated_criteria():
+                return  # Stay on criteria tab if validation failed
+            
             self._update_tab_settings()
             self._next_tab() # Switches to the next tab
             return
@@ -376,30 +379,31 @@ class ControllerPatientRegistry:
         return True
 
     def _update_tab_criteria(self):
-        """ Updates the criteria tab."""
-        # Check if autoconfig completed successfully
-        if self.model_registry.model.ludwig.input_features is None or self.model_registry.model.ludwig.target is None:
-            print("WARNING: Cannot update criteria tab - autoconfig not completed successfully")
-            return
-            
+        """
+        Updates the criteria tab with variable type selection and instance filtering.
+        Combines original functionality with [IS2] Select subpopulations and [IS3] Remove specific instances.
+        """
+        # Get criteria from Ludwig
         criteria = self.model_registry.model.ludwig.input_features | self.model_registry.model.ludwig.target
         io = ["", "input", "output"]
-
+        
         # Clear the layout
         while self.layout_registry_criteria.count():
             item = self.layout_registry_criteria.takeAt(0)
             if item.widget():
                 item.widget().deleteLater()
 
-        # Add rows to the layout
-        for name, type in criteria.items():
+        # SECTION 1: Variable Type Selection (Original Functionality)
+        # Add rows for each variable to select input/output types
+        for name, type_value in criteria.items():
             row = QWidget()
             row_layout = QHBoxLayout(row)
 
             label_criterium = QLabel(name)
             combo_io = QComboBox()
             combo_type = QComboBox()
-            ift = [""] + input_feature_types # Empty string for the first item
+            ift = [""] + input_feature_types  # Empty string for the first item
+            
             if name != self.model_registry.model.primary_variable:
                 combo_io.addItems(io)
                 combo_io.setCurrentText("input")
@@ -409,36 +413,369 @@ class ControllerPatientRegistry:
                 combo_io.setCurrentText("output")
                 combo_type.addItems(output_feature_types)
                 
-            combo_type.setCurrentText(type)
+            combo_type.setCurrentText(type_value)
 
             row_layout.addWidget(label_criterium)
             row_layout.addWidget(combo_io)
             row_layout.addWidget(combo_type)
             self.layout_registry_criteria.addWidget(row)
+        
+        # SECTION 2: Instance Filtering (New Functionality - [IS2] and [IS3])
+        # Add separator
+        separator = QFrame()
+        separator.setFrameShape(QFrame.HLine)
+        separator.setFrameShadow(QFrame.Sunken)
+        self.layout_registry_criteria.addWidget(separator)
+        
+        # Add header with instructions
+        header_widget = QWidget()
+        header_layout = QVBoxLayout(header_widget)
+        
+        instructions = QLabel(
+            "<b>Instance Selection Criteria (Optional)</b><br>"
+            "<i>Inclusion rules:</i> Select specific subpopulations (patients meeting certain conditions)<br>"
+            "<i>Exclusion rules:</i> Remove specific instances (outliers, invalid data, etc.)"
+        )
+        instructions.setWordWrap(True)
+        header_layout.addWidget(instructions)
+        
+        # Add buttons to add new rules
+        button_row = QWidget()
+        button_layout = QHBoxLayout(button_row)
+        
+        btn_add_inclusion = QPushButton("➕ Add Inclusion Rule")
+        btn_add_inclusion.clicked.connect(lambda: self._add_criteria_rule('inclusion'))
+        button_layout.addWidget(btn_add_inclusion)
+        
+        btn_add_exclusion = QPushButton("➖ Add Exclusion Rule")
+        btn_add_exclusion.clicked.connect(lambda: self._add_criteria_rule('exclusion'))
+        button_layout.addWidget(btn_add_exclusion)
+        
+        btn_clear_all = QPushButton("🗑️ Clear All")
+        btn_clear_all.clicked.connect(self._clear_all_criteria)
+        button_layout.addWidget(btn_clear_all)
+        
+        button_layout.addStretch()
+        header_layout.addWidget(button_row)
+        
+        self.layout_registry_criteria.addWidget(header_widget)
+        
+        # Display existing filtering rules
+        self._display_criteria_rules()
+        
+        # Add summary at the bottom
+        self._update_criteria_summary()
+    
+    def _add_criteria_rule(self, rule_type='inclusion'):
+        """Add a new criteria rule row to the interface."""
+        if self.model_registry.model.df is None:
+            QMessageBox.warning(
+                self.controller.window,
+                "No Dataset",
+                "Please load a dataset first before defining criteria."
+            )
+            return
+        
+        rule_widget = QWidget()
+        rule_layout = QHBoxLayout(rule_widget)
+        rule_layout.setContentsMargins(5, 2, 5, 2)
+        
+        # Rule type indicator
+        rule_type_label = QLabel("✓ Include:" if rule_type == 'inclusion' else "✗ Exclude:")
+        rule_type_label.setMinimumWidth(70)
+        rule_type_label.setStyleSheet("font-weight: bold; color: green;" if rule_type == 'inclusion' else "font-weight: bold; color: red;")
+        rule_layout.addWidget(rule_type_label)
+        
+        # Variable selection
+        combo_variable = QComboBox()
+        combo_variable.addItems([''] + list(self.model_registry.model.df.columns))
+        combo_variable.setMinimumWidth(150)
+        rule_layout.addWidget(combo_variable)
+        
+        # Operator selection
+        combo_operator = QComboBox()
+        combo_operator.addItems(['equals', 'not equals', 'greater than', 'less than', 
+                                  'greater or equal', 'less or equal', 'between', 'contains', 'not contains'])
+        combo_operator.setMinimumWidth(120)
+        rule_layout.addWidget(combo_operator)
+        
+        # Value input
+        line_value = QLineEdit()
+        line_value.setPlaceholderText("value (for 'between' use: min,max)")
+        line_value.setMinimumWidth(150)
+        rule_layout.addWidget(line_value)
+        
+        # Remove button
+        btn_remove = QPushButton("✕")
+        btn_remove.setMaximumWidth(30)
+        btn_remove.setToolTip("Remove this rule")
+        btn_remove.clicked.connect(lambda: self._remove_criteria_rule(rule_widget))
+        rule_layout.addWidget(btn_remove)
+        
+        rule_layout.addStretch()
+        
+        # Store rule type as widget property
+        rule_widget.setProperty('rule_type', rule_type)
+        
+        # Add to layout (QGridLayout adds to next available row)
+        self.layout_registry_criteria.addWidget(rule_widget)
+    
+    def _remove_criteria_rule(self, rule_widget):
+        """Remove a criteria rule from the interface."""
+        self.layout_registry_criteria.removeWidget(rule_widget)
+        rule_widget.deleteLater()
+        self._update_criteria_summary()
+    
+    def _clear_all_criteria(self):
+        """Remove all criteria rules."""
+        reply = QMessageBox.question(
+            self.controller.window,
+            "Clear All Criteria",
+            "Are you sure you want to remove all inclusion/exclusion criteria?",
+            QMessageBox.Yes | QMessageBox.No,
+            QMessageBox.No
+        )
+        
+        if reply == QMessageBox.Yes:
+            self.model_registry.model.criteria_manager.clear_rules()
+            self._update_tab_criteria()
+    
+    def _display_criteria_rules(self):
+        """Display existing rules from the criteria manager."""
+        for i, rule in enumerate(self.model_registry.model.criteria_manager.rules):
+            self._add_criteria_rule(rule.rule_type)
+            
+            # Find the last added rule widget
+            rule_widget = self.layout_registry_criteria.itemAt(self.layout_registry_criteria.count() - 3).widget()
+            rule_layout = rule_widget.layout()
+            
+            # Set the values
+            combo_variable = rule_layout.itemAt(1).widget()
+            combo_operator = rule_layout.itemAt(2).widget()
+            line_value = rule_layout.itemAt(3).widget()
+            
+            combo_variable.setCurrentText(rule.variable)
+            combo_operator.setCurrentText(rule.operator)
+            line_value.setText(str(rule.value))
+    
+    def _update_criteria_summary(self):
+        """Update the summary label showing filtering statistics."""
+        # Remove existing summary if present
+        for i in range(self.layout_registry_criteria.count()):
+            item = self.layout_registry_criteria.itemAt(i)
+            if item and item.widget() and item.widget().property('is_summary'):
+                item.widget().deleteLater()
+                break
+        
+        summary_widget = QWidget()
+        summary_widget.setProperty('is_summary', True)
+        summary_layout = QVBoxLayout(summary_widget)
+        
+        separator = QFrame()
+        separator.setFrameShape(QFrame.HLine)
+        separator.setFrameShadow(QFrame.Sunken)
+        summary_layout.addWidget(separator)
+        
+        summary_label = QLabel()
+        summary_label.setWordWrap(True)
+        
+        if self.model_registry.model.df is not None:
+            rules_count = sum(1 for i in range(self.layout_registry_criteria.count())
+                             if self.layout_registry_criteria.itemAt(i).widget() and
+                             self.layout_registry_criteria.itemAt(i).widget().property('rule_type'))
+            
+            text = f"<b>Current Status:</b><br>"
+            text += f"Original dataset: {len(self.model_registry.model.df):,} rows<br>"
+            text += f"Rules defined: {rules_count}<br>"
+            
+            if self.model_registry.model.filtered_df is not None:
+                filtered_count = len(self.model_registry.model.filtered_df)
+                removed = len(self.model_registry.model.df) - filtered_count
+                percentage = (removed / len(self.model_registry.model.df) * 100) if len(self.model_registry.model.df) > 0 else 0
+                text += f"<span style='color: blue;'>Filtered dataset: {filtered_count:,} rows</span><br>"
+                text += f"<span style='color: red;'>Removed: {removed:,} rows ({percentage:.1f}%)</span>"
+            else:
+                text += "<i>Click 'Continue' to apply criteria</i>"
+            
+            summary_label.setText(text)
+        else:
+            summary_label.setText("<i>No dataset loaded</i>")
+        
+        summary_layout.addWidget(summary_label)
+        self.layout_registry_criteria.addWidget(summary_widget)
 
     def _read_updated_criteria(self):
-        """Reads the user-modified criteria from the layout."""
-
+        """
+        Reads both variable types and instance filtering criteria.
+        Returns True if all validations pass, False otherwise.
+        """
+        # SECTION 1: Read variable type selections (input/output)
         for i in range(self.layout_registry_criteria.count()):
             row_widget = self.layout_registry_criteria.itemAt(i).widget()
             if not row_widget:
                 continue
+            
+            # Check if this is a variable type row (has exactly 3 widgets: label, combo_io, combo_type)
             row_layout = row_widget.layout()
-            if not row_layout or row_layout.count() < 3:
+            if not row_layout or row_layout.count() != 3:
                 continue
-
-            label = row_layout.itemAt(0).widget()
+            
+            # Check if first widget is a QLabel (variable name)
+            first_widget = row_layout.itemAt(0).widget()
+            if not isinstance(first_widget, QLabel):
+                continue
+            
+            # This is a variable type row
+            label = first_widget
             combo_io = row_layout.itemAt(1).widget()
             combo_type = row_layout.itemAt(2).widget()
-
+            
+            if not isinstance(combo_io, QComboBox) or not isinstance(combo_type, QComboBox):
+                continue
+            
             name = label.text()
             io_value = combo_io.currentText()
             type_value = combo_type.currentText()
 
+            # Update Ludwig features
             if io_value == "input":
                 self.model_registry.model.ludwig.input_features[name] = type_value
             else:
                 self.model_registry.model.ludwig.target[name] = type_value
+        
+        # SECTION 2: Read instance filtering rules ([IS2] and [IS3])
+        # Clear existing filtering rules
+        self.model_registry.model.criteria_manager.rules.clear()
+        
+        # Read filtering rules from the interface
+        incomplete_rules = []
+        for i in range(self.layout_registry_criteria.count()):
+            item = self.layout_registry_criteria.itemAt(i)
+            if not item or not item.widget():
+                continue
+            
+            rule_widget = item.widget()
+            rule_type = rule_widget.property('rule_type')
+            
+            if rule_type not in ['inclusion', 'exclusion']:
+                continue  # Not a filtering rule widget
+            
+            rule_layout = rule_widget.layout()
+            if not rule_layout or rule_layout.count() < 4:
+                continue
+            
+            # Extract rule components (skip first widget which is the label)
+            combo_variable = rule_layout.itemAt(1).widget()
+            combo_operator = rule_layout.itemAt(2).widget()
+            line_value = rule_layout.itemAt(3).widget()
+            
+            if not isinstance(combo_variable, QComboBox) or not isinstance(combo_operator, QComboBox) or not isinstance(line_value, QLineEdit):
+                continue
+            
+            variable = combo_variable.currentText()
+            operator = combo_operator.currentText()
+            value_text = line_value.text().strip()
+            
+            # Validate rule completeness
+            if not value_text:
+                incomplete_rules.append(f"{rule_type.title()}: {variable} {operator} [empty value]")
+                continue
+            
+            # Try to convert value to appropriate type
+            try:
+                # Special handling for 'between' operator
+                if operator == 'between':
+                    # Parse value as "min,max" or "min-max"
+                    if ',' in value_text:
+                        parts = value_text.split(',')
+                    elif '-' in value_text and value_text.count('-') == 1:
+                        parts = value_text.split('-')
+                    else:
+                        incomplete_rules.append(f"{rule_type.title()}: {variable} between [invalid format, use: min,max]")
+                        continue
+                    
+                    if len(parts) != 2:
+                        incomplete_rules.append(f"{rule_type.title()}: {variable} between [invalid format, use: min,max]")
+                        continue
+                    
+                    try:
+                        min_val = float(parts[0].strip())
+                        max_val = float(parts[1].strip())
+                        value = (min_val, max_val)
+                    except ValueError:
+                        incomplete_rules.append(f"{rule_type.title()}: {variable} between [values must be numeric]")
+                        continue
+                else:
+                    # Check if the column is numeric
+                    if variable in self.model_registry.model.df.columns:
+                        col_dtype = self.model_registry.model.df[variable].dtype
+                        if col_dtype in ['int64', 'float64']:
+                            value = float(value_text)
+                        else:
+                            value = value_text
+                    else:
+                        value = value_text
+            except ValueError:
+                value = value_text
+            
+            # Add rule to criteria manager
+            self.model_registry.model.criteria_manager.add_rule(
+                variable=variable,
+                operator=operator,
+                value=value,
+                rule_type=rule_type
+            )
+        
+        # Check for incomplete rules
+        if incomplete_rules:
+            QMessageBox.warning(
+                self.controller.window,
+                "Incomplete Rules",
+                f"The following rules have empty values and will be ignored:\n\n" + "\n".join(incomplete_rules),
+                QMessageBox.Ok
+            )
+        
+        # Apply filtering criteria if there are any rules
+        if len(self.model_registry.model.criteria_manager.rules) > 0:
+            try:
+                stats = self.model_registry.model.apply_criteria()
+                
+                # Show statistics dialog
+                QMessageBox.information(
+                    self.controller.window,
+                    "Criteria Applied",
+                    f"Instance selection criteria applied successfully:\n\n"
+                    f"Original dataset: {stats['original_count']} instances\n"
+                    f"Filtered dataset: {stats['filtered_count']} instances\n"
+                    f"Removed: {stats['removed_count']} instances ({stats['removed_percent']:.1f}%)\n\n"
+                    f"The filtered dataset will be used for training.",
+                    QMessageBox.Ok
+                )
+                
+                # Validate minimum sample size
+                if stats['filtered_count'] < 10:
+                    QMessageBox.warning(
+                        self.controller.window,
+                        "Low Sample Size",
+                        f"Warning: Only {stats['filtered_count']} instances remain after filtering.\n\n"
+                        f"This may not be sufficient for reliable model training.\n"
+                        f"Consider relaxing your criteria.",
+                        QMessageBox.Ok
+                    )
+                
+            except Exception as e:
+                QMessageBox.critical(
+                    self.controller.window,
+                    "Error Applying Criteria",
+                    f"An error occurred while applying the selection criteria:\n\n{str(e)}",
+                    QMessageBox.Ok
+                )
+                return False
+        else:
+            # No filtering rules defined - use full dataset
+            self.model_registry.model.filtered_df = None
+        
+        return True
 
     def _update_tab_settings(self):
         """Updates the settings tab with predefined configuration options depending on primary variable type."""
