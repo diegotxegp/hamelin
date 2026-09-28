@@ -203,6 +203,40 @@ class DataModel(BaseModel):
                         technical_detail=f"{type(e).__name__}: {e}"
                     )
 
+            elif extension == '.fwf':
+                # Fixed Width Format - documented Ludwig-supported format
+                # (docs/ludwig/03_user_guide/user_guide__datasets__
+                # supported_formats.md). pandas infers column widths from
+                # the file's own alignment when none are given explicitly.
+                try:
+                    self.df = pd.read_fwf(filepath)
+                    log.info(f"Loaded Fixed Width Format file: {filepath.name}")
+                except Exception as e:
+                    raise DataLoadError(
+                        filepath.name,
+                        reason="Failed to read Fixed Width Format (.fwf) file",
+                        technical_detail=f"{type(e).__name__}: {e}"
+                    )
+
+            elif extension in ['.pkl', '.pickle']:
+                # Pickled Pandas DataFrame - documented Ludwig-supported
+                # format (same source as .fwf above). Only load pickle
+                # files you trust: unpickling can execute arbitrary code,
+                # same caveat as opening any other Python pickle.
+                try:
+                    self.df = pd.read_pickle(filepath)
+                    if not isinstance(self.df, pd.DataFrame):
+                        raise ValueError(
+                            f"Pickle file does not contain a DataFrame (got {type(self.df).__name__})"
+                        )
+                    log.info(f"Loaded Pickled DataFrame file: {filepath.name}")
+                except Exception as e:
+                    raise DataLoadError(
+                        filepath.name,
+                        reason="Failed to read pickled DataFrame (.pkl) file",
+                        technical_detail=f"{type(e).__name__}: {e}"
+                    )
+
             elif extension in ['.xpt', '.sas7bdat']:
                 # SAS formats: try pandas.read_sas or pyreadstat
                 try:
@@ -237,7 +271,8 @@ class DataModel(BaseModel):
                     reason=f"Unsupported file format: {extension}",
                     technical_detail=(
                         "Supported formats: .csv, .tsv, .xlsx, .xls, .parquet, .json, .jsonl, "
-                        ".feather, .h5/.hdf5, .html, .sav (SPSS), .dta (Stata), .xpt/.sas7bdat (SAS)"
+                        ".feather, .h5/.hdf5, .html, .sav (SPSS), .dta (Stata), .xpt/.sas7bdat (SAS), "
+                        ".fwf (Fixed Width Format), .pkl/.pickle (Pickled DataFrame)"
                     )
                 )
             

@@ -226,10 +226,10 @@ class DataPage(QWidget):
         browse_btn.clicked.connect(self._browse_file)
         file_row.addWidget(browse_btn)
         
-        load_btn = PushButton(t("data.btn.load"), self)
-        load_btn.setIcon(FluentIcon.ACCEPT)
-        load_btn.clicked.connect(self._on_load_clicked)
-        file_row.addWidget(load_btn)
+        self.load_btn = PushButton(t("data.btn.load"), self)
+        self.load_btn.setIcon(FluentIcon.ACCEPT)
+        self.load_btn.clicked.connect(self._on_load_clicked)
+        file_row.addWidget(self.load_btn)
         
         # (formats_label will be placed below the file selection row so it
         # doesn't compete visually with the project datasets control)
@@ -246,10 +246,10 @@ class DataPage(QWidget):
         self._dataset_combo.setMinimumWidth(300)
         self._dataset_combo.setPlaceholderText(t("data.placeholder.datasets"))
         proj_ds_layout.addWidget(self._dataset_combo, stretch=1)
-        load_saved_btn = PushButton(t("data.btn.load.selected"), self)
-        load_saved_btn.setIcon(FluentIcon.ACCEPT)
-        load_saved_btn.clicked.connect(self._on_dataset_combo_load)
-        proj_ds_layout.addWidget(load_saved_btn)
+        self.load_saved_btn = PushButton(t("data.btn.load.selected"), self)
+        self.load_saved_btn.setIcon(FluentIcon.ACCEPT)
+        self.load_saved_btn.clicked.connect(self._on_dataset_combo_load)
+        proj_ds_layout.addWidget(self.load_saved_btn)
         self._project_datasets_section.setVisible(False)
         file_layout.addWidget(self._project_datasets_section)
 
@@ -1019,12 +1019,26 @@ class DataPage(QWidget):
         traceback. Instead every worker is tagged with a generation number;
         when one finishes, its result is only applied if it's still current -
         an older worker that finishes late is just discarded.
+
+        The two "Load" buttons are disabled for the duration instead: this
+        analysis can take tens of seconds (Ludwig's own import cost - see
+        prewarm_ludwig_type_inference()'s docstring), and clicking Load
+        again mid-analysis used to silently start a second, fully
+        concurrent Ludwig analysis - harmless to correctness thanks to the
+        generation guard above, but wasteful (two full analyses running at
+        once) and confusing (their progress bars/log lines interleave).
         """
+        self.load_btn.setEnabled(False)
+        self.load_saved_btn.setEnabled(False)
+
         self._analyzer_generation += 1
         generation = self._analyzer_generation
         worker = VariableAnalyzerWorker(df, parent=self)
         worker.analysis_ready.connect(
             lambda analysis, gen=generation: self._on_analyzer_worker_done(gen, analysis)
+        )
+        worker.error.connect(
+            lambda message, gen=generation: self._on_analyzer_worker_error(gen, message)
         )
         worker.finished.connect(worker.deleteLater)
         self._analyzer_worker = worker
@@ -1033,7 +1047,27 @@ class DataPage(QWidget):
     def _on_analyzer_worker_done(self, generation: int, analysis: dict) -> None:
         if generation != self._analyzer_generation:
             return  # superseded by a later load/refresh - stale, discard
+        self.load_btn.setEnabled(True)
+        self.load_saved_btn.setEnabled(True)
         self._on_variable_analysis_ready(analysis)
+
+    def _on_analyzer_worker_error(self, generation: int, message: str) -> None:
+        """Handle VariableAnalyzerWorker.error - previously unconnected,
+        so a failed analysis left the progress bar spinning forever with
+        no feedback at all."""
+        if generation != self._analyzer_generation:
+            return  # superseded - a newer worker's outcome is what counts
+        self.load_btn.setEnabled(True)
+        self.load_saved_btn.setEnabled(True)
+        self._var_progress.stop()
+        self._var_progress.setVisible(False)
+        self._var_status_lbl.setVisible(False)
+        InfoBar.warning(
+            title="Variable Analysis Failed",
+            content=f"Could not infer variable types: {message}",
+            orient=Qt.Horizontal, isClosable=True,
+            position=InfoBarPosition.TOP, duration=6000, parent=self,
+        )
 
     def _on_variable_analysis_ready(self, analysis: dict) -> None:
         """Populate variables table with Ludwig types and an editable ComboBox per row."""

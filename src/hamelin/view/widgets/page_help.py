@@ -112,7 +112,11 @@ class HelpPopup(QFrame):
         # by the popup's initial size otherwise - long text (e.g. the
         # Training page's) would get clipped instead of growing the popup.
         # SetFixedSize makes the whole frame always resize to exactly fit
-        # its content.
+        # its content - up to MAX_CONTENT_HEIGHT below, past which a
+        # scroll area takes over instead of growing the popup past the
+        # point where it'd run off screen (or just tower over whatever
+        # you were reading), same idea _position_popup already applies to
+        # its on-screen position.
         layout.setSizeConstraint(QVBoxLayout.SizeConstraint.SetFixedSize)
 
         label = QLabel(text)
@@ -121,7 +125,22 @@ class HelpPopup(QFrame):
         # height - is deterministic; 380 total width minus the margins above.
         label.setFixedWidth(340)
         label.setStyleSheet(f"background: transparent; color: {c.text_primary}; font-size: 14px;")
-        layout.addWidget(label)
+
+        MAX_CONTENT_HEIGHT = 420
+        if label.heightForWidth(340) > MAX_CONTENT_HEIGHT:
+            from PySide6.QtWidgets import QScrollArea
+            from hamelin.utils.theme_colors import scroll_area_qss
+
+            scroll = QScrollArea(self)
+            scroll.setWidget(label)
+            scroll.setWidgetResizable(True)
+            scroll.setFrameShape(QFrame.Shape.NoFrame)
+            scroll.setFixedWidth(360)
+            scroll.setFixedHeight(MAX_CONTENT_HEIGHT)
+            scroll.setStyleSheet(scroll_area_qss())
+            layout.addWidget(scroll)
+        else:
+            layout.addWidget(label)
 
 
 class PageHelpButton(QPushButton):

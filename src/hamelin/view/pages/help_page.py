@@ -8,18 +8,21 @@ Sections
 --------
   1. Introduction — what is HAMELIN and the clinical research workflow
   2. Getting Started — first steps, creating a project
-  3. Project (Metadata) — every field explained
+  3. Projects (Metadata) — every field explained
   4. Data — loading files, supported formats, variable types, quality report,
      and Table 1 (baseline characteristics), which lives at the bottom of
-     this same page rather than as its own tab
-  5. Forecasting — date column, parameters, reading the chart
-  6. Training — outcome, predictors, model types, metrics, hyperopt
-  7. Settings — theme, language, export defaults
+     this same page rather than as its own tab or its own Help section
+  5. Training — outcome, predictors, model types, metrics, hyperopt
+  6. Models — comparing and inspecting every trained model, own section
+     kept right after Training to match the nav bar's own ordering
+  7. Forecasting — date column, parameters, reading the chart
   8. Glossary — technical and clinical terms
 
-  Dashboard isn't documented here - it's kept up to date internally but
-  isn't linked from the nav sidebar, so there's nothing a user can
-  actually do with it right now (see main_window.py's _init_navigation).
+  Settings and Dashboard aren't documented here on purpose: Settings is
+  self-explanatory on screen (toggles/dropdowns, nothing to explain), and
+  Dashboard isn't linked from the nav sidebar, so there's nothing a user
+  can actually do with it right now (see main_window.py's
+  _init_navigation).
 
 Design principles
 -----------------
@@ -35,12 +38,14 @@ Sprint: 4, Day 36
 
 from __future__ import annotations
 
+from pathlib import Path
+
 from PySide6.QtWidgets import (
-    QWidget, QVBoxLayout, QHBoxLayout, QScrollArea,
+    QWidget, QVBoxLayout, QHBoxLayout, QScrollArea, QLabel,
     QSizePolicy,
 )
 from PySide6.QtCore import Qt, QPropertyAnimation, QEasingCurve, QSize
-from PySide6.QtGui import QFont
+from PySide6.QtGui import QFont, QPixmap
 from qfluentwidgets import (
     TitleLabel, SubtitleLabel, StrongBodyLabel, BodyLabel, CaptionLabel,
     CardWidget, PushButton, FluentIcon, IconWidget,
@@ -52,12 +57,17 @@ from hamelin.utils.usage_logger import usage_log
 from hamelin.view.widgets.theme_colors import apply_scroll_area_theme, bind_style
 from hamelin.i18n import t
 
+# Real app screenshots referenced by a few blocks below (see the "image"
+# key on individual block dicts) - same resources/ location as the logo,
+# see home_page.py's own _logo_path for the matching path computation.
+_HELP_IMAGES_DIR = Path(__file__).resolve().parent.parent.parent / "resources" / "help_images"
+
 
 # Section content — strings are intentionally long; they ARE the manual.
 # ──────────────────────────────────────────────────────────────────────────────
 
 _SECTIONS: list[dict] = [
-    # ── 1. Introduction ───────────────────────────────────────────────────────
+    # ── 1. Introduction ────────────────────────────────────────────────────────
     {
         "icon": FluentIcon.HOME,
         "title": "1 · Introduction",
@@ -66,7 +76,7 @@ _SECTIONS: list[dict] = [
             {
                 "heading": "What is HAMELIN?",
                 "text": (
-                    "HAMELIN (Health-data Automated Machine Learning and Enrollment Navigator) "
+                    "HAMELIN (Human-guided Automated Machine Learning for Clinical Studies) "
                     "is a desktop application designed for Clinical Research Professionals (CRPs) "
                     "who need to manage clinical studies, analyse patient data, and build predictive "
                     "models — without requiring programming skills or knowledge of Machine Learning.\n\n"
@@ -103,6 +113,7 @@ _SECTIONS: list[dict] = [
                     "Forecasting, is in the main list).  You can go back and forward at "
                     "any time."
                 ),
+                "image": "home_page.png",
             },
             {
                 "heading": "What does HAMELIN NOT do?",
@@ -117,7 +128,7 @@ _SECTIONS: list[dict] = [
         ],
     },
 
-    # ── 2. Getting Started ────────────────────────────────────────────────────
+    # ── 2. Getting Started ─────────────────────────────────────────────────────
     {
         "icon": FluentIcon.PLAY,
         "title": "2 · Getting Started",
@@ -154,6 +165,7 @@ _SECTIONS: list[dict] = [
                     "A folder named after your acronym will be created inside the Projects/ directory. "
                     "All files related to this project will be saved there automatically."
                 ),
+                "image": "project_page.png",
             },
             {
                 "heading": "Opening an existing project",
@@ -180,10 +192,10 @@ _SECTIONS: list[dict] = [
         ],
     },
 
-    # ── 3. Project (Metadata) ─────────────────────────────────────────────────
+    # ── 3. Projects ────────────────────────────────────────────────────────────
     {
         "icon": FluentIcon.FOLDER,
-        "title": "3 · Project",
+        "title": "3 · Projects",
         "summary": "Every metadata field explained — what to fill in and why it matters.",
         "blocks": [
             {
@@ -251,7 +263,7 @@ _SECTIONS: list[dict] = [
         ],
     },
 
-    # ── 4. Data ───────────────────────────────────────────────────────────────
+    # ── 4. Data ────────────────────────────────────────────────────────────────
     {
         "icon": FluentIcon.FOLDER_ADD,
         "title": "4 · Data",
@@ -260,13 +272,23 @@ _SECTIONS: list[dict] = [
             {
                 "heading": "Supported file formats",
                 "text": (
-                    "HAMELIN supports the following formats:\n\n"
+                    "HAMELIN supports the following formats (readable by Ludwig):\n\n"
                     "• CSV (.csv) — plain text, values separated by commas or semicolons.\n"
                     "  ✔ Most common format.  Use this when exporting from REDCap or Excel.\n"
+                    "• TSV (.tsv) — tab-separated values.\n"
                     "• Excel (.xlsx) — Microsoft Excel workbook (first sheet is used).\n"
+                    "• Parquet (.parquet) — columnar storage, useful for large datasets.\n"
+                    "• JSON / JSONL (.json, .jsonl) — structured data, JSON Lines for one-object-per-line.\n"
+                    "• Feather (.feather) — fast binary dataframe format.\n"
+                    "• HDF5 (.h5, .hdf5) — hierarchical binary format for large arrays.\n"
+                    "• HTML (.html) — single-table HTML files (limited support).\n"
                     "• SPSS (.sav) — IBM SPSS Statistics native format.\n"
                     "  ✔ Variable labels and value labels are preserved.\n"
-                    "• Stata (.dta) — Stata data file.\n\n"
+                    "• Stata (.dta) — Stata data file.\n"
+                    "• SAS (.xpt, .sas7bdat) — SAS datasets.\n"
+                    "• Fixed Width Format (.fwf) — columns aligned by character position, no delimiter.\n"
+                    "• Pickled DataFrame (.pkl, .pickle) — a pandas DataFrame saved with Python's pickle "
+                    "— only open files you trust.\n\n"
                     "Requirements:\n"
                     "  — First row must contain column headers (variable names).\n"
                     "  — One row per patient.\n"
@@ -286,6 +308,7 @@ _SECTIONS: list[dict] = [
                     "and runs a background analysis with Ludwig AI to infer the most appropriate "
                     "machine-learning type for each variable."
                 ),
+                "image": "data_page.png",
             },
             {
                 "heading": "Data Preview",
@@ -481,97 +504,10 @@ _SECTIONS: list[dict] = [
         ],
     },
 
-    # ── 5. Forecasting ────────────────────────────────────────────────────────
-    {
-        "icon": FluentIcon.HISTORY,
-        "title": "5 · Forecasting",
-        "summary": "Predicting when your study will reach its enrollment target.",
-        "blocks": [
-            {
-                "heading": "What does the Forecasting page do?",
-                "text": (
-                    "Given how patients have been enrolled so far, HAMELIN fits a statistical "
-                    "model to estimate the date when you will reach your Target Sample Size.\n\n"
-                    "It also shows:\n"
-                    "  • The current enrollment velocity (patients per month).\n"
-                    "  • A confidence interval — a range of dates within which the target is "
-                    "likely to be reached (default: 95% confidence).\n"
-                    "  • A monthly milestone table (how many patients you will have enrolled "
-                    "at each future month).\n"
-                    "  • A chart showing historical enrollment (solid line) and the forecast "
-                    "(dashed line with confidence band)."
-                ),
-            },
-            {
-                "heading": "Required inputs",
-                "text": (
-                    "1. A loaded dataset with a date column recording enrollment dates "
-                    "(one row per patient, one cell per enrollment date).\n"
-                    "2. A Target Sample Size (pre-filled from Project metadata).\n\n"
-                    "The enrollment date column is any column where each value is the date "
-                    "the corresponding patient was included in the study.  "
-                    "In REDCap this is often called 'enrollment_date' or 'inclusion_date'."
-                ),
-            },
-            {
-                "heading": "Forecast parameters explained",
-                "text": (
-                    "Enrollment Date Column\n"
-                    "    Select the column that contains the date each patient was enrolled.\n"
-                    "    Only date-type columns are shown here.\n\n"
-                    "Target Sample Size\n"
-                    "    The total number of patients you need to enroll.\n"
-                    "    Pre-filled from the Project metadata.  You can override it here.\n\n"
-                    "Historical Period (days)\n"
-                    "    How many days of past data to use for estimating recruitment velocity.\n"
-                    "    Default: 90 days.  Increase this for more stable estimates; decrease for "
-                    "more sensitivity to recent trends.\n\n"
-                    "Confidence Level\n"
-                    "    Statistical confidence for the estimated date interval.\n"
-                    "    0.95 = 95% confidence interval.  "
-                    "    A narrower interval (0.80) is more optimistic; "
-                    "    a wider one (0.99) is more conservative."
-                ),
-            },
-            {
-                "heading": "Reading the forecast chart",
-                "text": (
-                    "Solid coloured line — actual cumulative enrollment (historical data).\n"
-                    "Dashed line — projected enrollment based on fitted regression.\n"
-                    "Shaded band — confidence interval for the projection.\n"
-                    "Horizontal dashed line — target sample size.\n"
-                    "Vertical dashed line — estimated date when the target will be met.\n\n"
-                    "If the shaded band is very wide, your enrollment has been irregular "
-                    "(e.g., periods of high and low activity).  "
-                    "Consider reviewing whether a site just opened or closed."
-                ),
-            },
-            {
-                "heading": "Current Recruitment Status panel",
-                "text": (
-                    "This panel updates automatically after running the forecast.\n\n"
-                    "Currently Recruited — patients extracted from the date column (rows with a valid date).\n"
-                    "Target Sample Size  — as configured in the parameters.\n"
-                    "Remaining           — how many more patients you still need.\n"
-                    "Avg. Rate           — mean patients enrolled per month over the whole study period.\n"
-                    "Study Start Date    — date of the first enrollment found in the dataset."
-                ),
-            },
-            {
-                "heading": "Exporting the timeline",
-                "text": (
-                    "Click 'Export Timeline CSV' to save the monthly milestone table as a CSV file.\n"
-                    "Each row shows: Month, Expected enrolled, Lower bound, Upper bound.\n"
-                    "This table is useful for progress reports and sponsor updates."
-                ),
-            },
-        ],
-    },
-
-    # ── 6. Training ───────────────────────────────────────────────────────────
+    # ── 5. Training ────────────────────────────────────────────────────────────
     {
         "icon": FluentIcon.ROBOT,
-        "title": "6 · Training",
+        "title": "5 · Training",
         "summary": "Building a predictive model with AutoML — no programming required.",
         "blocks": [
             {
@@ -649,12 +585,14 @@ _SECTIONS: list[dict] = [
                     "  This is not just a hint — it forces Ludwig to train that kind of model, "
                     "so make sure it actually matches your outcome column.\n\n"
                     "Evaluation metric (how to measure model quality):\n"
-                    "  AUC-ROC — most common in clinical settings.  "
-                    "Measures how well the model separates positive from negative cases.\n"
-                    "  Accuracy — % of predictions that are correct overall.\n"
-                    "  F1 — balance between sensitivity and precision.  "
-                    "Use when classes are imbalanced.\n"
-                    "  MSE / MAE — for regression; measure average prediction error."
+                    "  The list of choices changes depending on the Prediction type picked "
+                    "above — Ludwig only supports certain metrics per type:\n"
+                    "  Binary — AUC-ROC (most common in clinical settings), Accuracy, "
+                    "Precision, Recall, Specificity.\n"
+                    "  Multi-class — Accuracy, Hits at K (is the true category among the "
+                    "top-K predictions?).\n"
+                    "  Regression — RMSE, MAE, MSE, RMSPE — all measure average prediction "
+                    "error, lower is better."
                 ),
             },
             {
@@ -664,11 +602,12 @@ _SECTIONS: list[dict] = [
                     "the rest of the settings.  Defaults are fine for most studies.\n\n"
                     "Time budget (minutes):\n"
                     "  Hard limit on search time.  Training stops when this is reached "
-                    "even if the max iterations have not been completed.\n\n"
+                    "even if the max iterations have not been completed.  Typed directly "
+                    "(no up/down arrows).\n\n"
                     "Final evaluation holdout (%):\n"
                     "  A fixed percentage of patients is set aside BEFORE training begins and "
                     "NEVER used for training — only for the final performance evaluation.  "
-                    "Default: 20%.\n\n"
+                    "Default: 0.20.  Typed directly, e.g. '0.2' (no up/down arrows).\n\n"
                     "Random Seed:\n"
                     "  Ensures that splits and random operations produce the same result every time "
                     "you re-run the training.  Use the same seed to reproduce a result exactly.\n\n"
@@ -677,9 +616,8 @@ _SECTIONS: list[dict] = [
                     "  Random search — try random combinations.  Fast but less thorough.\n"
                     "  Bayesian optimisation — uses results from previous trials to choose "
                     "the next configuration to test.  Most efficient.  Recommended.\n"
-                    "  Hyperband — early-stopping strategy for very large search spaces.\n"
-                    "  Grid Search — tries ALL combinations.  Very slow.  Not recommended for "
-                    "large spaces.\n\n"
+                    "  Grid Search (Exhaustive search) — tries ALL combinations.  Very slow.  "
+                    "Not recommended for large spaces.\n\n"
                     "Max. iterations:\n"
                     "  Maximum number of different configurations to try, once a search "
                     "strategy other than 'No optimisation' is selected.  More iterations → "
@@ -687,16 +625,21 @@ _SECTIONS: list[dict] = [
                     "Parallel trials:\n"
                     "  Number of CPU cores to use simultaneously.  "
                     "Increase for faster search; decrease if the computer becomes unresponsive.\n\n"
+                    "Early stopping (rounds):\n"
+                    "  How many consecutive evaluation rounds can pass with no improvement "
+                    "before training stops automatically.  Default: 5.  Set to -1 to disable "
+                    "it and always run the full time budget/iterations.\n\n"
+                    "Missing numeric values strategy:\n"
+                    "  How Ludwig fills missing values in NUMBER columns: Ludwig default "
+                    "(fills with 0), column mean, most frequent value, forward fill, "
+                    "backward fill, or drop the row entirely.\n\n"
                     "Handle Class Imbalance:\n"
                     "  On/off switch — enable it when one outcome category is much rarer than "
-                    "the other.\n\n"
-                    "Fill Missing Numeric Values with the Column Mean:\n"
-                    "  On/off switch.  Off (default): missing values in numeric columns are "
-                    "left for Ludwig to handle with its own default, which silently fills them "
-                    "with 0.  On: missing values are filled with that column's mean instead, "
-                    "before training — usually a better default than 0 for a clinical "
-                    "measurement."
+                    "the other.  Only available for Binary classification — Ludwig doesn't "
+                    "support this for multi-class or regression, so the switch is disabled "
+                    "(greyed out) for those."
                 ),
+                "image": "training_page_advanced.png",
             },
             {
                 "heading": "Starting and monitoring training",
@@ -761,98 +704,133 @@ _SECTIONS: list[dict] = [
                     "project's results/ folder every time training completes."
                 ),
             },
+        ],
+    },
+
+    # ── 6. Models ──────────────────────────────────────────────────────────────
+    # Training and Forecasting; see section 6, block 8 for the original
+    # placement of this content) ───────────────────────────────────────
+    {
+        "icon": FluentIcon.ROBOT,
+        "title": "6 · Models",
+        "summary": "Compare and inspect every model you've trained in this project.",
+        "blocks": [
             {
-                "heading": "Models — comparing and inspecting every trained model",
+                "heading": "What is the Models page?",
                 "text": (
                     "The 'Models' item in the navigation bar (between Training and "
                     "Forecasting) opens a dedicated view for everything you've trained in "
-                    "this project so far, not just the most recent run.  It is a normal "
-                    "page in the nav bar, not a separate window — leaving it is just "
-                    "clicking any other nav item.\n\n"
-                    "There you can:\n"
-                    "  — Compare several trained models side by side on the metric of your choice.\n"
-                    "  — Inspect a single model in depth (confusion matrix, ROC curve, "
+                    "this project so far, not just the most recent run.  It is a normal page "
+                    "in the nav bar, not a separate window — leaving it is just clicking any "
+                    "other nav item.  Open a project first: this page needs one to know where "
+                    "to look for trained models."
+                ),
+            },
+            {
+                "heading": "What you can do here",
+                "text": (
+                    "• Compare several trained models side by side on the metric of your "
+                    "choice.\n"
+                    "• Inspect a single model in depth (confusion matrix, ROC curve, "
                     "hyperparameters used).\n"
-                    "  — Duplicate a model with slightly different settings to try a "
-                    "variation without starting from scratch — this pre-fills the Training "
-                    "page with that configuration and switches you to it; nothing is saved "
-                    "until you actually start training.\n"
-                    "  — Mark favourites and clean up models you no longer need.\n\n"
-                    "Open a project first — this page needs one to know where to look for "
-                    "trained models."
+                    "• Duplicate a model with slightly different settings to try a variation "
+                    "without starting from scratch — this pre-fills the Training page with "
+                    "that configuration and switches you to it; nothing is saved until you "
+                    "actually start training.\n"
+                    "• Mark favourites and clean up models you no longer need."
                 ),
             },
         ],
     },
-
-    # ── 7. Settings ───────────────────────────────────────────────────────────
+    # ── 7. Forecasting ─────────────────────────────────────────────────────────
     {
-        "icon": FluentIcon.SETTING,
-        "title": "7 · Settings",
-        "summary": "Appearance, language, export defaults, and advanced options.",
+        "icon": FluentIcon.HISTORY,
+        "title": "7 · Forecasting",
+        "summary": "Predicting when your study will reach its enrollment target.",
         "blocks": [
             {
-                "heading": "Appearance",
+                "heading": "What does the Forecasting page do?",
                 "text": (
-                    "Theme:\n"
-                    "  Light — white/grey background (recommended for bright rooms).\n"
-                    "  Dark — dark background (recommended for low-light environments).\n"
-                    "  Auto (System) — follows the operating system's colour scheme.\n\n"
-                    "Font Size:\n"
-                    "  Adjust the base text size (8–16 pt).  "
-                    "Changes apply immediately without restart."
+                    "Given how patients have been enrolled so far, HAMELIN fits a statistical "
+                    "model to estimate the date when you will reach your Target Sample Size.\n\n"
+                    "It also shows:\n"
+                    "  • The current enrollment velocity (patients per month).\n"
+                    "  • A confidence interval — a range of dates within which the target is "
+                    "likely to be reached (default: 95% confidence).\n"
+                    "  • A monthly milestone table (how many patients you will have enrolled "
+                    "at each future month).\n"
+                    "  • A chart showing historical enrollment (solid line) and the forecast "
+                    "(dashed line with confidence band)."
+                ),
+                "image": "forecasting_page.png",
+            },
+            {
+                "heading": "Required inputs",
+                "text": (
+                    "1. A loaded dataset with a date column recording enrollment dates "
+                    "(one row per patient, one cell per enrollment date).\n"
+                    "2. A Target Sample Size (pre-filled from Project metadata).\n\n"
+                    "The enrollment date column is any column where each value is the date "
+                    "the corresponding patient was included in the study.  "
+                    "In REDCap this is often called 'enrollment_date' or 'inclusion_date'."
                 ),
             },
             {
-                "heading": "Language",
+                "heading": "Forecast parameters explained",
                 "text": (
-                    "Currently supported: English, Español.\n"
-                    "UI language change takes effect after restarting the application.\n\n"
-                    "Note: generated reports (Table 1, Quality Report) are always in the "
-                    "language selected here."
+                    "Enrollment Date Column\n"
+                    "    Select the column that contains the date each patient was enrolled.\n"
+                    "    Only date-type columns are shown here.\n\n"
+                    "Target Sample Size\n"
+                    "    The total number of patients you need to enroll.\n"
+                    "    Pre-filled from the Project metadata.  You can override it here.\n\n"
+                    "Historical Period (days)\n"
+                    "    How many days of past data to use for estimating recruitment velocity.\n"
+                    "    Default: 90 days.  Increase this for more stable estimates; decrease for "
+                    "more sensitivity to recent trends.\n\n"
+                    "Confidence Level\n"
+                    "    Statistical confidence for the estimated date interval.\n"
+                    "    0.95 = 95% confidence interval.  "
+                    "    A narrower interval (0.80) is more optimistic; "
+                    "    a wider one (0.99) is more conservative."
                 ),
             },
             {
-                "heading": "Export Preferences",
+                "heading": "Reading the forecast chart",
                 "text": (
-                    "There is no default export format setting here anymore — you pick the "
-                    "format directly where you export instead, via a dropdown right next to "
-                    "each Export button (Data tab: CSV, Excel .xlsx, or Word .docx.  "
-                    "Table 1, inside the Data tab: CSV, Excel .xlsx, or Word .docx as well), "
-                    "so the choice is made in context rather than as a global preference you "
-                    "have to remember you set.\n\n"
-                    "Decimal Places (still here) controls how many decimal digits are used "
-                    "for statistical values in exported reports.  Recommended: 2 for clinical "
-                    "reports, 4 for internal analysis."
+                    "Solid coloured line — actual cumulative enrollment (historical data).\n"
+                    "Dashed line — projected enrollment based on fitted regression.\n"
+                    "Shaded band — confidence interval for the projection.\n"
+                    "Horizontal dashed line — target sample size.\n"
+                    "Vertical dashed line — estimated date when the target will be met.\n\n"
+                    "If the shaded band is very wide, your enrollment has been irregular "
+                    "(e.g., periods of high and low activity).  "
+                    "Consider reviewing whether a site just opened or closed."
                 ),
             },
             {
-                "heading": "Advanced — Log Level",
+                "heading": "Current Recruitment Status panel",
                 "text": (
-                    "Controls the verbosity of the application log file (hamelin.log).\n\n"
-                    "DEBUG   — everything, including internal function calls.  "
-                    "Use only when troubleshooting.\n"
-                    "INFO    — normal operation messages (default).\n"
-                    "WARNING — only unexpected situations that were handled.\n"
-                    "ERROR   — only critical failures.\n\n"
-                    "The log file is located at: workspace/logs/hamelin.log (inside the hamelin repo)"
+                    "This panel updates automatically after running the forecast.\n\n"
+                    "Currently Recruited — patients extracted from the date column (rows with a valid date).\n"
+                    "Target Sample Size  — as configured in the parameters.\n"
+                    "Remaining           — how many more patients you still need.\n"
+                    "Avg. Rate           — mean patients enrolled per month over the whole study period.\n"
+                    "Study Start Date    — date of the first enrollment found in the dataset."
                 ),
             },
             {
-                "heading": "Debug mode",
+                "heading": "Exporting the timeline",
                 "text": (
-                    "Debug mode can be enabled from the command line:\n\n"
-                    "    python main.py --debug\n\n"
-                    "In debug mode:\n"
-                    "  — All log messages are written to the console AND the log file.\n"
-                    "  — Stack traces are shown in dialog boxes when an error occurs.\n"
-                    "  — The bottom status bar shows the active page and last action."
+                    "Click 'Export Timeline CSV' to save the monthly milestone table as a CSV file.\n"
+                    "Each row shows: Month, Expected enrolled, Lower bound, Upper bound.\n"
+                    "This table is useful for progress reports and sponsor updates."
                 ),
             },
         ],
     },
 
-    # ── 9. Glossary ──────────────────────────────────────────────────────────
+    # ── 8. Glossary ────────────────────────────────────────────────────────────
     {
         "icon": FluentIcon.BOOK_SHELF,
         "title": "8 · Glossary",
@@ -960,6 +938,7 @@ _SECTIONS: list[dict] = [
             },
         ],
     },
+
 ]
 
 
@@ -983,6 +962,9 @@ def _get_translated_sections() -> list[dict]:
                 {
                     "heading": get_text(f"help.section.{section_idx}.block.{block_idx}.heading", block["heading"]),
                     "text": get_text(f"help.section.{section_idx}.block.{block_idx}.text", block["text"]),
+                    # Screenshots aren't translated text - carried through
+                    # as-is, not looked up in strings.py.
+                    "image": block.get("image"),
                 }
                 for block_idx, block in enumerate(section["blocks"])
             ],
@@ -996,9 +978,10 @@ def _get_translated_sections() -> list[dict]:
 # ──────────────────────────────────────────────────────────────────────────────
 
 class _Block(QWidget):
-    """A heading + body-text block inside a section card."""
+    """A heading + body-text block inside a section card, with an optional
+    real screenshot of the app shown underneath the text."""
 
-    def __init__(self, heading: str, text: str, parent=None) -> None:
+    def __init__(self, heading: str, text: str, parent=None, image: str | None = None) -> None:
         super().__init__(parent)
         layout = QVBoxLayout(self)
         layout.setContentsMargins(0, 4, 0, 4)
@@ -1014,6 +997,19 @@ class _Block(QWidget):
         t_lbl.setWordWrap(True)
         t_lbl.setTextInteractionFlags(Qt.TextSelectableByMouse)
         layout.addWidget(t_lbl)
+
+        if image:
+            pixmap = QPixmap(str(_HELP_IMAGES_DIR / image))
+            if not pixmap.isNull():
+                img_lbl = QLabel(self)
+                # Cap the width so a full-page screenshot doesn't blow out
+                # this card's layout; keep it readable but not huge.
+                scaled = pixmap.scaledToWidth(700, Qt.SmoothTransformation)
+                img_lbl.setPixmap(scaled)
+                img_lbl.setStyleSheet("border: 1px solid rgba(0, 0, 0, 40); margin-top: 6px;")
+                layout.addWidget(img_lbl)
+            else:
+                log.warning(f"HelpPage: image not found or unreadable: {image}")
 
 
 class _SectionCard(QWidget):
@@ -1075,7 +1071,9 @@ class _SectionCard(QWidget):
         body_layout.setSpacing(16)
 
         for block in spec["blocks"]:
-            body_layout.addWidget(_Block(block["heading"], block["text"], self._body))
+            body_layout.addWidget(
+                _Block(block["heading"], block["text"], self._body, image=block.get("image"))
+            )
 
         card_layout.addWidget(self._body)
         self._body.setVisible(False)   # collapsed by default

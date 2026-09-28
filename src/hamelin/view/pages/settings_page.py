@@ -234,13 +234,15 @@ class SettingsPage(QWidget):
         contact_label = BodyLabel(t("settings.about.repository"))
         bind_style(contact_label, lambda c: f"color: {c.text_secondary}; font-size: 11px;")
         about_layout.addWidget(contact_label)
-        
-        # License button
-        license_btn = PushButton(t("settings.btn.license"), self)
-        license_btn.setIcon(FluentIcon.DOCUMENT)
-        license_btn.clicked.connect(self._show_license)
-        about_layout.addWidget(license_btn)
-        
+
+        # License, shown directly as text here (where the software itself
+        # is described) rather than behind a button/dialog.
+        about_layout.addSpacing(6)
+        license_label = BodyLabel(t("settings.about.license"))
+        license_label.setWordWrap(True)
+        bind_style(license_label, lambda c: f"color: {c.text_secondary}; font-size: 11px;")
+        about_layout.addWidget(license_label)
+
         layout.addWidget(about_card)
         
         # Action Buttons
@@ -300,37 +302,6 @@ class SettingsPage(QWidget):
             orient=Qt.Horizontal, isClosable=True,
             position=InfoBarPosition.TOP, duration=5000, parent=self,
         )
-    
-    def _show_license(self):
-        """Show license information"""
-        usage_log.event("Settings", "click", "License button")
-        log.info("Show license clicked")
-        from pathlib import Path
-        license_path = Path(__file__).parent.parent.parent.parent.parent / "LICENSE"
-        if license_path.exists():
-            license_text = license_path.read_text(encoding="utf-8")
-        else:
-            license_text = (
-                "MIT License\n\n"
-                "Copyright (c) 2025 Diego García-Prieto, Camilo Palazuelos, "
-                "Rafael Duque — University of Cantabria\n\n"
-                "Permission is hereby granted, free of charge, to any person obtaining a copy "
-                "of this software and associated documentation files (the 'Software'), to deal "
-                "in the Software without restriction, including without limitation the rights "
-                "to use, copy, modify, merge, publish, distribute, sublicense, and/or sell "
-                "copies of the Software, and to permit persons to whom the Software is "
-                "furnished to do so, subject to the following conditions:\n\n"
-                "The above copyright notice and this permission notice shall be included in all "
-                "copies or substantial portions of the Software.\n\n"
-                "THE SOFTWARE IS PROVIDED 'AS IS', WITHOUT WARRANTY OF ANY KIND, EXPRESS OR "
-                "IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, "
-                "FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE "
-                "AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER "
-                "LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, "
-                "OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE."
-            )
-        dlg = MessageBox("License — MIT", license_text, self)
-        dlg.exec()
     
     def _reset_settings(self):
         """Reset all settings to defaults"""

@@ -62,6 +62,7 @@ class MetadataPage(QWidget):
     metadata_saved = Signal()
     project_loaded = Signal(ProjectMetadata)
     recruitment_configured = Signal()
+    all_projects_deleted = Signal()
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -590,6 +591,7 @@ class MetadataPage(QWidget):
                 position=InfoBarPosition.TOP, parent=self,
             )
         log.warning(f"Deleted {len(projects) - len(failed)} project(s) via 'Delete All'")
+        self.all_projects_deleted.emit()
 
     def _on_open_project(self, short_name: str):
         usage_log.event("Projects", "click", "Open button", short_name)

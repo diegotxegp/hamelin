@@ -78,18 +78,25 @@ _MIN_RESTART_GAP_S = 3.0
 # makes every training/hyperopt trial fail identically - "f1" was dropped
 # entirely since it isn't a documented Ludwig metric for any output type.
 _METRICS_BY_TYPE = {
+    # configuration/features/binary_features.md, "Metrics"
     "binary": [
         ("training.metric.auc", "roc_auc"),
         ("training.metric.accuracy", "accuracy"),
         ("training.metric.precision", "precision"),
         ("training.metric.recall", "recall"),
+        ("training.metric.specificity", "specificity"),
     ],
+    # configuration/features/category_features.md, "Metrics"
     "category": [
         ("training.metric.accuracy", "accuracy"),
+        ("training.metric.hitsatk", "hits_at_k"),
     ],
+    # configuration/features/number_features.md, "Metrics"
     "number": [
         ("training.metric.rmse", "root_mean_squared_error"),
         ("training.metric.mae", "mean_absolute_error"),
+        ("training.metric.mse", "mean_squared_error"),
+        ("training.metric.rmspe", "root_mean_squared_percentage_error"),
     ],
 }
 _SEARCH_STRATEGIES = [
@@ -97,6 +104,17 @@ _SEARCH_STRATEGIES = [
     ("training.strategy.random", "random"),
     ("training.strategy.bayesian", "bayesian"),
     ("training.strategy.exhaustive", "exhaustive"),
+]
+# Missing-value strategy for NUMBER input features - configuration/features/
+# number_features.md, "missing_value_strategy" (default: fill_with_const,
+# i.e. Ludwig's own behaviour, which is what index 0 here leaves in place).
+_MISSING_STRATEGIES = [
+    ("training.missingstrategy.default", None),
+    ("training.missingstrategy.mean", "fill_with_mean"),
+    ("training.missingstrategy.mode", "fill_with_mode"),
+    ("training.missingstrategy.ffill", "ffill"),
+    ("training.missingstrategy.bfill", "bfill"),
+    ("training.missingstrategy.droprow", "drop_row"),
 ]
 
 
@@ -258,6 +276,16 @@ class TrainingPage(QWidget):
         self.secondary_list = QListWidget()
         self.secondary_list.setMaximumHeight(120)
         self.secondary_list.setSelectionMode(QListWidget.MultiSelection)
+        # Hover, not click - same reasoning as features_list above (an
+        # item click here selects/deselects it, not a request for help).
+        attach_help_popup_hover(
+            self.secondary_list,
+            "Optional: other outcomes to predict at the same time as the main one, in "
+            "the same model (a real multi-output model, not just extra notes). E.g. main "
+            "outcome 'Mortality', with 'Length_of_stay' and 'Readmission_30d' also ticked "
+            "here — the model is then trained to predict all three together. Leave empty "
+            "if you only care about the main outcome above."
+        )
         variables_layout.addWidget(self.secondary_list)
 
         # Explicit, readable item text colour - a plain QListWidget has no
@@ -408,19 +436,27 @@ class TrainingPage(QWidget):
         advanced_form = QFormLayout()
         advanced_form.setSpacing(12)
 
-        # Time budget
+        # Time budget - no up/down arrows: typed directly in the field,
+        # like Final Evaluation Holdout below. qfluentwidgets' SpinBox
+        # already hides the native Qt spin arrows by default and instead
+        # adds its OWN upButton/downButton pair (InlineSpinBoxBase) - those
+        # are only removed via setSymbolVisible(False), not
+        # setButtonSymbols().
         self.time_budget = SpinBox()
         self.time_budget.setRange(5, 1440)
         self.time_budget.setValue(60)
         self.time_budget.setSuffix(" minutes")
+        self.time_budget.setSymbolVisible(False)
         self._add_form_row(advanced_form, t("training.label.timebudget"), self.time_budget)
 
-        # Test split
+        # Test split ("Final Evaluation Holdout") - typed directly (e.g.
+        # "0.2"), no up/down arrows.
         self.test_split = DoubleSpinBox()
         self.test_split.setRange(0.1, 0.5)
         self.test_split.setValue(0.2)
         self.test_split.setSingleStep(0.05)
-        self.test_split.setSuffix(" (20%)")
+        self.test_split.setDecimals(2)
+        self.test_split.setSymbolVisible(False)
         self._add_form_row(advanced_form, t("training.label.testsplit"), self.test_split)
 
         # Random seed
@@ -446,6 +482,14 @@ class TrainingPage(QWidget):
         self.parallel_trials.setValue(4)
         self._add_form_row(advanced_form, t("training.label.paralleltrials"), self.parallel_trials)
 
+        # Early stopping (trainer.early_stop, configuration/trainer.md):
+        # consecutive evaluation rounds with no improvement before Ludwig
+        # stops training. Default 5, matching Ludwig's own; -1 disables it.
+        self.early_stop = SpinBox()
+        self.early_stop.setRange(-1, 100)
+        self.early_stop.setValue(5)
+        self._add_form_row(advanced_form, t("training.label.earlystop"), self.early_stop)
+
         hyperopt_content_layout.addLayout(advanced_form)
 
         # Switches — each gets its own static label. SwitchButton's own
@@ -467,12 +511,13 @@ class TrainingPage(QWidget):
         self.problem_type_combo.currentIndexChanged.connect(self._on_problem_type_changed)
         self._on_problem_type_changed()
 
-        features_row = QHBoxLayout()
-        features_row.addWidget(BodyLabel(t("training.label.meanimpute")))
-        self.mean_impute_switch = SwitchButton()
-        features_row.addWidget(self.mean_impute_switch)
-        features_row.addStretch()
-        hyperopt_content_layout.addLayout(features_row)
+        # Missing-value strategy for NUMBER features (configuration/
+        # features/number_features.md, "missing_value_strategy"). Index 0
+        # ("Ludwig default") sends no override, matching every other
+        # "let Ludwig decide" default elsewhere on this page.
+        self.missing_strategy_combo = ComboBox()
+        self.missing_strategy_combo.addItems([t(label) for label, _ in _MISSING_STRATEGIES])
+        self._add_form_row(advanced_form, t("training.label.meanimpute"), self.missing_strategy_combo)
 
         self._hyperopt_content.setVisible(False)
         model_layout.addWidget(self._hyperopt_content)
@@ -1188,12 +1233,51 @@ class TrainingPage(QWidget):
             "Search Strategy": self.hyperopt_strategy.currentText(),
             "Max Iterations": self.hyperopt_trials.value(),
             "Parallel Trials": self.parallel_trials.value(),
+            "Early Stopping": self.early_stop.value(),
             "Handle Class Imbalance": self.class_balance_switch.isChecked(),
-            "Fill Missing Numeric Values": self.mean_impute_switch.isChecked(),
+            "Missing Numeric Values Strategy": (
+                self.missing_strategy_combo.currentText()
+                if self.missing_strategy_combo.currentIndex() != 0 else ""
+            ),
         }
         for element, value in fields.items():
             if value:
                 usage_log.event("Training", "field_filled", element, str(value))
+
+    def _problem_type_mismatch(self, problem_type: str, target: str) -> str | None:
+        """Return a plain-language error if *problem_type* is incompatible
+        with the actual values in the *target* column, or None if it's
+        fine. Checked before training starts (see _start_training)."""
+        if self._data_model is None or self._data_model.df is None:
+            return None
+        df = self._data_model.get_active_df()
+        if target not in df.columns:
+            return None
+        series = df[target].dropna()
+        if series.empty:
+            return None
+
+        if problem_type == "number":
+            import pandas as pd
+            numeric = pd.to_numeric(series, errors="coerce")
+            bad_pct = numeric.isna().mean()
+            if bad_pct > 0.05:
+                examples = series[numeric.isna()].astype(str).unique()[:3]
+                return (
+                    f"'{target}' isn't numeric — {bad_pct:.0%} of its values aren't valid "
+                    f"numbers (e.g. {', '.join(examples)}). Regression needs a continuous "
+                    f"numeric outcome; pick Binary or Multi-class classification instead, "
+                    f"or choose a different outcome column."
+                )
+        elif problem_type == "binary":
+            n_unique = series.nunique()
+            if n_unique != 2:
+                return (
+                    f"'{target}' has {n_unique} distinct value(s), not 2 — Binary "
+                    f"classification needs exactly two. Pick Multi-class classification "
+                    f"instead, or choose a different outcome column."
+                )
+        return None
 
     def _start_training(self):
         """Validate config, build a LudwigTrainerWorker and start it."""
@@ -1247,6 +1331,28 @@ class TrainingPage(QWidget):
             return
 
         train_from_config = self._pending_config is not None
+
+        # Catch a Prediction Type that doesn't actually match the outcome
+        # column's data BEFORE sending anything to Ludwig. Left uncaught,
+        # this doesn't fail until minutes later, deep inside Ludwig's own
+        # config validation (Ray cluster already started) with a cryptic
+        # pydantic error - reproduced locally: forcing "number" on a
+        # column of e.g. "tested_positive"/"tested_negative" text values
+        # raises "Config validation error... Feature for stratify column
+        # ... must be binary or category" or a validation_metric mismatch,
+        # neither of which tells the user what's actually wrong.
+        if not train_from_config:
+            problem_type = _PROBLEM_TYPES[self.problem_type_combo.currentIndex()][1]
+            mismatch = self._problem_type_mismatch(problem_type, target)
+            if mismatch:
+                InfoBar.error(
+                    title="Prediction Type doesn't match this column",
+                    content=mismatch,
+                    orient=Qt.Horizontal, isClosable=True,
+                    position=InfoBarPosition.TOP, duration=8000, parent=self,
+                )
+                return
+
         time_limit_s = 0 if train_from_config else self.time_budget.value() * 60
 
         self.start_training_btn.setEnabled(False)
@@ -1300,6 +1406,9 @@ class TrainingPage(QWidget):
             # real choices, so it's always forced rather than only when
             # non-default.
             fields["problem_type"] = _PROBLEM_TYPES[self.problem_type_combo.currentIndex()][1]
+            # Always sent - the UI's own default (5) already matches
+            # Ludwig's, so sending it unchanged is a no-op.
+            fields["early_stop"] = int(self.early_stop.value())
             if self.metric_combo.currentIndex() != 0:
                 fields["metric"] = self._current_metrics[self.metric_combo.currentIndex()][1]
             search = _SEARCH_STRATEGIES[self.hyperopt_strategy.currentIndex()][1]
@@ -1309,8 +1418,9 @@ class TrainingPage(QWidget):
                 fields["parallel_trials"] = int(self.parallel_trials.value())
             if self.class_balance_switch.isChecked():
                 fields["class_imbalance"] = True
-            if self.mean_impute_switch.isChecked():
-                fields["mean_impute"] = True
+            missing_strategy = _MISSING_STRATEGIES[self.missing_strategy_combo.currentIndex()][1]
+            if missing_strategy is not None:
+                fields["missing_strategy"] = missing_strategy
             if fields:
                 backend_kwargs["user_config_fields"] = fields
             # Ticked "Secondary outcomes" become additional Ludwig output

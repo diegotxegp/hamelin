@@ -133,8 +133,25 @@ class Table1Page(QWidget):
         vars_layout.addLayout(sel_row)
 
         vars_layout.addSpacing(6)
+        settings_header = QHBoxLayout()
         settings_title = StrongBodyLabel("Table Settings")
-        vars_layout.addWidget(settings_title)
+        settings_help = HelpButton(
+            "Grouping Variable: pick a categorical column to split the table into "
+            "columns and add a between-group statistical test (t-test/ANOVA for "
+            "numeric variables, Chi-square/Fisher's exact for categorical ones). "
+            "Leave it as 'None' for one overall column with no group comparison.\n\n"
+            "Missing data: choose whether rows with a missing value are kept "
+            "(shown as 'missing' in the table) or dropped entirely before the "
+            "table is built.\n\n"
+            "Show p-values: only applies when a grouping variable is selected. "
+            "A p-value < 0.05 means the groups differ significantly on that "
+            "variable; untick this for a purely descriptive Table 1 with no "
+            "group comparison shown."
+        )
+        settings_header.addWidget(settings_title)
+        settings_header.addWidget(settings_help)
+        settings_header.addStretch()
+        vars_layout.addLayout(settings_header)
 
         group_row = QHBoxLayout()
         group_label = BodyLabel("Grouping Variable:")

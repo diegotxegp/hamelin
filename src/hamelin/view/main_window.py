@@ -147,6 +147,7 @@ class MainWindow(MSFluentWindow):
         # Share project metadata with ForecastingPage and DashboardPage when saved or opened
         self.metadata_page.metadata_saved.connect(self._on_metadata_saved)
         self.metadata_page.project_loaded.connect(self._on_project_loaded)
+        self.metadata_page.all_projects_deleted.connect(self.home_page.update_stats)
         # Forecasting → Dashboard live wiring: tracker_ready carries the live
         # RecruitmentTracker after each forecast run.
         self.forecasting_page.tracker_ready.connect(self.dashboard_page.set_tracker)

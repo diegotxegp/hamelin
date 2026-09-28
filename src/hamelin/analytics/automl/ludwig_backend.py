@@ -589,7 +589,10 @@ _SEARCH_TO_LUDWIG = {
     "exhaustive": "variant_generator",
 }
 # Metrics where "better" means smaller (regression error metrics).
-_MINIMIZE_METRICS = {"root_mean_squared_error", "mean_absolute_error"}
+_MINIMIZE_METRICS = {
+    "root_mean_squared_error", "mean_absolute_error",
+    "mean_squared_error", "root_mean_squared_percentage_error",
+}
 
 # Ludwig's own hyperopt default is unbounded concurrency (max_concurrent_
 # trials=None, capped only by CPU count) - on a modest dev machine, 10
@@ -616,6 +619,15 @@ def _fields_to_user_config(fields: dict, target: str) -> dict:
     if metric:
         cfg["trainer"] = {"validation_metric": metric, "validation_field": target}
 
+    # trainer.early_stop (default 5, -1 disables) - configuration/
+    # trainer.md. Always sent (like test_split/random_seed above it in
+    # TrainingPage) rather than gated on "moved off default", since the
+    # UI's own default already matches Ludwig's, so sending it unchanged
+    # is a no-op.
+    early_stop = fields.get("early_stop")
+    if early_stop is not None:
+        cfg.setdefault("trainer", {})["early_stop"] = int(early_stop)
+
     # Ludwig docs (configuration/preprocessing.md, "Data Balancing"):
     # dataset balancing is only supported for binary output features. The
     # TrainingPage UI already disables this switch for non-binary problem
@@ -624,16 +636,21 @@ def _fields_to_user_config(fields: dict, target: str) -> dict:
     if fields.get("class_imbalance") and fields.get("problem_type") == "binary":
         cfg["preprocessing"] = {"oversample_minority": 0.5}
 
-    if fields.get("mean_impute"):
+    missing_strategy = fields.get("missing_strategy")
+    if missing_strategy:
         # Ludwig's own default for a missing NUMBER value is
         # fill_with_const (0.0) - misleading for clinical data, where 0
         # is rarely a neutral placeholder (a blood pressure or age of 0
         # reads as a real, absurd measurement instead of "missing").
+        # One of the other documented strategies (configuration/features/
+        # number_features.md: fill_with_mean, fill_with_mode, bfill,
+        # ffill, drop_row) can be picked instead via TrainingPage's
+        # "Missing Numeric Values Strategy" dropdown.
         # "defaults" applies to every number feature at once without
         # having to name each column - merge_dict (see auto_train's
         # merge of user_config) recurses into nested dicts fine, unlike
         # the "output_features" list problem_type has to work around.
-        cfg["defaults"] = {"number": {"preprocessing": {"missing_value_strategy": "fill_with_mean"}}}
+        cfg["defaults"] = {"number": {"preprocessing": {"missing_value_strategy": missing_strategy}}}
 
     search = fields.get("search")
     if search and search != "none":
