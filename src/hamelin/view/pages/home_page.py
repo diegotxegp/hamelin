@@ -19,6 +19,7 @@ from hamelin.core.project import ProjectRepository
 from hamelin.core.dataset_registry import DatasetRegistry
 from hamelin.core.model_history import ModelHistory
 from hamelin.utils.logger import log
+from hamelin.utils.paths import resources_dir
 from hamelin.view.widgets import PageHelpButton
 from hamelin.view.widgets.theme_colors import bind_style
 from hamelin.i18n import t
@@ -76,7 +77,7 @@ class HomePage(QWidget):
         header_row.setAlignment(Qt.AlignLeft | Qt.AlignVCenter)
 
         logo_lbl = QLabel()
-        _logo_path = Path(__file__).resolve().parent.parent.parent / "resources" / "assets" / "logo.png"
+        _logo_path = resources_dir() / "assets" / "logo.png"
         if _logo_path.exists():
             pix = QPixmap(str(_logo_path)).scaled(
                 80, 80,

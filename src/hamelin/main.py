@@ -5,6 +5,9 @@ HAMELIN - Application Entry Point
 Parses arguments and launches the GUI (or CLI fallback mode).
 """
 
+import os
+import shutil
+import subprocess
 import sys
 import argparse
 from pathlib import Path
@@ -76,6 +79,65 @@ Examples:
     return parser.parse_args()
 
 
+def _disable_unsupported_gpu():
+    """Hide the GPU from this process (and, via inherited env, every Ray/
+    Ludwig worker subprocess) if it exists but isn't one the installed
+    PyTorch build actually has kernels for.
+
+    Ray/Ludwig auto-detect any CUDA-capable GPU and schedule training
+    trials on it unconditionally - on an old/unsupported GPU (e.g. compute
+    capability sm_50 when the installed torch only ships sm_75+ kernels)
+    this doesn't fail until deep inside a Ray worker mid-training, as a
+    cryptic ``CUBLAS_STATUS_ARCH_MISMATCH``, long after the point where a
+    clean CPU fallback would have been simple. Checked once at startup, in
+    throwaway subprocesses, so a CUDA context doesn't get pinned to *this*
+    process before we've decided whether the GPU should be visible at all.
+    """
+    if "CUDA_VISIBLE_DEVICES" in os.environ:
+        return  # already explicitly configured - respect it
+
+    if shutil.which("nvidia-smi") is None:
+        return  # no NVIDIA driver/GPU on this machine - nothing to check
+
+    try:
+        smi = subprocess.run(
+            ["nvidia-smi", "--query-gpu=compute_cap", "--format=csv,noheader"],
+            timeout=5, capture_output=True, text=True,
+        )
+        if smi.returncode != 0 or not smi.stdout.strip():
+            return
+    except Exception:
+        return  # no usable nvidia-smi - let torch/ray behave as normal
+
+    probe = (
+        "import torch, sys\n"
+        "if not torch.cuda.is_available():\n"
+        "    sys.exit(0)\n"
+        "major, minor = torch.cuda.get_device_capability(0)\n"
+        "arch = f'sm_{major}{minor}'\n"
+        "supported = torch.cuda.get_arch_list()\n"
+        "sys.exit(1 if supported and arch not in supported else 0)\n"
+    )
+    try:
+        # sys.executable [-c] is the same subprocess re-entry pattern Ray
+        # itself relies on, already handled by _run_as_python_interpreter
+        # above when this is a frozen build.
+        probe_result = subprocess.run(
+            [sys.executable, "-c", probe], timeout=30, capture_output=True,
+        )
+    except Exception:
+        log.warning("GPU compatibility probe failed to run; leaving GPU visible")
+        return
+
+    if probe_result.returncode == 1:
+        log.warning(
+            "Detected GPU's compute capability isn't supported by the "
+            "installed PyTorch build - disabling GPU for this session "
+            "(training will run on CPU instead of crashing mid-run)."
+        )
+        os.environ["CUDA_VISIBLE_DEVICES"] = ""
+
+
 def initialize_application(args):
     """Set up logging, load config, install exception handler, log startup info."""
     if args.debug:
@@ -94,6 +156,7 @@ def initialize_application(args):
             log.info("Using default configuration")
 
     install_global_exception_handler()
+    _disable_unsupported_gpu()
 
     log.info("=" * 60)
     log.info(f"HAMELIN v{__version__} - Clinical Research AutoML")
@@ -123,7 +186,8 @@ def run_gui():
         # icon=... setting (baked into the executable's resources) - set it
         # here too so the taskbar/window icon also shows up when running
         # straight from source (uv run hamelin / python -m hamelin).
-        logo_path = Path(__file__).resolve().parent / "resources" / "assets" / "logo.png"
+        from hamelin.utils.paths import resources_dir
+        logo_path = resources_dir() / "assets" / "logo.png"
         if logo_path.exists():
             app.setWindowIcon(QIcon(str(logo_path)))
 

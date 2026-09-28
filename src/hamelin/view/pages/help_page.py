@@ -54,13 +54,14 @@ from qfluentwidgets import (
 
 from hamelin.utils.logger import log
 from hamelin.utils.usage_logger import usage_log
+from hamelin.utils.paths import resources_dir
 from hamelin.view.widgets.theme_colors import apply_scroll_area_theme, bind_style
 from hamelin.i18n import t
 
 # Real app screenshots referenced by a few blocks below (see the "image"
 # key on individual block dicts) - same resources/ location as the logo,
 # see home_page.py's own _logo_path for the matching path computation.
-_HELP_IMAGES_DIR = Path(__file__).resolve().parent.parent.parent / "resources" / "help_images"
+_HELP_IMAGES_DIR = resources_dir() / "help_images"
 
 
 # Section content — strings are intentionally long; they ARE the manual.
