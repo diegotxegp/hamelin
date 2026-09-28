@@ -8,3 +8,14 @@ wheels/
 
 # Virtual environments
 .venv
+
+# Test cache
+.pytest_cache/
+
+# Runtime workspace (user datasets, projects, logs) - not shipped, not versioned
+/workspace/*
+
+# Vendored third-party reference docs (e.g. Ludwig's own manual) - large,
+# not authored by this project, kept locally only. docs/hamelin/ (this
+# project's own future manual) is NOT covered by this and stays tracked.
+/docs/ludwig/
