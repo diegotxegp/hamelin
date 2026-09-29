@@ -137,3 +137,29 @@ def test_multiclass_accuracy_is_the_overall_share_of_correct_predictions():
     assert fixed["test/Class/accuracy/best"] == 0.95 and fixed["test/Class/accuracy_per_class/best"] == 0.43
     binary = {"accuracy": 0.7, "accuracy_micro": 0.74, "recall": 0.8, "specificity": 0.6}
     assert overall_accuracy_metrics(binary)["accuracy"] == 0.7
+
+
+def test_multiclass_warns_by_name_about_classes_that_are_never_detected():
+    import pandas as pd
+    from hamelin.analytics.eval_data import class_detection, missed_classes
+    from hamelin.analytics.result_advice import build_advice
+
+    y_true = ["neg"] * 90 + ["mild"] * 10 + ["rare"] * 10
+    y_pred = ["neg"] * 88 + ["mild"] * 2 + ["mild"] * 8 + ["neg"] * 2 + ["neg"] * 10
+    pred = pd.DataFrame({"y_true": y_true, "y_pred": y_pred})
+    metrics = {"accuracy": 0.6, "accuracy_micro": 0.90, "accuracy_per_class": 0.6, "hits_at_k": 0.95}
+    from hamelin.analytics.eval_data import overall_accuracy_metrics
+    adv = build_advice(overall_accuracy_metrics(metrics), None, pred, 110)
+    text = " ".join(line for _, lines in adv.sections for line in lines)
+    assert "rare (0 of 10)" in text and "average accuracy per class" in text
+
+    rows = class_detection(["a", "b", "c"], [[9, 1, 0], [0, 4, 6], [1, 0, 2]])
+    assert [r["class"] for r in missed_classes(rows)] == ["b"]      # 'c' has only 3 patients: not judged
+
+
+def test_high_accuracy_that_only_matches_the_majority_class_is_not_called_too_good():
+    import pandas as pd
+    from hamelin.analytics.result_advice import build_advice
+    pred = pd.DataFrame({"y_true": ["neg"] * 93 + ["a"] * 4 + ["b"] * 3, "y_pred": ["neg"] * 100})
+    adv = build_advice({"accuracy": 0.96, "accuracy_micro": 0.96, "hits_at_k": 1.0}, None, pred, 100)
+    assert not any("rare in clinical data" in l for _, ls in adv.sections for l in ls)

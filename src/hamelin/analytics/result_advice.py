@@ -23,6 +23,7 @@ AUC_BANDS = ((0.90, "excellent"), (0.80, "good"), (0.70, "moderate"))
 R2_BANDS = ((0.90, "excellent"), (0.70, "good"), (0.50, "moderate"))
 SMALL_TEST_SET = 100
 MODEST_TEST_SET = 300
+PER_CLASS_GAP = 0.15         # overall accuracy this far above the per-class average is flagged
 OVERFIT_GAP = 0.10
 IMBALANCED_BELOW = 0.25
 TRADEOFF_GAP = 0.20
@@ -142,10 +143,27 @@ def build_advice(test_metrics: dict, train_metrics: dict | None = None, pred_df=
             adv.verdict = t(f"advice.verdict.multi.{band}").format(acc, base)
             why.append(t("advice.why.acc_vs_base").format(acc, shares.index[0], base, gain))
             weak_or_fair = band != "good"
-            too_good = acc >= TOO_GOOD
+            too_good = acc >= TOO_GOOD and gain >= 0.05      # not just the majority class in disguise
         elif acc is not None:
             adv.verdict = t("advice.verdict.multi.nobase").format(acc)
         why.append(t("advice.why.multi_confusion"))
+        per_class = _get(tm, "accuracy_per_class")
+        if acc is not None and per_class is not None and acc - per_class > PER_CLASS_GAP:
+            why.insert(0, t("advice.why.per_class_avg").format(acc, per_class))
+        if pred_df is not None and "y_pred" in pred_df.columns and shares is not None:
+            from hamelin.analytics.eval_data import class_detection, missed_classes
+            labels = list(dict.fromkeys(pred_df["y_true"].astype(str)))
+            truth, pred = pred_df["y_true"].astype(str), pred_df["y_pred"].astype(str)
+            rows = class_detection(labels, [[int(((truth == a) & (pred == b)).sum()) for b in labels]
+                                            for a in labels])
+            missed = missed_classes(rows)
+            if missed:
+                names = "; ".join(f"{r['class']} ({r['detected']} of {r['n']})" for r in missed[:4])
+                why.insert(0, t("advice.why.classes_missed").format(names))
+                rare = t("advice.imp.rare_classes")
+                if rare in imp:
+                    imp.remove(rare)                 # covered by the more specific advice below
+                imp.append(t("advice.imp.classes_missed"))
         if shares is not None and len(shares) > 2 and float(shares.iloc[-1]) < 0.05:
             imp.append(t("advice.imp.rare_classes"))
     else:  # regression

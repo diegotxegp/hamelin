@@ -43,6 +43,9 @@ from hamelin.i18n import t
 # (with just a .gitkeep) before this was ever pointed at it; not created
 # here, just used - mkdir(exist_ok=True) is only a safety net in case
 # that .gitkeep placeholder is ever removed.
+# Above this share of rows the confirmation adds a warning.
+OUTLIER_WARN_SHARE = 20.0
+
 _DATASETS_DIR = workspace_dir() / "data"
 
 
@@ -1038,17 +1041,10 @@ class DataPage(QWidget):
         when one finishes, its result is only applied if it's still current -
         an older worker that finishes late is just discarded.
 
-        The two "Load" buttons are disabled for the duration instead: this
-        analysis can take tens of seconds (Ludwig's own import cost - see
-        prewarm_ludwig_type_inference()'s docstring), and clicking Load
-        again mid-analysis used to silently start a second, fully
-        concurrent Ludwig analysis - harmless to correctness thanks to the
-        generation guard above, but wasteful (two full analyses running at
-        once) and confusing (their progress bars/log lines interleave).
+        The Load buttons stay enabled during the analysis (it can take tens
+        of seconds): loading another dataset just supersedes it, and the
+        generation guard above discards the stale result.
         """
-        self.load_btn.setEnabled(False)
-        self.load_saved_btn.setEnabled(False)
-
         self._analyzer_generation += 1
         generation = self._analyzer_generation
         worker = VariableAnalyzerWorker(df, parent=self)
@@ -1065,8 +1061,6 @@ class DataPage(QWidget):
     def _on_analyzer_worker_done(self, generation: int, analysis: dict) -> None:
         if generation != self._analyzer_generation:
             return  # superseded by a later load/refresh - stale, discard
-        self.load_btn.setEnabled(True)
-        self.load_saved_btn.setEnabled(True)
         self._on_variable_analysis_ready(analysis)
 
     def _on_analyzer_worker_error(self, generation: int, message: str) -> None:
@@ -1075,8 +1069,6 @@ class DataPage(QWidget):
         no feedback at all."""
         if generation != self._analyzer_generation:
             return  # superseded - a newer worker's outcome is what counts
-        self.load_btn.setEnabled(True)
-        self.load_saved_btn.setEnabled(True)
         self._var_progress.stop()
         self._var_progress.setVisible(False)
         self._var_status_lbl.setVisible(False)
@@ -1771,10 +1763,23 @@ class DataPage(QWidget):
 
     # ── Outlier exclusion ─────────────────────────────────────────────
 
+    def _confirm_outlier_exclusion(self, n_rows: int, total_rows: int) -> bool:
+        """Tell the user how many patients would be left out and ask before doing it."""
+        from qfluentwidgets import MessageBox
+        share = 100.0 * n_rows / max(total_rows, 1)
+        text = t("data.txt.outliers_confirm").format(n_rows, total_rows, share)
+        if share > OUTLIER_WARN_SHARE:
+            text += "\n\n" + t("data.txt.outliers_confirm_many")
+        return bool(MessageBox(t("data.txt.outliers_confirm_title"), text, self.window()).exec())
+
     def _exclude_outliers(self):
         """Mark rows with any numeric value >3 SD as excluded in the DataModel."""
         usage_log.event("Data", "click", "Exclude Outliers button")
         if self._data_model is None:
+            return
+        pending = self._data_model.find_outliers(std_threshold=3.0)
+        if pending and not self._confirm_outlier_exclusion(len(pending), len(self._data_model.df)):
+            usage_log.event("Data", "click", "Exclude Outliers cancelled", f"{len(pending)} row(s)")
             return
         n = self._data_model.exclude_outliers(std_threshold=3.0)
         total = len(self._data_model.excluded_rows)

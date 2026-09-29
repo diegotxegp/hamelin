@@ -477,27 +477,14 @@ class DataModel(BaseModel):
     
     # ── Outlier exclusion ────────────────────────────────────────────────
 
-    def exclude_outliers(self, std_threshold: float = 3.0) -> int:
-        """
-        Mark rows with any numeric value beyond ``std_threshold`` standard
-        deviations from the column mean as excluded.
-
-        Only numeric columns are considered.  NaN values are ignored when
-        computing mean/SD and do not themselves trigger exclusion.
-
-        Args:
-            std_threshold: Number of SDs beyond which a value is an outlier.
-
-        Returns:
-            Number of *newly* excluded rows (rows already in excluded_rows
-            are not double-counted).
-        """
+    def find_outliers(self, std_threshold: float = 3.0) -> set:
+        """Index labels of the rows that :meth:`exclude_outliers` would newly
+        exclude, without excluding anything (used to ask for confirmation)."""
         if self.df is None:
-            return 0
-
+            return set()
         numeric_cols = self.get_numeric_columns()
         if not numeric_cols:
-            return 0
+            return set()
 
         outlier_mask = pd.Series(False, index=self.df.index)
         for col in numeric_cols:
@@ -510,9 +497,23 @@ class DataModel(BaseModel):
                 continue
             col_mask = (self.df[col] - mean).abs() > std_threshold * sd
             outlier_mask = outlier_mask | col_mask.fillna(False)
+        return set(self.df.index[outlier_mask]) - self.excluded_rows
 
-        new_indices = set(self.df.index[outlier_mask]) - self.excluded_rows
-        self._change_reason = f"outliers beyond {std_threshold:g} standard deviations"
+    def exclude_outliers(self, std_threshold: float = 3.0) -> int:
+        """
+        Mark rows with any numeric value beyond ``std_threshold`` standard
+        deviations from the column mean as excluded.
+
+        Only numeric columns are considered.  NaN values are ignored when
+        computing mean/SD and do not themselves trigger exclusion.
+
+        Returns:
+            Number of *newly* excluded rows (rows already in excluded_rows
+            are not double-counted).
+        """
+        new_indices = self.find_outliers(std_threshold)
+        if new_indices:
+            self._change_reason = f"outliers beyond {std_threshold:g} standard deviations"
         self.excluded_rows.update(new_indices)
         log.info(
             f"exclude_outliers(threshold={std_threshold}): "

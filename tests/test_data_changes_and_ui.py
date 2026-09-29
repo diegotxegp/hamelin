@@ -172,3 +172,27 @@ def test_settings_apply_and_persist_at_once(qtbot):
     page._log_level_combo.setCurrentText("WARNING")
     assert config.get("app.log_level") == "WARNING"
     page._log_level_combo.setCurrentText("INFO")
+
+
+def test_exclude_outliers_asks_first_and_only_excludes_when_confirmed(tmp_path, qtbot, monkeypatch):
+    import numpy as np
+    from hamelin.view.pages.data_page import DataPage
+
+    rng = np.random.default_rng(0)
+    vals = list(rng.normal(50, 5, 200)) + [500.0]
+    csv = tmp_path / "o.csv"
+    pd.DataFrame({"x": vals}).to_csv(csv, index=False)
+    dm = DataModel()
+    dm.load_from_file(csv)
+    page = DataPage()
+    qtbot.addWidget(page)
+    page._data_model = dm
+
+    assert dm.find_outliers(3.0) == {200} and not dm.excluded_rows      # looking does not exclude
+    seen = []
+    monkeypatch.setattr(page, "_confirm_outlier_exclusion", lambda n, total: seen.append((n, total)) or False)
+    page._exclude_outliers()
+    assert seen == [(1, 201)] and not dm.excluded_rows                  # declined: nothing happens
+    monkeypatch.setattr(page, "_confirm_outlier_exclusion", lambda n, total: True)
+    page._exclude_outliers()
+    assert dm.excluded_rows == {200}

@@ -284,6 +284,7 @@ class TrainingPage(QWidget):
         self.features_list = QListWidget()
         self._all_columns: list[str] = []
         self.primary_combo.currentIndexChanged.connect(self._sync_predictors_with_outcome)
+        self.primary_combo.currentIndexChanged.connect(self._auto_set_problem_type)
         self.features_list.setMaximumHeight(150)
         self.features_list.setSelectionMode(QListWidget.MultiSelection)
         # Hover, not click (attach_help_popup_hover, not attach_help_popup) -
@@ -474,7 +475,7 @@ class TrainingPage(QWidget):
         # Always seconds (minimum 100). Every keystroke is applied at once.
         self.time_budget.setRange(100, 86400)
         self.time_budget.setKeyboardTracking(True)
-        self.time_budget.setValue(500)
+        self.time_budget.setValue(300)
         self.time_budget.setSymbolVisible(False)
         self._add_form_row(advanced_form, t("training.label.timebudget"), self.time_budget)
 
@@ -705,6 +706,43 @@ class TrainingPage(QWidget):
     def _on_cancel_pending_clicked(self) -> None:
         usage_log.event("Training", "click", "Cancel Duplicated Config button")
         self._clear_pending_config()
+
+    def _suggest_problem_type(self, target: str) -> str | None:
+        """Guess the Prediction Type ("binary"/"category"/"number") from the
+        values of *target*, or None if it can't be told."""
+        if self._data_model is None or self._data_model.df is None:
+            return None
+        df = self._data_model.get_active_df()
+        if target not in df.columns:
+            return None
+        series = df[target].dropna()
+        if series.empty:
+            return None
+        n_unique = series.nunique()
+        if n_unique == 2:
+            return "binary"
+        import pandas as pd
+        numeric = pd.to_numeric(series, errors="coerce")
+        if numeric.isna().mean() > 0.05:
+            return "category"
+        # Numeric: integer codes with few distinct values are class labels
+        # (e.g. 1/2/3), anything else is a continuous outcome.
+        is_int = bool((numeric.dropna() % 1 == 0).all())
+        if is_int and n_unique <= min(10, max(3, len(series) // 20)):
+            return "category"
+        return "number"
+
+    def _auto_set_problem_type(self, *_args) -> None:
+        """Pick the Prediction Type that fits the newly chosen outcome (the
+        user can still change it afterwards)."""
+        if getattr(self, "_restoring_form", False):
+            return
+        suggestion = self._suggest_problem_type(self.primary_combo.currentText().strip())
+        if suggestion is None:
+            return
+        idx = next(i for i, (_, v) in enumerate(_PROBLEM_TYPES) if v == suggestion)
+        if idx != self.problem_type_combo.currentIndex():
+            self.problem_type_combo.setCurrentIndex(idx)  # fires _on_problem_type_changed
 
     def _sync_predictors_with_outcome(self, *_args) -> None:
         """The outcome variable can't also be a predictor: list every column

@@ -264,6 +264,9 @@ class ModelInspectPanel(QWidget):
         plots.addWidget(self.roc_canvas, 1)
         lay.addLayout(plots)
 
+        self.cm_classes = BodyLabel("")
+        self.cm_classes.setWordWrap(True)
+        lay.addWidget(self.cm_classes)
         self.cm_hint = BodyLabel(t("eval.cm.hint"))
         bind_style(self.cm_hint, lambda c: f"color: {c.text_secondary}; font-size: 12px;")
         lay.addWidget(self.cm_hint)
@@ -381,6 +384,8 @@ class ModelInspectPanel(QWidget):
     def _render_metrics(self) -> None:
         names, keys = ed.split_metrics(self._flat, "test")
         self._raw = {n: float(self._flat[k]) for n, k in zip(names, keys)}
+        if "accuracy_per_class" in self._raw:           # multi-class: accuracy is already the overall figure
+            self._raw.pop("accuracy_micro", None)
         self._tiles_labels = sorted(self._raw)
         has = bool(self._tiles_labels)
         self.no_metrics_lbl.setVisible(not has)
@@ -452,15 +457,34 @@ class ModelInspectPanel(QWidget):
         show = result is not None
         for w in (self.cm_table, self.roc_canvas, self.cm_hint, self.cm_info, self.pct_btn, self.cm_export_btn):
             w.setVisible(show)
+        self.cm_classes.setVisible(False)
         self.cm_none.setVisible(not show)
         self.cm_none.setText(t("eval.cm.regression") if not supported else t("eval.no_predictions"))
         if not show:
             return
         self._cm = result
+        self._show_class_detection(result)
         n = sum(sum(r) for r in result["matrix"])
         self.cm_info.setText(f"{n} {t('eval.samples')}")
         self._fill_cm()
         self._render_plots()
+
+    def _show_class_detection(self, result: dict) -> None:
+        """For 3+ classes: how many patients of each class the model found (the
+        overall accuracy alone hides classes that are never detected)."""
+        rows = ed.class_detection(result["labels"], result["matrix"])
+        if len(rows) < 3:
+            self.cm_classes.setVisible(False)
+            return
+        missed = {r["class"] for r in ed.missed_classes(rows)}
+        parts = []
+        for r in rows:
+            txt = f"{html.escape(r['class'])}: {r['detected']}/{r['n']}"
+            if r["share"] is not None:
+                txt += f" ({r['share']:.0%})"
+            parts.append(f"<b style='color:#D13438'>{txt}</b>" if r["class"] in missed else txt)
+        self.cm_classes.setText(f"<b>{t('eval.cm.per_class')}</b> " + " · ".join(parts))
+        self.cm_classes.setVisible(True)
 
     def _fill_cm(self) -> None:
         labels, matrix = self._cm["labels"], self._cm["matrix"]

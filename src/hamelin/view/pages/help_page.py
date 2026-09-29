@@ -611,7 +611,7 @@ _SECTIONS: list[dict] = [
                     "Click '▶ Advanced options' in the Model Configuration card to reveal "
                     "the rest of the settings.  Defaults are fine for most studies.\n\n"
                     "Time budget (seconds):\n"
-                    "  Hard limit on search time, always in seconds (default 500, minimum 100).  "
+                    "  Hard limit on search time, always in seconds (default 300, minimum 100).  "
                     "Training stops when this is reached "
                     "even if the max iterations have not been completed.  Typed directly "
                     "(no up/down arrows).\n\n"

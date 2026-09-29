@@ -133,7 +133,7 @@ The preview table shows all rows and columns. Special values: `NaN` (missing num
 - **Remove Selected** hides the selection from every analysis (nothing is deleted from the file).
 - **Restore All** brings everything back.
 - **Remove Duplicates** hides duplicate rows (the first occurrence is kept).
-- **Exclude Outliers** / **Restore Excluded** exclude or restore rows with a value beyond 3 standard deviations.
+- **Exclude Outliers** / **Restore Excluded** exclude or restore rows with a value beyond 3 standard deviations. Before excluding, HAMELIN shows how many patients would be left out (for example "286 of 699 rows (41 %)") and asks for confirmation, with an extra warning above 20 %. Outliers are kept by default: in clinical data an extreme value is often a real patient, so exclude them only when you are sure they are errors.
 - **Export** saves the cleaned dataset (hidden items left out) as CSV, Excel or Word.
 
 ### 4.4 Variable list and types
@@ -203,7 +203,7 @@ A visual builder for inclusion/exclusion rules (column, operator, value). A pati
 
 | Field | Detail |
 |---|---|
-| **Time budget (s)** | Search time limit in seconds (default 500, minimum 100). Training stops when it is reached, even if the maximum iterations were not completed. Type the value directly: it takes effect and is saved as you type. With very short limits, expect the search to try few configurations. |
+| **Time budget (s)** | Search time limit in seconds (default 300, minimum 100). Training stops when it is reached, even if the maximum iterations were not completed. Type the value directly: it takes effect and is saved as you type. With very short limits, expect the search to try few configurations. |
 | **Final evaluation holdout** | Fraction of patients kept apart before training and used only for the final evaluation (default 0.20). |
 | **Random seed** | Same seed, same data and same settings give reproducible results. |
 | **Hyperparameter search strategy** | No optimisation (Ludwig defaults, fastest) / Random search / Bayesian optimisation (recommended) / Grid search (tries every combination, very slow). |
@@ -231,7 +231,7 @@ A visual builder for inclusion/exclusion rules (column, operator, value). A pati
 | **How it could be improved** | Only what applies to that model: review predictors, more patients, missing-value strategy, hyperparameter search, class imbalance, decision threshold, compare variants. |
 | **Before relying on it** | Internal validation on one random split (external validation is needed), calibration not checked, subgroups, decision support and not diagnosis. |
 
-For a multi-class outcome (three or more categories) *Accuracy* is the overall share of patients classified correctly; the per-class average that Ludwig also reports is kept as `accuracy_per_class`, because a rare class pulls it far below the overall figure. Quick reading: AUC 0.5 = chance, 0.7 acceptable, 0.8 good, 0.9 excellent (check for leakage), 1.0 almost always means leakage. R² 1.0 = perfect, 0.7–0.9 good, 0.5–0.7 moderate, < 0.5 weak, < 0 worse than the mean. RMSE and MAE are in the units of the outcome.
+For a multi-class outcome (three or more categories) *Accuracy* is the overall share of patients classified correctly; the per-class average that Ludwig also reports is kept as `accuracy_per_class`, because a rare class pulls it far below the overall figure. **Overall accuracy can hide a failure:** if 92 % of the patients belong to one class, always answering that class already scores 92 %. For that reason, in multi-class outcomes "How to read this result" names, in the *Why* block, any class with at least 5 test patients that the model detects less than half of the time (for example "primary_hypothyroid (0 of 10)"), shows both figures when they differ by more than 15 points, and does not treat an accuracy that merely matches the majority class as suspiciously high. Quick reading: AUC 0.5 = chance, 0.7 acceptable, 0.8 good, 0.9 excellent (check for leakage), 1.0 almost always means leakage. R² 1.0 = perfect, 0.7–0.9 good, 0.5–0.7 moderate, < 0.5 weak, < 0 worse than the mean. RMSE and MAE are in the units of the outcome.
 
 ### 6.7 What is saved
 Your choices in the Training page (outcome, predictors, rules and every Model Configuration field) are saved in the project (`project_state.json`) as you make them, so reopening the project restores them.
@@ -266,7 +266,7 @@ With **one** model selected you see below the list:
 - **Model details** — when it was trained, dataset, seed, Ludwig version, what it predicts, predictor variables, patients evaluated, and the **model architecture**: the combiner (with a plain description taken from the Ludwig documentation), its size, the input encoders and output decoders, the optimizer and learning rate, batch size and maximum epochs.
 - **Summary cards** and a plain-language reading, as right after training, including "How to read this result".
 - **Test metrics** — one card per metric measured on the test set, with a 95 % bootstrap confidence interval where it can be computed. If the predictions carry a patient attribute with few values (for example sex), **Break down by** shows accuracy per group and flags groups with fewer than 30 patients.
-- **Confusion matrix** — rows are the true outcome, columns the prediction; switch between counts and percentages, click a cell to list the patients in it and, for two-class models, change the decision threshold (50 % by default). Next to it, the ROC curve. **Export** saves the table as PNG/PDF plus a CSV.
+- **Confusion matrix** — rows are the true outcome, columns the prediction; switch between counts and percentages, click a cell to list the patients in it and, for two-class models, change the decision threshold (50 % by default). For outcomes with three or more classes, a line above the matrix lists how many patients of each class the model detected (classes that are mostly missed in red). Next to it, the ROC curve. **Export** saves the table as PNG/PDF plus a CSV.
 - **Notes** (saved with the model) and **Export report** (project, model, variables, evaluation size and metrics as CSV or PDF).
 
 Buttons under the list: **View Config** (the exact Ludwig configuration, read-only and copyable), **Duplicate and Retrain** (pre-fills Training with that configuration under a new name; nothing is saved until you train), **Compare selected**, **Delete selected** and **Delete non-favorites** (both ask for confirmation and delete the model folder), and **Open models folder**.

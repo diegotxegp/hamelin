@@ -66,6 +66,27 @@ def _flatten(prefix: str, obj: dict, out: dict) -> None:
             out[key] = v
 
 
+MISSED_CLASS_MIN_N = 5        # a class needs this many test patients to be judged
+MISSED_CLASS_BELOW = 0.5      # ... and is "missed" when fewer than this share is detected
+
+
+def class_detection(labels, matrix) -> list[dict]:
+    """Per-class detection from a confusion matrix (rows = true class): for
+    each class, how many of its test patients the model found."""
+    out = []
+    for i, label in enumerate(labels):
+        n = int(sum(matrix[i]))
+        hit = int(matrix[i][i])
+        out.append({"class": str(label), "n": n, "detected": hit, "share": hit / n if n else None})
+    return out
+
+
+def missed_classes(rows: list[dict]) -> list[dict]:
+    """Classes with enough patients to judge that the model mostly fails to detect."""
+    return [r for r in rows if r["n"] >= MISSED_CLASS_MIN_N and r["share"] is not None
+            and r["share"] < MISSED_CLASS_BELOW]
+
+
 def overall_accuracy_metrics(metrics: dict) -> dict:
     """Make "accuracy" mean the share of correct predictions for a multi-class outcome.
 
