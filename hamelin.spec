@@ -2,11 +2,17 @@
 """
 PyInstaller spec for HAMELIN.
 
-Build (onedir, faster to build/debug than --onefile):
+Build (onedir, faster to build/debug):
     uv run pyinstaller hamelin.spec
-
 Output: dist/hamelin/hamelin (+ dist/hamelin/_internal/...)
-Run:    dist/hamelin/hamelin
+
+Build (single file, easiest to copy to another machine):
+    HAMELIN_ONEFILE=1 pyinstaller hamelin.spec
+Output: dist/hamelin  (one executable; the user's data lives in a "workspace"
+folder created next to it, or wherever the HAMELIN_WORKSPACE variable points)
+
+For a machine without a GPU (a virtual machine, say) build inside a
+virtual environment that has the CPU-only PyTorch: it is several GB smaller.
 
 Notes:
 - src/hamelin/main.py already has a `sys.frozen` shim (_run_as_python_
@@ -27,9 +33,12 @@ Notes:
   more after the first real run against a trained model.
 """
 
+import os
+
 from PyInstaller.utils.hooks import collect_submodules, collect_data_files, collect_dynamic_libs
 
 block_cipher = None
+ONEFILE = os.environ.get("HAMELIN_ONEFILE") == "1"
 
 hiddenimports = (
     collect_submodules("ludwig")
@@ -80,28 +89,45 @@ a = Analysis(
 
 pyz = PYZ(a.pure, a.zipped_data, cipher=block_cipher)
 
-exe = EXE(
-    pyz,
-    a.scripts,
-    [],
-    exclude_binaries=True,
-    name="hamelin",
-    debug=False,
-    bootloader_ignore_signals=False,
-    strip=False,
-    upx=False,
-    console=True,  # keep a console for now - training logs print here
-    disable_windowed_traceback=False,
-    argv_emulation=False,
-)
+if ONEFILE:
+    exe = EXE(
+        pyz,
+        a.scripts,
+        a.binaries,
+        a.datas,
+        [],
+        name="hamelin",
+        debug=False,
+        bootloader_ignore_signals=False,
+        strip=False,
+        upx=False,
+        console=True,  # keep a console: training logs print here
+        disable_windowed_traceback=False,
+        argv_emulation=False,
+    )
+else:
+    exe = EXE(
+        pyz,
+        a.scripts,
+        [],
+        exclude_binaries=True,
+        name="hamelin",
+        debug=False,
+        bootloader_ignore_signals=False,
+        strip=False,
+        upx=False,
+        console=True,  # keep a console for now - training logs print here
+        disable_windowed_traceback=False,
+        argv_emulation=False,
+    )
 
-coll = COLLECT(
-    exe,
-    a.binaries,
-    a.zipfiles,
-    a.datas,
-    strip=False,
-    upx=False,
-    upx_exclude=[],
-    name="hamelin",
-)
+    coll = COLLECT(
+        exe,
+        a.binaries,
+        a.zipfiles,
+        a.datas,
+        strip=False,
+        upx=False,
+        upx_exclude=[],
+        name="hamelin",
+    )

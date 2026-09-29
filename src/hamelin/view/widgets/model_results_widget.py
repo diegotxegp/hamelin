@@ -105,7 +105,8 @@ class ModelResultsWidget(QWidget):
             An :class:`AutoMLResult` returned by any registered backend.
         """
         self._result = result
-        metrics = result.test_metrics or {}
+        from hamelin.analytics.eval_data import overall_accuracy_metrics
+        metrics = overall_accuracy_metrics(result.test_metrics or {})
 
         # ── KPI cards — adapt to the task type ─────────────────────────
         # Ludwig's classification and regression metric key sets don't
@@ -366,7 +367,9 @@ class ModelResultsWidget(QWidget):
             from hamelin.analytics.result_advice import advice_html, build_advice
 
             preds = (result.extra or {}).get("test_predictions")
-            adv = build_advice(result.test_metrics, result.train_metrics, preds)
+            from hamelin.analytics.eval_data import overall_accuracy_metrics
+            adv = build_advice(overall_accuracy_metrics(result.test_metrics or {}),
+                               overall_accuracy_metrics(result.train_metrics or {}), preds)
             text = advice_html(adv)
         except Exception as exc:  # noqa: BLE001
             log.warning(f"ModelResultsWidget: advice unavailable — {exc}")

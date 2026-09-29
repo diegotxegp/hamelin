@@ -1,436 +1,371 @@
-# HAMELIN — Manual de usuario
+# HAMELIN — User Manual
 
-**HAMELIN** (Human-guided Automated Machine Learning for Clinical Studies) es una aplicación de escritorio para profesionales de investigación clínica (CRPs) que necesitan gestionar estudios clínicos, analizar datos de pacientes y construir modelos predictivos — sin necesidad de saber programar ni de conocimientos de Machine Learning.
+**HAMELIN** (Human-guided Automated Machine Learning for Clinical Studies) is a desktop application for clinical research professionals who need to manage studies, analyse patient data and build predictive models — without programming and without machine-learning expertise.
 
-Este documento describe, con el detalle suficiente para trabajar sin sorpresas, cómo está organizada la aplicación y qué hace cada pantalla. Está escrito a partir del código y de los textos de ayuda ya integrados en la propia app (página **Help**), no es una traducción libre: cuando algo aquí discrepe de lo que ves en pantalla, la aplicación manda.
+This manual describes how the application is organised and what each screen does. The built-in **Help** page and the "?" icons next to most fields explain the same things in context; if something here differs from what you see on screen, the application is right.
 
-> Para quién no es Hamelin: no sustituye a un bioestadístico o data scientist para análisis complejos, no gestiona consentimientos informados ni documentación regulatoria, no es un CDMS (úsalo junto a tu EDC — REDCap, OpenClinica, etc.), y no envía datos a ningún servicio en la nube: todo corre localmente en tu máquina.
+> What HAMELIN is not: it does not replace a biostatistician for complex analyses, it does not manage informed consent or regulatory documents, it is not a clinical data management system (use it alongside your EDC — REDCap, OpenClinica, …), and it never sends data to any cloud service: everything runs locally on your computer.
 
 ---
 
-## 1. Instalación y primer arranque
+## 1. Installation and first launch
 
-**Requisitos:**
-- Windows 10/11 (64-bit), macOS 12+, o Ubuntu 20.04+.
-- Python 3.12 (gestionado por `uv`).
-- RAM: 8 GB mínimo; 16 GB recomendado para datasets grandes (>10.000 filas).
-- Disco: espacio para la app + tus datasets.
+**Requirements**
+- Windows 10/11 (64-bit), macOS 12+ or Ubuntu 20.04+.
+- Python 3.12 or newer (managed by `uv`).
+- RAM: 8 GB minimum, 16 GB recommended for large datasets (> 10,000 rows).
+- Disk: room for the application and your datasets.
+- A GPU is optional. If the GPU is missing or not supported by the installed PyTorch, HAMELIN uses the CPU automatically.
 
-**Arranque:**
+**Launch**
 ```bash
 cd hamelin/
+uv sync
 uv run hamelin
 ```
-En el primer arranque se muestra la página **Home** sin proyectos. No hace falta configuración previa.
+A splash screen appears immediately while the application loads. On the first launch the **Home** page shows no projects; no set-up is needed.
 
-**Modo debug** (más detalle en el log, trazas completas en los diálogos de error):
-```bash
-uv run hamelin --debug
-```
-Otros flags: `--config <ruta>` (config personalizada), `--version`, `--no-gui`.
+**Debug mode** (more detail in the log, full traces in error dialogs): `uv run hamelin --debug`. Other flags: `--config <path>`, `--version`, `--no-gui`.
+
+The window opens at a size that fits your screen; maximise it if you prefer. Its size and maximised state are remembered.
 
 ---
 
-## 2. Flujo de trabajo recomendado
+## 2. Recommended workflow
 
 ```
-PROJECT  →  DATA  →  TRAINING  →  EVALUATION  →  PREDICTION
-                                                      │
-                                               FORECASTING (opcional)
+PROJECT  →  DATA  →  TRAINING  →  EVALUATION
 ```
 
-1. **Project**: crea o abre un proyecto y rellena los metadatos del estudio.
-2. **Data**: carga el dataset de pacientes (CSV, Excel, SPSS...). La generación de **Table 1** vive al final de esta misma pestaña.
-3. **Training**: entrena un modelo predictivo con AutoML.
-4. **Evaluation**: página dedicada (justo después de Training en el menú) para inspeccionar y comparar todos los modelos entrenados en el proyecto.
-5. **Prediction**: aplica un modelo entrenado a pacientes nuevos cuyo resultado aún no se conoce.
+1. **Project** — create or open a project and fill in the study's metadata.
+2. **Data** — load the patient dataset (CSV, Excel, SPSS, …), clean it and generate **Table 1**.
+3. **Training** — train a predictive model with AutoML.
+4. **Evaluation** — inspect and compare every model trained in the project.
 
-**Forecasting** es opcional: predice cuándo alcanzarás tu objetivo de reclutamiento; úsalo si es relevante para tu estudio.
+**Prediction** (apply a trained model to new patients) and **Forecasting** (recruitment forecast) are visible in the navigation bar but greyed out: they are not available in this version.
 
-Cada paso es una pestaña del menú lateral izquierdo (Help y Settings están fijados abajo del todo; el resto, incluidos Evaluation, Prediction y Forecasting, está en la lista principal). Puedes ir hacia adelante y hacia atrás libremente.
+Each step is an item of the left navigation bar (Help and Settings are pinned at the bottom). You can move back and forth freely.
 
-![Página Home de Hamelin](images/home_page.png)
-*Página Home con un proyecto abierto: resumen rápido de proyectos, datasets y modelos, con acceso al resto de la app desde el menú lateral (Home, Projects, Data, Training, Evaluation, Prediction, Forecasting; Help y Settings abajo).*
+![Home page](images/home_page.png)
+*Home page with a project open: quick summary of projects, datasets and models, and the navigation bar. Prediction and Forecasting are disabled.*
 
 ---
 
-## 3. Página "Project" (Proyectos)
+## 3. Project page
 
-![Página Projects con New Project, Quick Project y Delete All Projects](images/project_page.png)
-*Pantalla selectora de proyectos, con los tres botones de acción arriba y las tarjetas de proyectos guardados debajo.*
+![Project page](images/project_page.png)
+*Project form with the study metadata.*
 
-### 3.1 Pantalla selectora
-Al entrar en "Project" ves una lista de tarjetas, una por proyecto guardado, con nombre, tipo de estudio, nº de datasets/modelos y fecha de última modificación. Cada tarjeta tiene:
-- **Select**: marca el proyecto como activo sin abrir su formulario de metadatos.
-- **Open**: abre el formulario completo de metadatos de ese proyecto.
+### 3.1 Project selector
+The page lists one card per saved project (name, study type, number of datasets and models, last modification). Each card has **Select** (make it the active project) and **Open** (open its metadata form). Above the list:
 
-Arriba de la lista hay tres botones:
-
-| Botón | Qué hace |
+| Button | What it does |
 |---|---|
-| **New Project** | Abre el formulario en blanco para crear un proyecto rellenando todos los campos. |
-| **Quick Project** | Se salta el formulario: crea un proyecto al instante con datos de marcador de posición generados automáticamente (nombre, acrónimo, número de protocolo con timestamp). Útil para empezar a cargar datos ya; abre el proyecto después desde esta misma pantalla para rellenar los datos reales. |
-| **Delete All Projects** | Borra permanentemente **todos** los proyectos guardados y todo su contenido (datasets, resultados, modelos), tras una confirmación. No se puede deshacer. Si tenías un proyecto abierto en otras pestañas (Data, Training...) en el momento de borrar, esas pestañas no se limpian automáticamente hasta que navegues o reinicies. |
+| **New Project** | Opens a blank form. |
+| **Quick Project** | Creates a project instantly with placeholder data, so you can start loading data straight away; fill in the real details later. |
+| **Delete All Projects** | Permanently deletes **all** projects and everything in them, after a confirmation. It cannot be undone. |
 
-### 3.2 Formulario de metadatos
+### 3.2 Metadata form
 
-| Campo | Obligatorio | Notas |
+| Field | Required | Notes |
 |---|---|---|
-| Project Name | Sí | Nombre completo oficial del estudio. |
-| Acronym | Sí | Código corto en mayúsculas, único, solo letras y números. **No se puede cambiar después de guardar** — es el nombre de la carpeta en disco. |
-| Protocol Number | Sí | Identificador oficial del protocolo. |
-| Principal Investigator | Sí | Nombre del investigador principal. |
-| Contact Email | Sí | Debe tener formato de email válido. |
-| Institution | Sí | Hospital/universidad/centro. |
+| Project Name | Yes | Full official name of the study. |
+| Acronym | Yes | Short unique code (letters and digits). **It cannot be changed after saving**: it is the project's folder name. |
+| Protocol Number | Yes | Official protocol identifier. |
+| Principal Investigator | Yes | |
+| Contact Email | Yes | Must be a valid email address. |
+| Institution | Yes | Hospital, university or centre. |
 | Study Type | No | Patient Registry / Observational Study / Clinical Trial. |
-| Ethics Committee / Approval Number / Approval Date | No | Sección de aprobación ética. |
-| Target Sample Size | Sí (>0) | Nº de pacientes objetivo; lo usa la página Forecasting. |
-| Start Date / Expected End Date | No | Fechas de reclutamiento, también usadas en Forecasting. |
-| Primary Objective / Secondary Objectives | No | Texto libre; aparece tal cual en los informes generados. |
+| Ethics Committee / Approval Number / Approval Date | No | |
+| Target Sample Size | Yes (> 0) | Number of patients aimed for. |
+| Start Date / Expected End Date | No | Recruitment dates. |
+| Primary Objective / Secondary Objectives | No | Free text; it appears in the reports HAMELIN generates. |
 
-Botones del formulario: **Save Project**, **Reset** (limpia el formulario), **← Back to Projects** (descarta sin guardar).
+Buttons: **Save Project**, **Reset**, **← Back to Projects**.
 
-### 3.3 Dónde se guarda todo
-
-```
-workspace/Projects/<ACRÓNIMO>/          (nombre de carpeta siempre en inglés, "Projects")
-    metadata.json                        : metadatos del proyecto
-    data/                                 : datasets vinculados a este proyecto
-    data/dataset_index.json               : registro de datasets
-    results/                              : resultados de entrenamiento y exportaciones
-    results/models/<nombre del modelo>/   : un modelo entrenado por carpeta (pesos, config, predicciones de test)
-    results/tables/                       : Table 1 y dataset limpio exportados
-    results/reports/                      : informe de calidad, resumen del dataset e informe de modelo
-    results/forecasts/                    : gráfico y timeline de Forecasting
-    results/predictions/                  : predicciones exportadas desde Prediction
-```
-
-Los cuadros de **Export…** de cada página se abren por defecto en la subcarpeta correspondiente de `results/` del proyecto activo (se crea al momento), para que lo que genera un proyecto se quede con el proyecto; puedes elegir cualquier otra ruta en el propio cuadro. Sin proyecto abierto se comportan como siempre.
-
-**Orden garantizado.** Todo lo que se genera para un proyecto vive en su carpeta: datasets en `data/`, y modelos, informes y exportaciones en `results/` (el resumen automático de cada dataset va a `results/reports/`). Solo hay una carpeta desechable, `ludwig_runs/`, donde Ludwig vuelca cada trial de la búsqueda (a veces cientos de MB de checkpoints): Hamelin la borra al terminar (o fallar/cancelar) cada entrenamiento y al abrir el proyecto, porque el modelo ganador ya está en `results/models/`. Al abrir un proyecto de una versión anterior también se colocan en su sitio los modelos de `model_checkpoints/` y los resúmenes que estaban en `data/`. Los logs técnicos diarios se conservan 30 días; `usage_log.csv` (datos del estudio de usabilidad) nunca se borra solo.
-
-Puedes hacer copia de seguridad de toda la carpeta `Projects/` a cualquier sitio. Fuera de un proyecto concreto:
+### 3.3 Where everything is stored
 
 ```
-workspace/logs/hamelin_YYYY-MM-DD.log     : log técnico de la app (uno por día)
-workspace/logs/usage_log.csv              : registro de uso — ver sección 12
-workspace/data/                            : datasets sueltos, aún no vinculados a un proyecto
+workspace/Projects/<ACRONYM>/
+    metadata.json                       study description
+    project_state.json                  choices made in the interface (see 4.7 and 6.7)
+    data/                               the project's datasets
+    data/dataset_index.json             dataset register
+    data/<dataset>.changes.json         every change made to a dataset (see 4.7)
+    results/models/<model name>/        one folder per trained model
+    results/tables/                     exported tables (Table 1, cleaned dataset)
+    results/reports/                    quality report, dataset summary, model report
 ```
 
-`workspace/` está excluido de git (no se sube al repositorio); es contenido local, generado por el uso de la app.
+The **Export…** dialogs open, by default, in the matching sub-folder of the active project's `results/` folder, so what a project produces stays with the project. You can pick any other location in the dialog.
+
+**Tidy by design.** Everything generated for a project lives in its folder. The only disposable folder is `ludwig_runs/`, where Ludwig dumps every hyperparameter trial (sometimes hundreds of MB of checkpoints); HAMELIN deletes it after every training run (finished, failed or cancelled) and when a project is opened, because the winning model is already in `results/models/`. Daily technical logs are kept for 30 days; `usage_log.csv` is never deleted automatically.
+
+Back up the whole `Projects/` folder wherever you like. Outside any project:
+
+```
+workspace/config/app_config.yaml       application settings
+workspace/logs/hamelin_YYYY-MM-DD.log  technical log (one per day)
+workspace/logs/usage_log.csv           usage log — see section 12
+workspace/data/                        loose datasets, not yet linked to a project
+```
 
 ---
 
-## 4. Página "Data"
+## 4. Data page
 
-![Página Data con un dataset real cargado](images/data_page.png)
-*Dataset real cargado (768 filas × 9 columnas) desde el registro de datasets del proyecto: origen y métricas arriba, inspección de datos (con eliminar filas y excluir outliers), Variables & Types, resumen de datos y, debajo, la sección Table 1 con el resultado ya generado.*
+![Data page](images/data_page.png)
+*A dataset loaded (768 rows × 9 columns): source and metrics, data inspection, variable types, data summary and, below, Table 1.*
 
-### 4.1 Formatos soportados
-CSV, TSV, Excel (`.xlsx`, primera hoja), Parquet, JSON/JSONL, Feather, HDF5, HTML (una sola tabla), SPSS (`.sav`), Stata (`.dta`), SAS (`.xpt`, `.sas7bdat`), Ancho Fijo (`.fwf`), DataFrame serializado (`.pkl`/`.pickle` — abre solo ficheros de confianza). Son los 14 formatos que documenta Ludwig oficialmente. Requisitos: cabecera en la primera fila, una fila por paciente, sin celdas combinadas ni formato decorativo (en Excel).
+### 4.1 Supported formats
+CSV, TSV, Excel (`.xlsx`, first sheet), Parquet, JSON/JSONL, Feather, HDF5, HTML (a single table), SPSS (`.sav`), Stata (`.dta`), SAS (`.xpt`, `.sas7bdat`), fixed-width (`.fwf`) and serialised DataFrame (`.pkl`/`.pickle` — open trusted files only): the 14 formats documented by Ludwig. Requirements: header in the first row, one row per patient, no merged cells or decorative formatting (Excel).
 
-### 4.2 Cargar un dataset
-1. **Browse** → selecciona el fichero.
+### 4.2 Loading a dataset
+1. **Browse** and pick the file.
 2. **Load**.
 
-Con un proyecto activo, el fichero se copia automáticamente a `data/` del proyecto y queda registrado para recargarlo luego desde el selector "Project datasets", sin tener que volver a buscarlo. HAMELIN detecta automáticamente el tipo de cada columna y lanza en segundo plano un análisis con Ludwig para inferir el tipo de variable más adecuado para ML.
+With a project open, the file is copied to the project's `data/` folder and registered, so you can reload it later from the "Project datasets" selector. HAMELIN detects each column's type and, in the background, asks Ludwig for the most suitable machine-learning type.
 
-### 4.3 Vista previa y edición
-La tabla de vista previa muestra todas las filas y columnas. Valores especiales: `NaN` (número faltante), `NaT` (fecha faltante), celda vacía (igual que los anteriores en la práctica), `inf` (desbordamiento numérico — trátalo como problema de calidad de datos).
+### 4.3 Preview and editing
+The preview table shows all rows and columns. Special values: `NaN` (missing number), `NaT` (missing date), empty cell, `inf` (numeric overflow — treat it as a data-quality problem).
 
-- Clic en cabecera de columna → modo "selección de columnas". Clic en nº de fila → modo "selección de filas". Ctrl/Shift para selección múltiple.
-- **Remove Selected**: oculta lo seleccionado del análisis (no se borra de verdad).
-- **Restore All**: recupera todo lo oculto.
-- **Remove Duplicates**: elimina filas duplicadas.
-- **Exclude Outliers** / **Restore Excluded**: excluye/recupera outliers.
-- **Export**: exporta el dataset "limpio" (con lo oculto ya fuera) en CSV, Excel o Word.
+- Click a **column header** to enter column-selection mode; click a **row number** for row-selection mode. Ctrl/Shift select several.
+- **Remove Selected** hides the selection from every analysis (nothing is deleted from the file).
+- **Restore All** brings everything back.
+- **Remove Duplicates** hides duplicate rows (the first occurrence is kept).
+- **Exclude Outliers** / **Restore Excluded** exclude or restore rows with a value beyond 3 standard deviations.
+- **Export** saves the cleaned dataset (hidden items left out) as CSV, Excel or Word.
 
-### 4.4 Lista de variables y tipos (Variable List)
-Cada columna aparece con su tipo inferido: 🔢 number, ⭕ binary, 📝 category, 📅 date, 📄 text, 📈 sequence, ⏱ timeseries, ➡ vector. El análisis puede tardar hasta ~30s en datasets grandes (la primera vez que se usa en una sesión, ver sección 11.2 sobre el coste de importación de Ludwig).
+### 4.4 Variable list and types
+Every column appears with its inferred type: number, binary, category, date, text, sequence, timeseries, vector. The analysis can take some time on large datasets. Override the type of any column with the drop-down next to it (the row is highlighted). **Reset Types to Inferred** reverts all manual overrides; it never touches the data itself.
 
-Puedes anular el tipo de cualquier columna con el desplegable "Set type" junto a ella (la fila se resalta). **Reset Types to Inferred** revierte todas las anulaciones manuales (nunca toca los valores reales del dataset).
+### 4.5 Quality report and summary
+- **Generate Quality Report**: a CSV with one row per variable (type, missing values, % missing, unique values, min/max/mean for numeric ones).
+- **Data Summary**: a plain-text summary on the page; **Export Data Summary** saves it as `.txt`/`.md`.
+- An automatic chart of the 10 variables with the most missing data.
 
-### 4.5 Informe de calidad y resumen
-- **Generate Quality Report**: CSV con una fila por variable (tipo, nulos, % faltante, valores únicos, min/max/media para numéricas). Tú eliges dónde guardarlo.
-- **Data Summary**: tarjeta de texto plano con un resumen del dataset, visible en la propia página; **Export Data Summary** lo guarda en `.txt`/`.md`.
-- Gráfico automático de las 10 variables con más datos faltantes.
+### 4.6 Table 1 (baseline characteristics)
+Table 1 is at the bottom of the Data page and uses the dataset already loaded.
 
-### 4.6 Table 1 (características basales)
-Vive al final de esta misma pestaña Data (no tiene su propio botón "Browse" — usa el dataset ya cargado arriba).
+1. Under "Select Variables for Table 1" every column is ticked by default; variables HAMELIN suggests excluding (identifiers, free text, zero variance) or that look like a good comparison variable are flagged in their row. **Apply All Recommendations** applies those suggestions, or tick and untick by hand.
+2. Under **How to build the table** (these options only change the layout of the table, never your data):
+   - **Compare groups by** — optional. Choose a category (for example Treatment or Outcome) to get one column per group and a test of whether the groups differ. Leave it as *None* for a single column describing all patients.
+   - **Missing values** — keep every patient (missing values are counted and shown), or drop any patient with a missing value in the selected variables.
+   - **Show p-values** — only available when *Compare groups by* is set. The p-value is the probability of seeing a difference at least this large by chance alone; below 0.05 is usually read as a real difference between groups. HAMELIN uses t-test / Mann-Whitney for numeric variables and Chi-square / Fisher's exact test for categorical ones.
+3. **Generate Table 1**.
+4. **Export** as CSV, Excel or Word.
 
-1. En "Select Variables for Table 1", cada columna aparece marcada por defecto; las que HAMELIN sugiere excluir (identificadores, texto libre, varianza cero...) o que parecen buena variable de agrupación aparecen marcadas directamente en su fila.
-2. **Apply All Recommendations** actúa sobre esas sugerencias automáticamente, o marca/desmarca tú mismo.
-3. En "Table Settings": **Grouping Variable** (opcional — variable categórica que divide la tabla en grupos y añade un test estadístico: t-test/ANOVA para numéricas, Chi-cuadrado/Fisher para categóricas), **Missing data** (mantener o descartar filas con valores faltantes), **Show p-values**.
-4. **Generate Table 1**.
-5. **Export**: CSV, Excel o Word.
+Reading it: numeric variables show mean ± SD (roughly normal) or median (IQR) (skewed); categorical variables show n (%).
 
-Interpretación: numéricas → media±DE (normal) o mediana (RIC) (sesgada); categóricas → n (%); p-valor <0.05 → diferencia significativa entre grupos.
+### 4.7 Record of changes made to the dataset
+The original file is never modified. Instead, every change you make on the Data page — rows or columns removed, duplicates or outliers excluded, variable types overridden, and their restoration — is recorded with its date, exactly as a model's configuration is recorded when it is trained:
 
----
-
-## 5. Página "Forecasting" (opcional)
-
-![Página Forecasting](images/forecasting_page.png)
-*Pronóstico de reclutamiento ya generado sobre un dataset de ejemplo con fechas de inclusión: estado actual, parámetros, resultados, gráfico y tabla mensual. Los botones de exportación proponen `results/forecasts/` del proyecto.*
-
-Ajusta un modelo estadístico sobre el ritmo de reclutamiento histórico para estimar cuándo se alcanzará el **Target Sample Size** del proyecto.
-
-**Entradas necesarias:** un dataset cargado con una columna de fecha de inclusión (una fila por paciente), y el Target Sample Size (viene precargado desde los metadatos del proyecto).
-
-**Parámetros:**
-- **Enrollment Date Column**: solo se listan columnas de tipo fecha.
-- **Target Sample Size**: editable aquí, aunque venga precargado.
-- **Historical Period (days)**: cuántos días pasados usar para estimar la velocidad de reclutamiento (por defecto 90).
-- **Confidence Level**: intervalo de confianza de la fecha estimada (0.95 por defecto).
-
-**Gráfico**: línea sólida = reclutamiento histórico acumulado; línea discontinua = proyección; banda sombreada = intervalo de confianza (si es muy ancha, el reclutamiento ha sido irregular); líneas horizontales/verticales discontinuas = objetivo y fecha estimada.
-
-**Panel de estado actual**: pacientes reclutados, objetivo, restantes, tasa media mensual, fecha de inicio del estudio.
-
-**Export Timeline CSV**: tabla de hitos mensuales (mes, esperado, límite inferior/superior).
+- `data/<dataset>.changes.json` in the project folder, always up to date. It lists the rows and columns left out (row numbers start at 1), the type overrides, the number of rows and columns in use, and a dated history.
+- **View Data Changes** (Data page) shows this record in a read-only window.
+- When you train a model, a copy is stored in its folder as `data_changes.json`, so a model can always be traced back to the exact data it was trained on.
 
 ---
 
-## 6. Página "Training"
+## 5. Prediction and Forecasting (not available yet)
 
-![Página Training](images/training_page.png)
-*Página Training con el dataset cargado, el resultado y los predictores elegidos (tarjetas 1–2 arriba; la configuración del modelo y el control del entrenamiento, más abajo).*
+The **Prediction** page (apply a trained model to new patients) and the **Forecasting** page (recruitment forecast from enrolment dates) are disabled in the navigation bar in this version. They will be enabled in a later release.
 
-### 6.1 Concepto
-Entrenar un modelo significa enseñar a un programa a reconocer patrones en tus datos asociados a un resultado clínico de interés. HAMELIN usa **AutoML vía Ludwig**: selecciona y configura automáticamente el mejor algoritmo — no necesitas saber qué es un Random Forest o una red neuronal.
+---
 
-### 6.2 Paso 1 — Variables
-- **Outcome variable**: la columna que quieres predecir.
-- **Predictor variables**: clic para seleccionar (Ctrl/Shift para varias; no hay "Select All"). Regla general: incluye variables disponibles ANTES de conocer el resultado; excluye ID de paciente, códigos administrativos y columnas de fecha; excluye variables con >50% de valores faltantes salvo que vayas a imputarlas.
-- **Secondary outcomes** (opcional): otros resultados clínicos a predecir junto al principal — esto entrena un modelo multi-output real, no es solo anotación. Una columna marcada a la vez como predictor y como resultado secundario se trata solo como predictor.
+## 6. Training page
 
-### 6.3 Paso 2 — Criterios de selección de pacientes
-Constructor visual de reglas de inclusión/exclusión (Columna, Operador, Valor — sin caja de texto libre). Un paciente que NO cumple TODAS las reglas de inclusión queda excluido; un paciente que cumple CUALQUIER regla de exclusión también. Botón **Preview** en cada bloque para ver cuántas filas coinciden antes de comprometerte. **Save preset** / **Reset preset** guardan estos criterios como JSON reutilizable del proyecto, bajo `training_schemas/`.
+![Training page](images/training_page.png)
+*Training page with a dataset loaded, the outcome and the predictors chosen.*
 
-### 6.4 Paso 3 — Configuración del modelo
+### 6.1 Concept
+Training a model means teaching a program to recognise patterns in your data that relate to a clinical outcome. HAMELIN uses **AutoML through Ludwig**: it selects and configures the algorithm for you.
 
-Solo se muestran tres campos por defecto; el resto vive tras "▶ Advanced options".
+### 6.2 Step 1 — Variables
+- **Outcome variable** — the column you want to predict.
+- **Predictor variables** — click to select (Ctrl/Shift for several, or **Select All Predictors**). The outcome variable is removed from this list automatically, so a variable can never be used to predict itself; if you change the outcome, the previous one returns to the list. Rules of thumb: include variables available *before* the outcome is known; exclude patient IDs, administrative codes and dates; exclude variables with > 50 % missing values unless you plan to impute them.
+- **Secondary outcomes** (optional) — other endpoints to predict at the same time; this trains a real multi-output model.
 
-| Campo | Detalle |
+### 6.3 Step 2 — Patient selection criteria
+A visual builder for inclusion/exclusion rules (column, operator, value). A patient who does not meet **all** inclusion rules, or who meets **any** exclusion rule, is left out. **Preview** shows how many rows match before you commit. Presets can be saved and reused.
+
+### 6.4 Step 3 — Model configuration
+
+| Field | Detail |
 |---|---|
-| **Model name** | Viene rellenado con un nombre libre (`model_1`, `model_2`…); escribe el tuyo para reemplazarlo. Nombre de la carpeta donde se guarda el modelo; aparecerá en el Historial y en "Evaluation". |
-| **Prediction type** | Binary classification (2 valores) / Multi-class classification (≥3 categorías) / Regression (número continuo). No es solo una sugerencia: fuerza a Ludwig a entrenar ese tipo de modelo. |
-| **Evaluation metric** | **La lista cambia según el Prediction type**, porque Ludwig solo soporta ciertas métricas por tipo de salida: <br>• **Binary**: AUC-ROC, Accuracy, Precision, Recall, Specificity.<br>• **Multi-class**: Accuracy, Hits at K.<br>• **Regression**: RMSE, MAE, MSE, RMSPE (todas miden error medio — cuanto más bajo, mejor). |
+| **Model name** | Pre-filled with the first free name (`model_1`, `model_2`, …). It names the model's folder and appears in Evaluation. |
+| **Prediction type** | Binary classification / Multi-class classification / Regression. It forces Ludwig to train that type of model. |
+| **Evaluation metric** | The list depends on the prediction type. Binary: AUC-ROC, Accuracy, Precision, Recall, Specificity. Multi-class: Accuracy, Hits at K. Regression: RMSE, MAE, MSE, RMSPE (lower is better). |
 
-### 6.5 Opciones avanzadas
+### 6.5 Advanced options
 
-![Sección Model Configuration con Advanced options desplegado](images/training_page_advanced.png)
-*Tarjeta 3 (Model Configuration) con "Advanced options" desplegado y tarjeta 4 (Training Control): **Model name** viene rellenado (`model_2`, el primer nombre libre), **Time Budget (s)** está siempre en segundos (500 por defecto; la unidad va en la etiqueta, no dentro del campo), **Hyperparameter Search Strategy** sustituye al antiguo «Search Strategy», y junto a **Start Training** están **Preview Config** y **Train from Config File…**. Con "Binary classification" seleccionado, Handle Class Imbalance está habilitado (en Off por defecto); en Multi-class o Regression se desactiva solo.*
+![Advanced options](images/training_page_advanced.png)
+*Model Configuration with "Advanced options" expanded, and the Training Control card.*
 
-| Campo | Detalle |
+| Field | Detail |
 |---|---|
-| **Time budget (segundos)** | Límite de tiempo de búsqueda, siempre en segundos (por defecto `500`, mínimo `300`). El entrenamiento se detiene al alcanzarlo aunque no se hayan completado las iteraciones máximas. **Se escribe directamente en el campo** (sin flechas de incremento). |
-| **Final evaluation holdout (%)** | Porcentaje de pacientes apartado ANTES de entrenar, nunca usado en el entrenamiento — solo para la evaluación final. Por defecto `0.20`. **Se escribe directamente** (p.ej. `0.2`), sin flechas. *(Nota técnica: este holdout se separa fuera de Ludwig antes de pasarle los datos; Ludwig hace además su propio split interno del resto — no es exactamente el mismo mecanismo que `preprocessing.split` de la configuración nativa de Ludwig.)* |
-| **Random Seed** | Asegura resultados reproducibles entre ejecuciones con la misma semilla. |
-| **Hyperparameter search strategy** | No optimisation (valores por defecto de Ludwig, más rápido) / Random search / Bayesian optimization (recomendado, más eficiente) / Grid Search (Exhaustive search — prueba TODAS las combinaciones, muy lento). |
-| **Max. iterations** | Nº máximo de configuraciones a probar (si hay estrategia de búsqueda activa). **Mínimo y valor por defecto: 10.** Es un límite superior: el límite de tiempo siempre tiene prioridad, así que con un presupuesto corto (p. ej. 300 s) la búsqueda se detiene antes de completar todas las iteraciones. |
-| **Parallel trials** | Cuántos trials (entrenamientos completos) se ejecutan a la vez, sea cual sea la estrategia de búsqueda. El valor por defecto se calcula para tu equipo (un trial por núcleo y por cada 2 GB de RAM, entre 1 y 8; p. ej. 3 en un portátil de 4 núcleos y 8 GB). Más trials en paralelo acaban antes pero pueden bloquear el equipo. |
-| **Early stopping** | Tres modos: **Automatic** (recomendado; el planificador de búsqueda de Ludwig detiene los trials débiles, nada que ajustar), **Stop when no longer improving** (cada trial se detiene tras *Patience* rondas de evaluación sin mejorar la puntuación de validación, 5 por defecto; la búsqueda pasa a `scheduler: fifo`, sin el planificador automático) y **Off** (cada trial entrena todas sus épocas hasta el límite de tiempo). Ludwig no puede combinar una paciencia con su planificador automático —lo pone a -1 (`trainer.early_stop`)—, de ahí los modos separados. |
-| **Handle Class Imbalance** | Interruptor. **Solo disponible para Binary classification** — Ludwig no soporta balanceo de clases para multiclase ni regresión, así que el interruptor aparece desactivado (gris) y se desmarca automáticamente en esos casos. |
-| **Missing numeric values strategy** | Desplegable (ya no es un simple interruptor on/off) con las estrategias reales que documenta Ludwig para columnas numéricas: *Ludwig default* (rellena con 0, sin tocar nada), *Fill with column mean*, *Fill with most frequent value*, *Forward fill*, *Backward fill*, *Drop rows with missing value*. |
+| **Time budget (s)** | Search time limit in seconds (default 500, minimum 100). Training stops when it is reached, even if the maximum iterations were not completed. Type the value directly: it takes effect and is saved as you type. With very short limits, expect the search to try few configurations. |
+| **Final evaluation holdout** | Fraction of patients kept apart before training and used only for the final evaluation (default 0.20). |
+| **Random seed** | Same seed, same data and same settings give reproducible results. |
+| **Hyperparameter search strategy** | No optimisation (Ludwig defaults, fastest) / Random search / Bayesian optimisation (recommended) / Grid search (tries every combination, very slow). |
+| **Max. iterations** | Maximum number of configurations to try when a search strategy is active. **Minimum and default: 10.** It is an upper bound: the time limit always has priority, so with a short budget the search stops before completing all iterations. |
+| **Parallel trials** | How many trials (complete trainings) run at once. The default is computed for your computer (one per core and per 2 GB of RAM, between 1 and 8). More trials finish sooner but can make the computer unresponsive. |
+| **Early stopping** | **Automatic** (recommended: Ludwig's search scheduler stops weak trials; nothing to tune), **Stop when no longer improving** (each trial stops after *Patience* evaluation rounds without improvement of the validation score, 5 by default; the search then uses a `fifo` scheduler) or **Off** (each trial trains all its epochs, up to the time limit). Ludwig cannot combine a patience with its automatic scheduler (it sets `trainer.early_stop` to -1), hence the separate modes. |
+| **Handle Class Imbalance** | Check box. **Only available for binary classification** (Ludwig does not support balancing for multi-class or regression, so it is greyed out and unticked automatically). |
+| **Missing numeric values strategy** | Ludwig default (fill with 0), fill with column mean, fill with most frequent value, forward fill, backward fill, or drop rows with a missing value. |
 
-### 6.6 Entrenar y monitorizar
-1. **Start Training** (solo activo con un dataset cargado).
-2. Barra de progreso y log de entrenamiento en tiempo real — no cierres la app mientras entrena.
-3. Al terminar, el panel de Resultados muestra 4 tarjetas según lo entrenado: clasificación (AUC-ROC, Accuracy, Sensitivity, Specificity) o regresión (R², RMSE, MAE, Loss); cualquier otra métrica de Ludwig aparece en una línea más pequeña. Matriz de confusión y curva ROC para tareas de clasificación, cuando están disponibles.
-4. **Stop** cancela en cualquier momento; se muestran los resultados parciales hasta el último trial completado.
+### 6.6 Training and monitoring
+1. **Start Training** (enabled once a dataset is loaded).
+2. A progress bar and live log show the training; do not close the application meanwhile.
+3. When it finishes, the Results panel shows four cards: for classification AUC-ROC, Accuracy, Sensitivity and Specificity; for regression R², RMSE, MAE and Loss. Confusion matrix and ROC curve are shown for classification.
+4. **Stop** cancels at any time; partial results up to the last completed trial are shown.
 
-**Preview Config** (junto a Start Training): abre una ventana de solo lectura con la configuración de Ludwig que se usará, construida a partir de tus elecciones en *Model Configuration* — sin entrenar. AutoML completa el resto (arquitectura, encoders…) al empezar; si has preparado una config fija (modelo duplicado o archivo importado), muestra esa config exacta. La configuración final completa de cada modelo entrenado se consulta después en la página *Evaluation* (**View Config**).
+**Preview Config** opens a read-only window with the Ludwig configuration that will be used, built from your choices, without training. AutoML completes the rest (architecture, encoders, …) when it starts.
 
-**«How to read this result»** (en inglés, debajo del resumen verde; aparece tras entrenar y, para cada modelo, en *Evaluation*). Lo generan **reglas explícitas** (no un modelo de IA), así que es reproducible y auditable. Contiene:
+**How to read this result** appears under the green summary after training and, for each model, in Evaluation. It is written in English and generated by **explicit rules** (not by an AI model), so it is reproducible and auditable:
 
-| Bloque | Qué dice |
+| Block | What it says |
 |---|---|
-| **Verdict** | Bueno / moderado / débil. Binaria: por el AUC (≥ 0,90 excelente, 0,80–0,89 bueno, 0,70–0,79 moderado, < 0,70 limitado). Multiclase: exactitud frente a acertar siempre la clase más frecuente (+15 puntos = bueno, +5 = moderado). Regresión: por R² (≥ 0,90 / 0,70 / 0,50; negativo = peor que predecir la media). |
-| **Why** | Qué significa cada número y con qué se compara: AUC, exactitud frente a la línea base, sensibilidad/especificidad y su desequilibrio, precisión (depende de la prevalencia), R² y error típico frente a la dispersión del resultado. |
-| **How reliable is this estimate?** | Pacientes de test (< 100 = pocos), IC 95 % del indicador principal, sobreajuste (brecha train–test > 0,10) y aviso si el resultado es sospechosamente alto (≥ 0,95: buscar fugas de información). |
-| **How it could be improved** | Revisar predictores, más pacientes, estrategia de valores faltantes, búsqueda de hiperparámetros, desbalance de clases (< 25 %), umbral de decisión, comparar variantes. Solo aparece lo que aplica a ese modelo. |
-| **Before relying on it** | Validación interna en un único split aleatorio (hace falta validación externa), calibración no comprobada, subgrupos, apoyo a la decisión y no diagnóstico. |
+| **Verdict** | Good / moderate / weak. Binary: by AUC (≥ 0.90 excellent, 0.80–0.89 good, 0.70–0.79 moderate, < 0.70 limited). Multi-class: accuracy against always answering the most common class. Regression: by R² (≥ 0.90 / 0.70 / 0.50; negative = worse than predicting the mean). |
+| **Why** | What each number means and what it is compared with. |
+| **How reliable is this estimate?** | Number of test patients (< 100 is few), the 95 % confidence interval, overfitting (train–test gap > 0.10) and a warning when the result is suspiciously high (≥ 0.95: look for information leakage). |
+| **How it could be improved** | Only what applies to that model: review predictors, more patients, missing-value strategy, hyperparameter search, class imbalance, decision threshold, compare variants. |
+| **Before relying on it** | Internal validation on one random split (external validation is needed), calibration not checked, subgroups, decision support and not diagnosis. |
 
-Son reglas empíricas para modelos de predicción clínica: ayudan a interpretar, no sustituyen el criterio clínico ni estadístico. El código está en `analytics/result_advice.py`.
+For a multi-class outcome (three or more categories) *Accuracy* is the overall share of patients classified correctly; the per-class average that Ludwig also reports is kept as `accuracy_per_class`, because a rare class pulls it far below the overall figure. Quick reading: AUC 0.5 = chance, 0.7 acceptable, 0.8 good, 0.9 excellent (check for leakage), 1.0 almost always means leakage. R² 1.0 = perfect, 0.7–0.9 good, 0.5–0.7 moderate, < 0.5 weak, < 0 worse than the mean. RMSE and MAE are in the units of the outcome.
 
-**Interpretación rápida:**
-- AUC-ROC: 0.5 = azar, 0.7 = aceptable, 0.8 = bueno, 0.9 = excelente (verifica que no haya data leakage), 1.0 = casi siempre indica fuga de datos.
-- R²: 1.0 = ajuste perfecto, 0.7–0.9 = bueno/excelente, 0.5–0.7 = moderado, <0.5 = débil, <0 = peor que predecir siempre la media (el target puede no ser predecible con esos predictores).
-- RMSE/MAE: mismas unidades que la variable de resultado; MAE más fácil de interpretar directamente, RMSE penaliza más los errores grandes.
+### 6.7 What is saved
+Your choices in the Training page (outcome, predictors, rules and every Model Configuration field) are saved in the project (`project_state.json`) as you make them, so reopening the project restores them.
 
-**Dónde queda la configuración de cada entrenamiento.** Tras entrenar, todo lo elegido en la página queda dentro de la carpeta del modelo, `results/models/<nombre>/`:
+Every trained model has its own folder, `results/models/<name>/`:
 
-| Fichero | Contenido |
+| File | Content |
 |---|---|
-| `training_settings.json` | **Todo lo elegido en Training**: nombre, resultado, predictores, resultados secundarios, reglas de inclusión/exclusión, tipo de predicción, métrica, límite de tiempo, hold-out, semilla, estrategia y nº de iteraciones/trials en paralelo, early stopping, valores faltantes, desbalance de clases, filas usadas y excluidas, y la **configuración parcial de Ludwig** que Hamelin envió (la misma que muestra *Preview Config*). |
-| `model_hyperparameters.json` | La configuración **completa final** de Ludwig del modelo entrenado (arquitectura elegida por AutoML incluida). Es lo que muestra *View Config* en Evaluation. |
-| `training_report.json` | Informe de Ludwig: configuración, versiones, semilla y métricas. |
+| `training_settings.json` | **Everything chosen on the Training page**: name, outcome, predictors, patient selection rules, prediction type, metric, time limit, holdout, seed, search strategy, iterations, parallel trials, early stopping, missing values, class imbalance, rows used and excluded, and the **partial Ludwig configuration** HAMELIN sent (the one Preview Config shows). |
+| `model_hyperparameters.json` | The **complete final** Ludwig configuration of the model (the architecture chosen by AutoML included). Shown by *View Config* in Evaluation. |
+| `training_report.json` | Ludwig's report: configuration, versions, seed and metrics. |
+| `data_changes.json` | The changes made to the dataset on the Data page (see 4.7). |
+| `test_predictions.csv` | Predictions for the held-out test set. |
+| `notes.txt` | Your notes about the model, if any. |
 
-Se ha verificado con un entrenamiento real de valores no predeterminados: métrica, estrategia de búsqueda, iteraciones, trials en paralelo, límite de tiempo (`hyperopt.executor.time_budget_s`), semilla, hold-out (192 de 768 filas = 25 %), valores faltantes, desbalance de clases y tipo de predicción llegan a la configuración de Ludwig y/o a `training_settings.json`. **Early stopping:** Ludwig pone `trainer.early_stop` a -1 mientras un planificador de trials está activo, así que Hamelin ofrece tres modos explícitos (automático, por paciencia, desactivado); el modo por paciencia cambia el planificador a `fifo`, y todo queda en `training_settings.json`.
-
-**Export Trained Model**: guarda un **informe JSON** de la última ejecución (tipo de modelo, resultado, predictores, dataset, métricas e hiperparámetros) en `results/reports/`, útil para auditoría y notas de reproducibilidad; el modelo en sí no va en ese archivo. Cada modelo entrenado también se guarda automáticamente en su propia carpeta dentro de `results/models/` del proyecto (pesos, `model_hyperparameters.json` con la configuración completa y, normalmente, `test_predictions.csv`). Los proyectos de versiones anteriores, que usaban una carpeta `model_checkpoints/`, se migran solos la primera vez que se abren.
+**Export Trained Model** saves a JSON report of the last run in `results/reports/`.
 
 ---
 
-## 7. Página "Evaluation"
+## 7. Evaluation page
 
-![Página Evaluation, pestaña Models](images/evaluation_page.png)
-*Pestaña **Models**: lista de modelos entrenados (con estrella de favorito) y, para el seleccionado, detalles, tarjetas de métricas con intervalo de confianza, matriz de confusión interactiva y curva ROC, notas e informe.*
+![Evaluation page](images/evaluation_page.png)
+*Models tab: the list of trained models and, for the selected one, its details, metrics with confidence intervals, confusion matrix and ROC curve, and notes.*
 
-Vista dedicada (entre Training y Prediction en el menú) a **todos** los modelos entrenados en el proyecto, no solo el último. Es una página nativa, con el mismo tema visual que el resto de la app, y conserva las funciones de la antigua página "Models". Tiene dos pestañas: **Models** y **Compare**. Necesita un proyecto abierto para saber dónde buscar.
+A dedicated view of **all** the models trained in the project, not just the latest. It has two tabs, **Models** and **Compare**, and needs an open project.
 
-### 7.1 Pestaña Models
-Una fila por modelo (★, nombre, variable de resultado, algoritmo, métrica principal de test y fecha), el más reciente primero. Clic en una fila para inspeccionarla; Ctrl/Mayús-clic para seleccionar varias; clic en la ☆ para marcar un favorito (se guarda en `results/models/favorites.json`).
+### 7.1 Models tab
+One row per model (favourite star, name, outcome, algorithm, main test metric, date), the newest first. Click a row to inspect it; Ctrl/Shift-click to select several; click the ☆ to mark a favourite (saved in `results/models/favorites.json`).
 
-Con **un** modelo seleccionado se muestra debajo:
+With **one** model selected you see below the list:
 
-- **Detalles**: cuándo se entrenó, dataset, semilla, versión de Ludwig, qué predice, variables predictoras, pacientes evaluados (exacto o aproximado), arquitectura del modelo (combiner, encoders, decoders, optimizador, tamaño de lote; descritos según la documentación de Ludwig) y el proyecto/objetivo.
-- **Tarjetas resumen** y lectura en lenguaje sencillo, igual que justo tras entrenar.
-- **Test metrics**: una tarjeta por métrica medida en el conjunto de test, con nombre en lenguaje llano y, donde se puede calcular (exactitud, R², RMSE, MAE), **intervalo de confianza del 95 %** por *bootstrap* de `test_predictions.csv`. Si las predicciones incluyen un atributo del paciente con pocos valores (p. ej. sexo), **Break down by** muestra la exactitud por grupo y avisa de los grupos con menos de 30 pacientes.
-- **Matriz de confusión**: filas = resultado real, columnas = predicción; alterna **Show % / Show counts**, **clic en una celda** para listar los pacientes de esa celda (con su confianza) y, en modelos de dos clases, cambia el **umbral de decisión** (50 % por defecto) para ver cómo cambian los errores. Junto a ella, la curva ROC (binarios). **Export** guarda la tabla como PNG/PDF más un CSV.
-- **Notas** (`notes.txt` en la carpeta del modelo) y **Export report**: proyecto, modelo, variables, tamaño de evaluación y métricas, en CSV o PDF.
+- **Model details** — when it was trained, dataset, seed, Ludwig version, what it predicts, predictor variables, patients evaluated, and the **model architecture**: the combiner (with a plain description taken from the Ludwig documentation), its size, the input encoders and output decoders, the optimizer and learning rate, batch size and maximum epochs.
+- **Summary cards** and a plain-language reading, as right after training, including "How to read this result".
+- **Test metrics** — one card per metric measured on the test set, with a 95 % bootstrap confidence interval where it can be computed. If the predictions carry a patient attribute with few values (for example sex), **Break down by** shows accuracy per group and flags groups with fewer than 30 patients.
+- **Confusion matrix** — rows are the true outcome, columns the prediction; switch between counts and percentages, click a cell to list the patients in it and, for two-class models, change the decision threshold (50 % by default). Next to it, the ROC curve. **Export** saves the table as PNG/PDF plus a CSV.
+- **Notes** (saved with the model) and **Export report** (project, model, variables, evaluation size and metrics as CSV or PDF).
 
-Botones bajo la lista: **View Config** (configuración exacta de Ludwig, solo lectura y copiable), **Duplicate and Retrain** (precarga Training con esa configuración bajo el nombre `<nombre>_copy` y te lleva allí; nada se guarda hasta que entrenes), **Compare selected**, **Delete selected** y **Delete non-favorites** (ambos piden confirmación y borran también la carpeta del modelo), y **Open models folder**.
+Buttons under the list: **View Config** (the exact Ludwig configuration, read-only and copyable), **Duplicate and Retrain** (pre-fills Training with that configuration under a new name; nothing is saved until you train), **Compare selected**, **Delete selected** and **Delete non-favorites** (both ask for confirmation and delete the model folder), and **Open models folder**.
 
-### 7.2 Pestaña Compare
+### 7.2 Compare tab
 
-![Pestaña Compare](images/evaluation_compare_page.png)
-*Pestaña **Compare**: modelos marcados, controles y la vista de tabla ordenada por la métrica elegida (el mejor valor de cada columna en negrita). Debajo, tamaño de evaluación de cada modelo.*
+![Compare tab](images/evaluation_compare_page.png)
+*Compare tab: the ticked models, the controls and the table ranked by the chosen metric (the best value of each column in bold).*
 
-![Vista Radar de la pestaña Compare](images/evaluation_compare_radar.png)
-*Vista **Radar**: un modelo (elegido en el desplegable) frente a la media de los marcados; más lejos del centro = mejor (las métricas donde menos es mejor se invierten).*
+![Radar view](images/evaluation_compare_radar.png)
+*Radar view: one model against the average of those ticked; further from the centre is better.*
 
-Marca dos o más modelos (o selecciónalos en *Models* y pulsa **Compare selected**), elige la métrica y una vista:
+Tick two or more models, choose the metric and a view:
 
-| Vista | Qué muestra |
+| View | Shows |
 |---|---|
-| **Table** | Ranking por la métrica elegida; clic en una cabecera reordena; clic en ☆ marca favorito; **Confidence intervals** añade el IC 95 %. |
-| **Graph** | Una barra por modelo, la mejor en verde. |
-| **Heatmap** | Modelos × métricas; más brillante = mejor por columna (las métricas donde menos es mejor se invierten). |
-| **Radar** | Un modelo frente a la media de los marcados. |
+| **Table** | Ranking by the chosen metric; click a header to re-rank; **Confidence intervals** adds 95 % intervals. |
+| **Graph** | One bar per model, the best in green. |
+| **Heatmap** | Models against metrics; brighter is better within each column. |
+| **Radar** | One model against the average of those ticked. |
 
-Controles: **What matters most** (salta a la métrica que responde a una prioridad clínica: detectar casos, evitar falsas alarmas, equilibrio, rendimiento global), **Test / Train metrics**, **All metrics** (desactívalo para ver solo las clave), **Favorites only**, **Compare settings** (con exactamente dos modelos: tabla de ajustes de Ludwig que difieren, con explicación en lenguaje llano) y **Export** (PNG/PDF + CSV). Compara solo modelos que predicen el mismo resultado sobre el mismo tipo de datos.
-
-### 7.3 Dónde se guarda
-Cada modelo vive en `results/models/<nombre>/` del proyecto (pesos, `model_hyperparameters.json`, `training_report.json`, `test_predictions.csv`, y `notes.txt` si hay notas). Las exportaciones de esta página se proponen en `results/reports/`.
+Controls: **What matters most** (jumps to the metric that answers a clinical priority), **Test / Train metrics**, **All metrics**, **Favorites only**, **Compare settings** (with exactly two models: the Ludwig settings that differ, explained in plain language) and **Export** (PNG/PDF + CSV). Only compare models that predict the same outcome on the same kind of data.
 
 ---
 
-## 8. Página "Prediction"
+## 8. Settings page
 
-![Página Prediction](images/prediction_page.png)
-*Página Prediction tras ejecutar una predicción sobre 80 pacientes sin columna de resultado: modelo elegido, comprobación de columnas en verde, y la tabla con las columnas originales seguidas de `predicted_class`, `confidence_class` y una probabilidad por clase. **Export Predictions** propone `results/predictions/`.*
+![Settings page](images/settings_page.png)
 
-Aplica un modelo entrenado a un dataset **sin columna de resultado** (p. ej. pacientes reclutados después de entrenar) y devuelve una predicción por fila. No modifica el modelo ni los datos del proyecto.
-
-1. **Model**: un modelo entrenado en el proyecto, o **Browse external model…** para elegir cualquier carpeta con un modelo Ludwig guardado (debe contener `model_hyperparameters.json`), p. ej. uno compartido por un colega.
-2. **New data**: **Browse…** y carga un archivo (mismos formatos que la página Data). No hace falta la columna de resultado.
-3. **Comprobación automática**: se comparan las columnas del archivo con los predictores del modelo. Si falta alguna se lista en rojo y **Run prediction** queda desactivado; las columnas extra se conservan.
-4. **Run prediction**: se ejecuta en segundo plano (`LudwigModel.predict`, backend local).
-5. **Resultados**: vista previa (primeras 500 filas) con las columnas originales seguidas de `predicted_<resultado>`, `confidence_<resultado>` (clasificación) y `prob_<resultado>_<clase>` por clase. **Export Predictions** guarda todas las filas en CSV o Excel.
-
-Las predicciones son apoyo a la decisión, no un diagnóstico: un modelo solo es fiable con pacientes parecidos a los de su entrenamiento.
-
----
-
-## 9. Página "Settings"
-
-![Página Settings](images/settings_page.png)
-*Página de configuración: apariencia, idioma, preferencias de exportación y opciones avanzadas.*
-
-| Sección | Contenido |
+| Section | Content |
 |---|---|
-| **Appearance** | Tema (Light/Dark/Auto según el SO) y tamaño de fuente (8–16pt, aplica sin reiniciar). |
-| **Language** | Español/English — el cambio de idioma de la interfaz requiere reiniciar la app. Los informes generados (Table 1, Quality Report) siempre se generan en el idioma seleccionado aquí. |
-| **Export Preferences** | Ya no hay un formato de exportación "por defecto" global: se elige en cada momento junto al botón de exportar correspondiente. Lo que queda aquí es **Decimal Places** (decimales en los informes exportados; 2 recomendado para informes clínicos, 4 para análisis interno). |
-| **Advanced: Log Level** | DEBUG / INFO (por defecto) / WARNING / ERROR — verbosidad del log técnico. |
-| **Debug mode** | Vía línea de comandos (`uv run hamelin --debug`), no desde aquí. |
+| **Appearance** | Theme (Light / Dark / Auto) and font size (8–16 pt), applied at once. |
+| **Language** | English / Spanish. Changing the interface language requires a restart. |
+| **Export Preferences** | **Decimal Places** for the means, SDs and medians of Table 1 and its exports (2 recommended for clinical reports, 4 for internal analysis); applied to the next table you generate. |
+| **Advanced: Log Level** | DEBUG / INFO (default) / WARNING / ERROR; applied at once and remembered. |
+
+Every change on this page is applied immediately and saved to `workspace/config/app_config.yaml`; there is nothing to confirm. Only the interface language needs a restart. Debug mode is enabled from the command line (`uv run hamelin --debug`).
 
 ---
 
-## 10. Página "Help"
+## 9. Help page
 
-![Página Help](images/help_page.png)
-*Manual integrado: 9 secciones plegables (aquí todas colapsadas) con los botones Expand All / Collapse All arriba.*
+![Help page](images/help_page.png)
+*Built-in manual: collapsible sections (all collapsed here) with Expand All / Collapse All at the top.*
 
-Manual de ayuda integrado en la propia app, con **9 secciones**: 1 Introduction, 2 Getting Started, 3 Projects, 4 Data (Table 1 incluido como parte de esta sección, no aparte), 5 Training, 6 Evaluation, 7 Prediction (ambas en el mismo orden que el menú de navegación), 8 Forecasting, 9 Glossary. Settings no tiene sección propia — es autoexplicativo en pantalla. Cada sección es expandible/colapsable; botones **Expand All** / **Collapse All** arriba. Casi todos los campos de la interfaz tienen además un icono "?" propio que abre una explicación puntual sin salir de la página en la que estás.
-
-Varios bloques incluyen ahora **capturas reales de la propia aplicación** directamente dentro del texto de ayuda (no solo en este manual externo) — por ejemplo, al expandir "Getting Started" verás la captura real de la pantalla de Proyectos con sus botones. Esto se implementó añadiendo soporte de imágenes a los bloques de ayuda (`_Block` en `help_page.py`); las imágenes viven en `src/hamelin/resources/help_images/` y no dependen de traducción (se muestran igual en inglés y español).
+The built-in manual has nine sections: Introduction, Getting Started, Projects, Data (Table 1 included), Training, Evaluation, Prediction, Forecasting and Glossary. A section's content is loaded when you first open it. Most fields also have a "?" icon that explains them without leaving the page.
 
 ---
 
-## 11. Arquitectura de la aplicación (para quien la mantenga)
+## 10. Start-up performance and the standalone executable
 
-### 11.1 Dos interfaces coexistiendo
-HAMELIN tiene, a día de hoy, **dos capas de interfaz gráfica**:
-- `src/hamelin/view/` + `controller/` + `model/` — la arquitectura MVC actual, descrita en todo este manual.
-- `src/hamelin/interface/` — una app "modo simple" más antigua, con su propio `MainWindow`, widgets y utilidades, **que ya no se enlaza desde el menú**: la antigua página "Models", que la embebía entera, se reescribió de forma nativa como la página "Evaluation" (`view/pages/evaluation_page.py`) para que comparta tema y estilo con el resto de la app.
+HAMELIN shows a splash screen immediately and loads its heavy scientific libraries only when they are needed (statistics and Ludwig are loaded when you first open the Data or Training page, or train a model). The first dataset you load in a session can therefore take a few seconds longer than the following ones. The GPU compatibility check runs in the background and training waits for it if necessary.
 
-Todas las funciones de esa página (métricas con intervalos de confianza, desglose por subgrupo, matriz de confusión con umbral y lista de pacientes, comparación en tabla/gráfico/mapa de calor/radar, diff de ajustes, favoritos, notas, informe, arquitectura del modelo) están ya en la página nativa: la lógica sin Qt vive en `analytics/eval_data.py`, `analytics/setting_labels.py` y `analytics/architecture.py`, y la interfaz en `view/pages/evaluation_page.py` y `view/widgets/eval_*_panel.py`. El código antiguo sigue en el repositorio (y sus tests), y `view/` reutiliza sus utilidades sin Qt (`interface/utils/get_model_paths.py`, `metric_labels.py`, `bootstrap_ci.py`, `print_confusion_matrix.py`). Retirar del todo `interface/` queda pendiente.
-
-**Textos de la interfaz.** Todo texto visible vive en `src/hamelin/i18n/strings.py` (inglés = fuente de verdad, español al lado) y se usa con `t("clave")`. Los avisos, etiquetas y ayudas de Training, Data, Forecasting, Project, Table 1 y los widgets compartidos se extrajeron del código con `tools/extract_ui_strings.py`; su versión española es por ahora el mismo texto inglés (marcador), y `tools/untranslated_strings.py` lista lo que falta traducir. Dos tests vigilan el sistema: `tests/test_i18n.py` (mismas claves en ambos idiomas) y `tests/test_i18n_usage.py` (toda clave usada existe y cada `.format()` recibe sus argumentos).
-
-### 11.2 Por qué la primera carga de un dataset puede tardar
-La inferencia de tipo de variable (sección 4.4) usa `ludwig.automl.base_config`, que internamente importa **todo** el subsistema de esquemas de Ludwig (encoders, decoders, combiners, hasta el esquema de modelos LLM, y `torchmetrics`) — no solo la parte de tipos. La primera vez que se usa en una sesión, esa importación puede tardar bastante (decenas de segundos en máquinas modestas). HAMELIN precalienta esa importación en segundo plano al arrancar (ver `prewarm_ludwig_type_inference()` en `analytics/variable_analyzer.py`), pero si cargas un dataset en los primeros segundos tras abrir la app, puedes notar el retraso igualmente. No es un fallo de HAMELIN — es el coste real de esa función concreta de Ludwig.
-
-### 11.3 Todas las opciones de Training están verificadas contra la documentación oficial de Ludwig
-Las métricas, estrategias de búsqueda y restricciones (p.ej. el balanceo de clases solo para binary) mostradas en la sección 6 de este manual se han contrastado explícitamente contra la documentación oficial de Ludwig (vendida localmente en `docs/ludwig/`, fuera del repositorio git). Si Ludwig se actualiza a una versión con un esquema de configuración distinto, esta sección debería revisarse de nuevo contra la doc de esa versión.
-
-### 11.4 Esquema: de la pantalla Training a la configuración real de Ludwig
-
-Ningún widget de la pantalla Training habla con Ludwig directamente. Todo pasa por un diccionario intermedio ("fields") que solo lleva lo que el usuario cambió de su valor neutro, y una función pura (`_fields_to_user_config`) que lo traduce a la sintaxis real de Ludwig:
-
-```
-┌─────────────────────┐      ┌───────────────────┐      ┌──────────────────────────┐
-│  TrainingPage (UI)   │      │   fields: dict     │      │  Ludwig user_config      │
-│                      │      │  (solo lo tocado)  │      │                          │
-│  Prediction type ────┼─────▶│ problem_type       │      │ output_features[0].type  │
-│  Evaluation metric ──┼─────▶│ metric              ├─────▶│ trainer.validation_metric│
-│  Early stopping ─────┼─────▶│ early_stop(_mode)   │      │ trainer.early_stop +     │
-│  (3 modos)           │      │                    │      │ executor.scheduler(fifo) │
-│  Hyperparam. search ─┼─────▶│ search, max_iter,   │      │ hyperopt.search_alg,     │
-│                      │      │ parallel_trials     │      │ hyperopt.executor        │
-│  Handle Imbalance ───┼─────▶│ class_imbalance      │      │ preprocessing.           │
-│  (solo si binary)    │      │ (+ problem_type)    │      │ oversample_minority      │
-│  Missing values ─────┼─────▶│ missing_strategy     │      │ defaults.number.         │
-│  strategy            │      │                      │      │ preprocessing.           │
-│                      │      │                      │      │ missing_value_strategy   │
-└─────────────────────┘      └───────────────────┘      └──────────────────────────┘
-                                                                      │
-                                                                      ▼
-                                                        auto_train(user_config=...)
-                                                     (se fusiona con lo que Ludwig
-                                                      infiere automáticamente del
-                                                      dataset — nada se pisa si el
-                                                      usuario no tocó esa opción)
-```
-
-Por eso un campo dejado en su valor por defecto **no** se envía a Ludwig — se deja que Ludwig decida, en vez de forzar explícitamente su propio valor por defecto. Ver `src/hamelin/analytics/automl/ludwig_backend.py::_fields_to_user_config`.
+A single-file executable for machines without Python (for example a virtual machine) can be built; see [DISTRIBUTION.md](DISTRIBUTION.md).
 
 ---
 
-## 12. Registro de uso (usage log)
+## 11. For maintainers
 
-Aparte del log técnico, HAMELIN guarda en `workspace/logs/usage_log.csv` un registro estructurado de **qué hace el usuario en la interfaz**: clics en botones, campos de formulario rellenados, navegación entre páginas, con marca de tiempo (segundos incluidos) para cada evento. Es un CSV con columnas `timestamp, session_id, page, action, element, detail`, pensado para poder analizarse directamente en Excel/pandas — por ejemplo, para un estudio de usabilidad y eficacia de la herramienta.
+### 11.1 Layout
+- `src/hamelin/view/` + `controller/` + `model/` — the current MVC application described in this manual.
+- `src/hamelin/analytics/` — logic without Qt: `eval_data.py`, `architecture.py` (architecture summary read from `model_hyperparameters.json`), `result_advice.py` ("How to read this result"), `table1_generator.py`, the AutoML backend in `analytics/automl/`.
+- `src/hamelin/core/` — projects, model history, `project_layout.py` (tidy-up) and `dataset_changes.py` (record of changes to datasets).
+- `src/hamelin/interface/` — an older interface that is no longer linked from the menu; only its Qt-free utilities are still used.
 
-Además de clics y navegación, cada **aviso o error mostrado al usuario** (los banners de advertencia y error) se registra como `warning_shown` / `error_shown`, con el título como `element` y el texto como `detail`: así se pueden contar los errores cometidos por un participante sin instrumentar cada pantalla. `tools/usage_summary.py` resume el fichero por sesión y dataset (tiempo hasta el modelo, tiempo de entrenamiento, avisos, errores, ayudas, navegaciones); el cuestionario de evaluación de usuario está en [`CUESTIONARIO.md`](CUESTIONARIO.md). Las pruebas automáticas (`pytest`) redirigen este registro a un fichero temporal para no contaminar los datos reales.
+### 11.2 Interface texts
+All visible text lives in `src/hamelin/i18n/strings.py` (English is the source of truth) and is used with `t("key")`. Two tests guard the system: identical keys in both languages, and every used key exists.
 
-Es un fichero separado del log técnico a propósito: uno es texto libre para depurar errores, el otro son datos tabulares para análisis. Ambos viven en `workspace/logs/`, fuera del control de versiones.
+### 11.3 From the Training page to Ludwig's configuration
+No widget talks to Ludwig directly. The page builds a small dictionary containing only what the user moved off the neutral default, and a pure function (`_fields_to_user_config` in `analytics/automl/ludwig_backend.py`) translates it into Ludwig's syntax, which `auto_train(user_config=…)` merges with what Ludwig infers from the dataset:
 
----
-
-## 13. Glosario rápido
-
-| Término | Significado |
+| Training page | Ludwig configuration |
 |---|---|
-| AutoML | Software que selecciona y configura automáticamente el mejor algoritmo para un dataset dado. |
-| AUC-ROC | Métrica (0–1) de cuán bien un clasificador binario separa positivos de negativos. |
-| Holdout set | Parte de los datos apartada del entrenamiento, usada solo para la evaluación final. |
-| Hiperparámetro | Ajuste que controla cómo aprende el algoritmo (p.ej. learning rate), distinto de los parámetros que el modelo aprende de los datos. |
-| Data leakage | Cuando información del futuro o del propio resultado se cuela en los datos de entrenamiento, dando un rendimiento irrealmente alto. |
-| Ludwig | Framework de AutoML de código abierto (originalmente de Uber AI) que HAMELIN usa para entrenar modelos e inferir tipos de variable. |
-| Overfitting | Cuando un modelo aprende demasiado bien los datos de entrenamiento y no generaliza a pacientes nuevos. |
-| Random seed | Número que inicializa el generador aleatorio, para que los splits y las inicializaciones sean reproducibles. |
+| Prediction type | `output_features[0].type` |
+| Evaluation metric | `trainer.validation_metric` |
+| Early stopping | `trainer.early_stop` (+ `hyperopt.executor.scheduler: fifo` when a patience is set) |
+| Search strategy, max. iterations, parallel trials | `hyperopt.search_alg`, `hyperopt.executor` |
+| Handle class imbalance (binary only) | `preprocessing.oversample_minority` |
+| Missing numeric values | `defaults.number.preprocessing.missing_value_strategy` |
 
-(Glosario clínico y de formatos de fichero completo disponible en la propia página Help de la app.)
+A field left at its default is **not** sent, so Ludwig decides.
+
+---
+
+## 12. Usage log
+
+Besides the technical log, HAMELIN writes `workspace/logs/usage_log.csv`: a structured record of what the user does in the interface (button clicks, filled fields, navigation, and every warning or error banner shown), with a timestamp for each event. Columns: `timestamp, session_id, page, action, element, detail`. It is meant for analysis in Excel or pandas, for example in a usability study. `tools/usage_summary.py` summarises it per session and dataset; the evaluation questionnaire is in [`CUESTIONARIO.md`](CUESTIONARIO.md). Automated tests redirect this log to a temporary file.
+
+---
+
+## 13. Quick glossary
+
+| Term | Meaning |
+|---|---|
+| AutoML | Software that selects and configures the best algorithm for a dataset. |
+| AUC-ROC | Metric (0–1) of how well a binary classifier separates positives from negatives. |
+| Holdout set | Part of the data kept apart from training, used only for the final evaluation. |
+| Hyperparameter | A setting that controls how the algorithm learns (for example the learning rate). |
+| Data leakage | Information from the future or from the outcome itself slipping into the training data, giving unrealistically high performance. |
+| Ludwig | Open-source AutoML framework that HAMELIN uses to train models and infer variable types. |
+| Overfitting | A model that learns the training data too well and does not generalise to new patients. |
+| Random seed | Number that initialises the random generator so splits and initialisations are reproducible. |

@@ -2,7 +2,9 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
-from sklearn.metrics import confusion_matrix
+from hamelin.utils.lazy import LazyModule
+
+_skm = LazyModule("sklearn.metrics")
 import hamelin.interface.utils.get_model_paths as gmp
 
 _ludwig_model_cache = {}
@@ -69,7 +71,7 @@ def _confusion_matrix_from_saved_predictions(predictions_csv: Path, threshold: f
     y_conf = df["y_score"].values if has_score else None
 
     labels = list(np.unique(np.concatenate([y_true, y_pred])))
-    cm = confusion_matrix(y_true, y_pred, labels=labels)
+    cm = _skm.confusion_matrix(y_true, y_pred, labels=labels)
 
     # Same row-level detail as the live path, minus the y_true/y_pred/
     # y_score columns folded back into _true_label/_predicted_label/
@@ -132,7 +134,7 @@ def compute_confusion_matrix(model_path: str, dataset_path: str, threshold: floa
     y_conf = preds_df[prob_col].values if prob_col else None
 
     labels = list(np.unique(np.concatenate([y_true, y_pred])))
-    cm = confusion_matrix(y_true, y_pred, labels=labels)
+    cm = _skm.confusion_matrix(y_true, y_pred, labels=labels)
 
     # Row-level detail behind the aggregate counts, so a UI can let someone
     # click a (true, predicted) cell and see the actual examples that landed

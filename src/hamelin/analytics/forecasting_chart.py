@@ -32,7 +32,9 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 from matplotlib.figure import Figure
-from scipy import stats
+from hamelin.utils.lazy import LazyModule
+
+stats = LazyModule("scipy.stats")
 
 from hamelin.analytics.recruitment_tracker import RecruitmentTracker
 from hamelin.utils.logger import log

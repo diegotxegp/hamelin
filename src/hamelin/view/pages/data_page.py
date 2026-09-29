@@ -6,6 +6,7 @@ Data loading, inspection, and quality assessment.
 """
 
 from pathlib import Path
+from hamelin.utils.paths import workspace_dir
 
 from PySide6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QFormLayout, QTableWidget,
@@ -32,6 +33,7 @@ from hamelin.view.widgets.theme_colors import apply_scroll_area_theme, bind_styl
 from hamelin.analytics.variable_analyzer import VariableAnalyzerWorker
 from hamelin.core.dataset_registry import DatasetRegistry
 from hamelin.view.pages.table1_page import Table1Page
+from hamelin.view.widgets.config_dialog import show_config_dialog
 from hamelin.i18n import t
 
 # Where "Browse" opens by default - a single, top-level place to keep
@@ -41,7 +43,7 @@ from hamelin.i18n import t
 # (with just a .gitkeep) before this was ever pointed at it; not created
 # here, just used - mkdir(exist_ok=True) is only a safety net in case
 # that .gitkeep placeholder is ever removed.
-_DATASETS_DIR = Path(__file__).resolve().parent.parent.parent.parent.parent / "workspace" / "data"
+_DATASETS_DIR = workspace_dir() / "data"
 
 
 class DataPage(QWidget):
@@ -524,6 +526,12 @@ class DataPage(QWidget):
         )
         remove_duplicates_btn.clicked.connect(self._remove_duplicates)
         actions_row1.addWidget(remove_duplicates_btn)
+
+        self._view_changes_btn = PushButton(t("data.btn.view_changes"), self)
+        self._view_changes_btn.setIcon(FluentIcon.VIEW)
+        attach_help_popup(self._view_changes_btn, t("data.help.view_changes"))
+        self._view_changes_btn.clicked.connect(self._on_view_changes)
+        actions_row1.addWidget(self._view_changes_btn)
 
         actions_row1.addStretch()
         main_layout.addLayout(actions_row1)
@@ -1441,6 +1449,25 @@ class DataPage(QWidget):
         except Exception:
             log.debug("Failed to save project state after restore_all")
 
+    def _on_view_changes(self) -> None:
+        """Show the record of every change made to the dataset (also saved
+        next to it as <dataset>.changes.json)."""
+        usage_log.event("Data", "click", "View Data Changes button")
+        dm = self._data_model
+        if dm is None or dm.df is None:
+            InfoBar.warning(
+                title=t("data.txt.no_dataset"), content=t("data.txt.load_a_dataset_first_to_see_its_changes"),
+                orient=Qt.Horizontal, isClosable=True,
+                position=InfoBarPosition.TOP, duration=3000, parent=self,
+            )
+            return
+        from hamelin.core.dataset_changes import build_record, changes_path, save_record
+        if self._project_dir is not None:
+            save_record(dm, self._project_dir)
+        where = (changes_path(self._project_dir, dm.filepath) if self._project_dir and dm.filepath else None)
+        note = t("data.txt.changes_note").format(where if where else "—")
+        show_config_dialog(self.window(), t("data.txt.changes_title"), build_record(dm), note)
+
     def _remove_duplicates(self) -> None:
         """Hide every duplicate row (keeping the first occurrence of each),
         same rows the Data Summary's "duplicate rows detected" warning
@@ -1465,6 +1492,7 @@ class DataPage(QWidget):
             )
             return
 
+        self._data_model._change_reason = "duplicate rows (first occurrence kept)"
         row_of_index = {df_idx: i for i, df_idx in enumerate(self._preview_row_map)}
         for df_idx in dup_indices:
             self._removed_row_indices.add(df_idx)

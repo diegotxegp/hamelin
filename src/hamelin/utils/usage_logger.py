@@ -22,6 +22,7 @@ import csv
 import threading
 from datetime import datetime
 from pathlib import Path
+from hamelin.utils.paths import workspace_dir
 from typing import Optional
 
 
@@ -49,7 +50,7 @@ class UsageLogger:
 
         # Same base as HamelinLogger's workspace/logs/ - see the matching
         # comment in hamelin/utils/logger.py.
-        log_dir = Path(__file__).resolve().parent.parent.parent.parent / "workspace" / "logs"
+        log_dir = workspace_dir() / "logs"
         log_dir.mkdir(parents=True, exist_ok=True)
         self._path = log_dir / "usage_log.csv"
 

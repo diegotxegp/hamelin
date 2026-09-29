@@ -57,6 +57,10 @@ class DataModel(BaseModel):
         self.excluded_rows: set = set()
         # Columns explicitly excluded/hidden by the user (not persisted to disk)
         self.excluded_columns: set = set()
+        # Dated history of user changes (see hamelin.core.dataset_changes)
+        self.change_log: list = []
+        self._logged_state = None
+        self._change_reason = None
     
     def load_from_file(
         self,
@@ -508,6 +512,7 @@ class DataModel(BaseModel):
             outlier_mask = outlier_mask | col_mask.fillna(False)
 
         new_indices = set(self.df.index[outlier_mask]) - self.excluded_rows
+        self._change_reason = f"outliers beyond {std_threshold:g} standard deviations"
         self.excluded_rows.update(new_indices)
         log.info(
             f"exclude_outliers(threshold={std_threshold}): "
@@ -683,6 +688,8 @@ class DataModel(BaseModel):
             path.parent.mkdir(parents=True, exist_ok=True)
             path.write_text(json.dumps(payload, indent=2, ensure_ascii=False), encoding='utf-8')
             log.info(f"Project state saved to {path}")
+            from hamelin.core.dataset_changes import save_record
+            save_record(self, project_dir)
         except Exception as exc:  # noqa: BLE001
             log.warning(f"Failed to save project state to {project_dir}: {exc}")
 
@@ -710,6 +717,8 @@ class DataModel(BaseModel):
                 self.excluded_rows = set([r for r in rows if r in existing])
             # store the full loaded object for UI consumers
             self.project_state = obj
+            from hamelin.core.dataset_changes import mark_baseline
+            mark_baseline(self, project_dir)
             result = obj
             log.info(f"Project state loaded from {path}")
         except Exception as exc:  # noqa: BLE001

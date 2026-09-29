@@ -611,7 +611,7 @@ _SECTIONS: list[dict] = [
                     "Click '▶ Advanced options' in the Model Configuration card to reveal "
                     "the rest of the settings.  Defaults are fine for most studies.\n\n"
                     "Time budget (seconds):\n"
-                    "  Hard limit on search time, always in seconds (default 500, minimum 300).  "
+                    "  Hard limit on search time, always in seconds (default 500, minimum 100).  "
                     "Training stops when this is reached "
                     "even if the max iterations have not been completed.  Typed directly "
                     "(no up/down arrows).\n\n"
@@ -633,7 +633,7 @@ _SECTIONS: list[dict] = [
                     "  Maximum number of different configurations to try, once a search "
                     "strategy other than 'No optimisation' is selected.  More iterations → "
                     "better model, more time.  Minimum and default: 10.  It is an upper limit: "
-                    "the time budget always takes priority, so with a short budget (e.g. 300 s) the "
+                    "the time budget always takes priority, so with a short budget (e.g. 100 s) the "
                     "search stops before all iterations have run.\n\n"
                     "Parallel trials:\n"
                     "  How many trials run at the same time, whatever the search strategy.  The "
@@ -1156,17 +1156,28 @@ class _SectionCard(QWidget):
         body_layout.setContentsMargins(0, 12, 0, 0)
         body_layout.setSpacing(16)
 
-        for block in spec["blocks"]:
-            body_layout.addWidget(
-                _Block(block["heading"], block["text"], self._body, image=block.get("image"))
-            )
+        # The blocks (dozens of labels and images per section) are only built
+        # the first time the section is opened: it keeps start-up fast.
+        self._blocks_spec = spec["blocks"]
+        self._body_layout = body_layout
 
         card_layout.addWidget(self._body)
         self._body.setVisible(False)   # collapsed by default
 
+    def _ensure_blocks(self) -> None:
+        if self._blocks_spec is None:
+            return
+        for block in self._blocks_spec:
+            self._body_layout.addWidget(
+                _Block(block["heading"], block["text"], self._body, image=block.get("image"))
+            )
+        self._blocks_spec = None
+
     # ------------------------------------------------------------------
     def _toggle(self) -> None:
         expanded = not self._body.isVisible()
+        if expanded:
+            self._ensure_blocks()
         usage_log.event("Help", "click", f"Section toggle: {self._title}", "expanded" if expanded else "collapsed")
         self._body.setVisible(expanded)
         self._toggle_btn.setIcon(
@@ -1175,6 +1186,7 @@ class _SectionCard(QWidget):
 
     def expand(self) -> None:
         """Expand the section programmatically."""
+        self._ensure_blocks()
         self._body.setVisible(True)
         self._toggle_btn.setIcon(FluentIcon.CARE_UP_SOLID)
 

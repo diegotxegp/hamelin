@@ -18,7 +18,9 @@ following standard medical publication guidelines.
 import pandas as pd
 import numpy as np
 from typing import Dict, Any, List, Tuple, Optional
-from scipy import stats
+from hamelin.utils.lazy import LazyModule
+
+stats = LazyModule("scipy.stats")
 import warnings
 
 from hamelin.utils.logger import log

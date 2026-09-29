@@ -61,6 +61,13 @@ def _class_shares(pred_df):
 
 
 def detect_task(test_metrics: dict, pred_df=None) -> str:
+    # Ludwig also reports a one-vs-rest roc_auc for multi-class outcomes, so the
+    # number of classes decides, not the presence of an AUC.
+    shares = _class_shares(pred_df)
+    if shares is not None and len(shares) > 2 and _get(test_metrics, "r2") is None:
+        return "multiclass"
+    if _get(test_metrics, "hits_at_k", "accuracy_micro") is not None:
+        return "multiclass"
     if _get(test_metrics, "roc_auc", "auc", "roc_auc_score") is not None:
         return "binary"
     if _get(test_metrics, "r2", "root_mean_squared_error", "rmse", "mean_absolute_error", "mae") is not None:

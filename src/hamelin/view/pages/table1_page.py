@@ -162,17 +162,19 @@ class Table1Page(QWidget):
         missing_label = BodyLabel(t("table1.txt.missing_data"))
         missing_label.setFixedWidth(160)
         self._missing_combo = ComboBox()
-        self._missing_combo.addItem("Include all rows (show as missing)")
-        self._missing_combo.addItem("Exclude rows with any missing value")
+        self._missing_combo.addItem("Keep all patients (show missing values)")
+        self._missing_combo.addItem("Drop patients with any missing value")
         missing_row.addWidget(missing_label)
         missing_row.addWidget(self._missing_combo)
         missing_row.addStretch()
         vars_layout.addLayout(missing_row)
 
         # Show p-values
-        self._pvalue_check = QCheckBox("Show p-values (requires a grouping variable)")
+        self._pvalue_check = QCheckBox("Show p-values (needs 'Compare groups by')")
         self._pvalue_check.setChecked(True)
         vars_layout.addWidget(self._pvalue_check)
+        self._group_combo.currentIndexChanged.connect(self._update_pvalue_availability)
+        self._update_pvalue_availability()
 
         layout.addWidget(vars_card)
 
@@ -645,6 +647,10 @@ class Table1Page(QWidget):
         usage_log.event("Table 1", "click", "Select All button")
         for checkbox in self._var_checkboxes.values():
             checkbox.setChecked(True)
+
+    def _update_pvalue_availability(self, *_args) -> None:
+        """P-values compare groups, so they only make sense with a grouping variable."""
+        self._pvalue_check.setEnabled(self._group_combo.currentIndex() > 0)
 
     def _select_none_vars(self):
         usage_log.event("Table 1", "click", "Deselect All button")

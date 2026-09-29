@@ -15,6 +15,7 @@ from __future__ import annotations
 
 import os
 from pathlib import Path
+from hamelin.utils.paths import workspace_dir
 
 import pandas as pd
 from PySide6.QtWidgets import (
@@ -38,7 +39,7 @@ from hamelin.view.widgets import HelpButton, PageHelpButton, style_table_widget
 from hamelin.view.widgets.theme_colors import apply_scroll_area_theme, bind_style, on_theme_changed, apply_transparent_container
 from hamelin.i18n import t
 
-_DATASETS_DIR = Path(__file__).resolve().parent.parent.parent.parent.parent / "workspace" / "data"
+_DATASETS_DIR = workspace_dir() / "data"
 _MAX_PREVIEW_ROWS = 500
 _BROWSE = "__browse__"
 

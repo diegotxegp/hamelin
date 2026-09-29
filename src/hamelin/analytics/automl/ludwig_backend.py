@@ -842,6 +842,8 @@ class LudwigBackend(AutoMLBackend):
         Returns:
             AutoMLResult with model_type, metrics, hyperparameters, etc.
         """
+        from hamelin.utils.gpu_check import wait_for_gpu_probe
+        wait_for_gpu_probe()
         secondary_outcomes = kwargs.get("secondary_outcomes") or []
 
         # --- Feature selection ---
@@ -1123,6 +1125,8 @@ class LudwigBackend(AutoMLBackend):
         architecture/hyperparameters on train_df and evaluate on test_df
         (the held-out set run() split off before calling this - see
         _held_out_test_set)."""
+        from hamelin.utils.gpu_check import wait_for_gpu_probe
+        wait_for_gpu_probe()
         try:
             from ludwig.api import LudwigModel
         except ImportError as exc:

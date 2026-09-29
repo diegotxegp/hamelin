@@ -66,10 +66,42 @@ def _flatten(prefix: str, obj: dict, out: dict) -> None:
             out[key] = v
 
 
+def overall_accuracy_metrics(metrics: dict) -> dict:
+    """Make "accuracy" mean the share of correct predictions for a multi-class outcome.
+
+    For a category outcome with 3+ classes Ludwig's ``accuracy`` is averaged
+    per class, so a rare class dragged it far below the share of patients
+    that are actually classified correctly (43 % against 95 % overall, on a
+    very unbalanced outcome), and it disagreed with the confidence interval
+    computed from the saved predictions.  ``accuracy_micro`` is the overall
+    figure, so it replaces ``accuracy`` (the per-class average is kept as
+    ``accuracy_per_class``).  Binary and regression outcomes are untouched.
+    Works on both flat ("test/<target>/accuracy/best") and plain ("accuracy") keys.
+    """
+    out = dict(metrics)
+    for key in list(metrics):
+        parts = key.split("/")
+        if "accuracy_micro" not in parts:
+            continue
+        i = parts.index("accuracy_micro")
+        head, tail = parts[:i], parts[i + 1:]
+        if any("/".join(head + [m] + tail) in metrics for m in ("recall", "specificity")):
+            continue                                    # binary: sensitivity/specificity exist
+        acc_key = "/".join(head + ["accuracy"] + tail)
+        if acc_key in metrics:
+            out["/".join(head + ["accuracy_per_class"] + tail)] = metrics[acc_key]
+            out[acc_key] = metrics[key]
+    return out
+
+
 def flat_metrics(rec: ModelTraining) -> dict:
     """{"test/<target>/<metric>/best": value, ...} for *rec*: read from the
     model's training_report.json, or rebuilt from the run's stored metrics
     when the report is missing."""
+    return overall_accuracy_metrics(_flat_metrics_raw(rec))
+
+
+def _flat_metrics_raw(rec: ModelTraining) -> dict:
     folder = model_folder(rec)
     if folder is not None:
         report = folder / "training_report.json"

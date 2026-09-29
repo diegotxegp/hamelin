@@ -112,3 +112,28 @@ def test_auc_bootstrap_matches_sklearn_and_is_fast():
     assert auc == pytest.approx(roc_auc_score(y, p))
     assert lo < auc < hi
     assert bootstrap_auc_ci(df.drop(columns=["y_prob_0", "y_prob_1"])) == (None, None, None)
+
+
+def test_multiclass_outcome_with_a_one_vs_rest_auc_is_not_read_as_binary():
+    import pandas as pd
+    from hamelin.analytics.result_advice import build_advice, detect_task
+
+    pred = pd.DataFrame({"y_true": ["a", "b", "c", "a", "b", "c"] * 20,
+                         "y_pred": ["a", "b", "c", "b", "b", "a"] * 20})
+    metrics = {"roc_auc": 0.74, "accuracy": 0.5, "accuracy_micro": 0.5, "hits_at_k": 0.8}
+    assert detect_task(metrics, pred) == "multiclass"
+    assert detect_task(metrics, None) == "multiclass"        # hits_at_k only exists for categories
+    adv = build_advice(metrics, None, pred, 120)
+    assert adv.task == "multiclass" and "two groups" not in adv.verdict
+
+
+def test_multiclass_accuracy_is_the_overall_share_of_correct_predictions():
+    from hamelin.analytics.eval_data import overall_accuracy_metrics
+
+    multi = {"accuracy": 0.43, "accuracy_micro": 0.95, "hits_at_k": 0.75}
+    assert overall_accuracy_metrics(multi)["accuracy"] == 0.95
+    flat = {"test/Class/accuracy/best": 0.43, "test/Class/accuracy_micro/best": 0.95}
+    fixed = overall_accuracy_metrics(flat)
+    assert fixed["test/Class/accuracy/best"] == 0.95 and fixed["test/Class/accuracy_per_class/best"] == 0.43
+    binary = {"accuracy": 0.7, "accuracy_micro": 0.74, "recall": 0.8, "specificity": 0.6}
+    assert overall_accuracy_metrics(binary)["accuracy"] == 0.7

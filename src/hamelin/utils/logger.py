@@ -20,6 +20,7 @@ import logging
 import logging.handlers
 import sys
 from pathlib import Path
+from hamelin.utils.paths import workspace_dir
 from typing import Optional
 from datetime import datetime
 
@@ -73,7 +74,7 @@ class HamelinLogger:
     def _setup_logger(self):
         """Configure the logging system."""
         # Create logs directory if it doesn't exist
-        log_dir = Path(__file__).parent.parent.parent.parent / "workspace" / "logs"
+        log_dir = workspace_dir() / "logs"
         log_dir.mkdir(parents=True, exist_ok=True)
         
         # Create logger

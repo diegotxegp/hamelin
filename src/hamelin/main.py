@@ -50,6 +50,7 @@ multiprocessing.freeze_support()
 from hamelin.utils.logger import log
 from hamelin.utils.config_manager import config
 from hamelin.utils.error_handler import install_global_exception_handler
+from hamelin.utils.gpu_check import start_gpu_probe
 from hamelin import __version__
 
 
@@ -79,78 +80,13 @@ Examples:
     return parser.parse_args()
 
 
-def _disable_unsupported_gpu():
-    """Hide the GPU from this process (and, via inherited env, every Ray/
-    Ludwig worker subprocess) if it exists but isn't one the installed
-    PyTorch build actually has kernels for.
-
-    Ray/Ludwig auto-detect any CUDA-capable GPU and schedule training
-    trials on it unconditionally - on an old/unsupported GPU (e.g. compute
-    capability sm_50 when the installed torch only ships sm_75+ kernels)
-    this doesn't fail until deep inside a Ray worker mid-training, as a
-    cryptic ``CUBLAS_STATUS_ARCH_MISMATCH``, long after the point where a
-    clean CPU fallback would have been simple. Checked once at startup, in
-    throwaway subprocesses, so a CUDA context doesn't get pinned to *this*
-    process before we've decided whether the GPU should be visible at all.
-    """
-    if "CUDA_VISIBLE_DEVICES" in os.environ:
-        return  # already explicitly configured - respect it
-
-    if shutil.which("nvidia-smi") is None:
-        return  # no NVIDIA driver/GPU on this machine - nothing to check
-
-    try:
-        smi = subprocess.run(
-            ["nvidia-smi", "--query-gpu=compute_cap", "--format=csv,noheader"],
-            timeout=5, capture_output=True, text=True,
-        )
-        if smi.returncode != 0 or not smi.stdout.strip():
-            return
-    except Exception:
-        return  # no usable nvidia-smi - let torch/ray behave as normal
-
-    # The verdict is printed rather than signalled through sys.exit(1): a
-    # debugger set to break on raised exceptions pauses on that SystemExit
-    # inside this throwaway subprocess, which looked like a second process
-    # to close every time the app was started under it.
-    probe = (
-        "import torch\n"
-        "verdict = 'ok'\n"
-        "if torch.cuda.is_available():\n"
-        "    major, minor = torch.cuda.get_device_capability(0)\n"
-        "    arch = f'sm_{major}{minor}'\n"
-        "    supported = torch.cuda.get_arch_list()\n"
-        "    if supported and arch not in supported:\n"
-        "        verdict = 'unsupported'\n"
-        "print(verdict)\n"
-    )
-    try:
-        # sys.executable [-c] is the same subprocess re-entry pattern Ray
-        # itself relies on, already handled by _run_as_python_interpreter
-        # above when this is a frozen build.
-        probe_result = subprocess.run(
-            [sys.executable, "-c", probe], timeout=30, capture_output=True,
-        )
-    except Exception:
-        log.warning("GPU compatibility probe failed to run; leaving GPU visible")
-        return
-
-    if probe_result.returncode == 0 and b"unsupported" in probe_result.stdout:
-        log.warning(
-            "Detected GPU's compute capability isn't supported by the "
-            "installed PyTorch build - disabling GPU for this session "
-            "(training will run on CPU instead of crashing mid-run)."
-        )
-        os.environ["CUDA_VISIBLE_DEVICES"] = ""
-
-
 def initialize_application(args):
     """Set up logging, load config, install exception handler, log startup info."""
     if args.debug:
         log.set_level('DEBUG')
         log.debug("Debug mode enabled")
     else:
-        log.set_level('INFO')
+        log.set_level(str(config.get('app.log_level', 'INFO')).upper())
 
     if args.config:
         custom_config_path = Path(args.config)
@@ -162,7 +98,9 @@ def initialize_application(args):
             log.info("Using default configuration")
 
     install_global_exception_handler()
-    _disable_unsupported_gpu()
+    # The probe imports torch in a throwaway subprocess (seconds): run it in
+    # the background so the window appears straight away; training waits for it.
+    start_gpu_probe()
 
     log.info("=" * 60)
     log.info(f"HAMELIN v{__version__} - Clinical Research AutoML")
@@ -179,9 +117,9 @@ def run_gui():
     log.info("Launching GUI...")
 
     try:
-        from PySide6.QtWidgets import QApplication
-        from PySide6.QtGui import QIcon
-        from hamelin.view.main_window import MainWindow
+        from PySide6.QtWidgets import QApplication, QSplashScreen
+        from PySide6.QtGui import QIcon, QPixmap
+        from PySide6.QtCore import Qt
         from hamelin.i18n import set_language
 
         app = QApplication(sys.argv)
@@ -196,6 +134,19 @@ def run_gui():
         logo_path = resources_dir() / "assets" / "logo.png"
         if logo_path.exists():
             app.setWindowIcon(QIcon(str(logo_path)))
+
+        # Immediate feedback: the heavy imports below (Qt Fluent widgets,
+        # pandas, matplotlib, ...) take a few seconds on a cold start.
+        splash = None
+        if logo_path.exists():
+            pix = QPixmap(str(logo_path)).scaled(
+                200, 200, Qt.KeepAspectRatio, Qt.SmoothTransformation)
+            splash = QSplashScreen(pix, Qt.WindowStaysOnTopHint)
+            splash.show()
+            splash.showMessage(f"HAMELIN v{__version__}", Qt.AlignBottom | Qt.AlignHCenter)
+            app.processEvents()
+
+        from hamelin.view.main_window import MainWindow
 
         lang = config.get("app.language", "en")
         set_language(lang)
@@ -215,6 +166,8 @@ def run_gui():
 
         log.debug("Creating main window")
         window = MainWindow()
+        if splash is not None:
+            splash.finish(window)
 
         log.info("GUI launched successfully")
 

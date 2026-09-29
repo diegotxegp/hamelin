@@ -87,8 +87,26 @@ def _position_popup(popup: QWidget, anchor: QWidget) -> None:
     popup.move(x, y)
 
 
+_current_popup = None
+
+
+def _close_current_popup() -> None:
+    """Only one help popup at a time: a second Qt.Popup opened while another
+    one grabs the mouse makes Wayland warn about the popup's transient parent."""
+    global _current_popup
+    try:
+        if _current_popup is not None:
+            _current_popup.close()
+    except RuntimeError:        # already deleted
+        pass
+    _current_popup = None
+
+
 class HelpPopup(QFrame):
     def __init__(self, text: str, parent: QWidget | None = None):
+        global _current_popup
+        _close_current_popup()
+        _current_popup = self
         super().__init__(
             parent,
             Qt.WindowType.Popup
@@ -196,6 +214,12 @@ def attach_help_popup(widget: QWidget, text: str) -> None:
     a row would also pop this open. See attach_help_popup_hover() for
     those instead.
     """
+    # A combo box opens its own drop-down popup on click; a second popup on
+    # top of it is what made Wayland complain, so those get the hover popup.
+    if hasattr(widget, "_showComboMenu") or hasattr(widget, "showPopup"):
+        attach_help_popup_hover(widget, text)
+        return
+
     def _show(*_args):
         usage_log.event(infer_page_name(widget), "click", "Help button (attached)", text[:60])
         popup = HelpPopup(text, widget)

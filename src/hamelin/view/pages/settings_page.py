@@ -165,7 +165,8 @@ class SettingsPage(QWidget):
         # Decimal places
         self._decimals_spin = SpinBox()
         self._decimals_spin.setRange(0, 6)
-        self._decimals_spin.setValue(2)
+        self._decimals_spin.setValue(int(config.get('table1.decimal_places', 2)))
+        self._decimals_spin.valueChanged.connect(self._on_decimals_changed)
         export_form.addRow(t("settings.label.decimals"), self._decimals_spin)
         
         export_layout.addLayout(export_form)
@@ -186,7 +187,9 @@ class SettingsPage(QWidget):
         # Log level
         self._log_level_combo = ComboBox()
         self._log_level_combo.addItems(["DEBUG", "INFO", "WARNING", "ERROR"])
-        self._log_level_combo.setCurrentIndex(1)  # INFO
+        level = str(config.get('app.log_level', 'INFO')).upper()
+        self._log_level_combo.setCurrentText(level if level in ("DEBUG", "INFO", "WARNING", "ERROR") else "INFO")
+        self._log_level_combo.currentTextChanged.connect(self._on_log_level_changed)
         advanced_form.addRow(t("settings.label.log.level"), self._log_level_combo)
         
         advanced_layout.addLayout(advanced_form)
@@ -279,6 +282,7 @@ class SettingsPage(QWidget):
         chosen = mapping.get(theme, Theme.LIGHT)
         setTheme(chosen)
         config.set('ui.theme', theme.lower())
+        config.save()
         log.info(f"Theme changed to: {theme}")
         usage_log.event("Settings", "select", "Theme", theme)
     
@@ -286,16 +290,31 @@ class SettingsPage(QWidget):
         """Handle font size change"""
         log.debug(f"Font size changed to: {size}")
         config.set('ui.font.size', size)
+        config.save()
         family = config.get('ui.font.family', 'Segoe UI')
         app = QApplication.instance()
         if app:
             app.setFont(QFont(family, size))
     
+    def _on_decimals_changed(self, value: int):
+        """Applies at once: the next Table 1 (and every export made from it) uses it."""
+        config.set('table1.decimal_places', int(value))
+        config.save()
+        usage_log.event("Settings", "select", "Decimal Places", str(value))
+
+    def _on_log_level_changed(self, level: str):
+        """Applies at once to the running application and is remembered."""
+        log.set_level(level)
+        config.set('app.log_level', level)
+        config.save()
+        usage_log.event("Settings", "select", "Log Level", level)
+
     def _on_language_changed(self, lang: str):
         """Handle language change"""
         log.info(f"Language changed to: {lang}")
         lang_code = {"English": "en", "Español": "es"}.get(lang, "en")
         config.set('app.language', lang_code)
+        config.save()
         set_language(lang_code)
         usage_log.event("Settings", "select", "UI Language", lang)
         InfoBar.information(

@@ -24,7 +24,9 @@ from typing import List, Optional, Dict, Any, Tuple
 import json
 import pandas as pd
 import numpy as np
-from scipy import stats
+from hamelin.utils.lazy import LazyModule
+
+stats = LazyModule("scipy.stats")
 
 from hamelin.core.project import ProjectMetadata
 from hamelin.utils.logger import log

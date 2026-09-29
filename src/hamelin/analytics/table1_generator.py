@@ -17,7 +17,9 @@ import pandas as pd
 import numpy as np
 from typing import Optional, Union, List, Dict
 from dataclasses import dataclass
-from scipy import stats
+from hamelin.utils.lazy import LazyModule
+
+stats = LazyModule("scipy.stats")
 from pathlib import Path
 
 from hamelin.utils.logger import log
@@ -368,18 +370,21 @@ class Table1Generator:
         """
         if len(series) == 0:
             return "N/A"
-        
+
+        from hamelin.utils.config_manager import config
+        d = max(0, min(6, int(config.get("table1.decimal_places", 2))))   # Settings > Decimal Places
+
         if is_normal:
             # Mean ± SD
             mean = series.mean()
             std = series.std()
-            return f"{mean:.2f} ± {std:.2f}"
+            return f"{mean:.{d}f} ± {std:.{d}f}"
         else:
             # Median [IQR]
             median = series.median()
             q1 = series.quantile(0.25)
             q3 = series.quantile(0.75)
-            return f"{median:.2f} [{q1:.2f}-{q3:.2f}]"
+            return f"{median:.{d}f} [{q1:.{d}f}-{q3:.{d}f}]"
     
     def _format_categorical(self, count: int, total: int) -> str:
         """

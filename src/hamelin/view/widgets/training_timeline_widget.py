@@ -71,11 +71,14 @@ class TrainingTimelineWidget(QWidget):
 
     def clear(self) -> None:
         self._viz = None
+        self._placeholder_pending = False
         self._draw_empty()
 
     def _apply_theme(self) -> None:
         """Re-render whatever's currently shown so a theme switch updates
         it live, without a restart."""
+        if self._placeholder_pending:
+            return
         self._draw() if self._viz is not None else self._draw_empty()
 
     # ------------------------------------------------------------------
@@ -97,7 +100,15 @@ class TrainingTimelineWidget(QWidget):
         self._canvas.setMinimumSize(400, 200)
         layout.addWidget(self._canvas)
 
-        self._draw_empty()
+        # The placeholder is drawn the first time the widget is shown, not
+        # here: matplotlib's first text layout costs ~0.4 s at start-up.
+        self._placeholder_pending = True
+
+    def showEvent(self, event) -> None:
+        super().showEvent(event)
+        if self._placeholder_pending:
+            self._placeholder_pending = False
+            self._draw() if self._viz is not None else self._draw_empty()
 
     # ------------------------------------------------------------------
     # Drawing

@@ -19,7 +19,7 @@ from PySide6.QtCore import Qt, Signal
 from qfluentwidgets import (
     TitleLabel, StrongBodyLabel, BodyLabel, CardWidget,
     PushButton, ComboBox, SpinBox, DoubleSpinBox, LineEdit,
-    FluentIcon, ProgressBar, IndeterminateProgressBar, SwitchButton, RadioButton,
+    FluentIcon, ProgressBar, IndeterminateProgressBar, CheckBox, RadioButton,
     InfoBar, InfoBarPosition
 )
 
@@ -282,6 +282,8 @@ class TrainingPage(QWidget):
         variables_layout.addWidget(features_label)
         
         self.features_list = QListWidget()
+        self._all_columns: list[str] = []
+        self.primary_combo.currentIndexChanged.connect(self._sync_predictors_with_outcome)
         self.features_list.setMaximumHeight(150)
         self.features_list.setSelectionMode(QListWidget.MultiSelection)
         # Hover, not click (attach_help_popup_hover, not attach_help_popup) -
@@ -469,9 +471,9 @@ class TrainingPage(QWidget):
         # are only removed via setSymbolVisible(False), not
         # setButtonSymbols().
         self.time_budget = SpinBox()
-        # Always seconds. Minimum 300 = the old 5-minute floor: below that
-        # Ray Tune's scheduler rejects the search (grace_period > max_t).
-        self.time_budget.setRange(300, 86400)
+        # Always seconds (minimum 100). Every keystroke is applied at once.
+        self.time_budget.setRange(100, 86400)
+        self.time_budget.setKeyboardTracking(True)
         self.time_budget.setValue(500)
         self.time_budget.setSymbolVisible(False)
         self._add_form_row(advanced_form, t("training.label.timebudget"), self.time_budget)
@@ -538,14 +540,10 @@ class TrainingPage(QWidget):
 
         hyperopt_content_layout.addLayout(advanced_form)
 
-        # Switches — each gets its own static label. SwitchButton's own
-        # .setText() only sets what's currently displayed; the widget
-        # overwrites it with "On"/"Off" the moment it's toggled (see
-        # SwitchButton._updateText, wired to the indicator's toggled
-        # signal), so it can't carry a permanent category name by itself.
         balance_row = QHBoxLayout()
-        balance_row.addWidget(BodyLabel(t("training.label.imbalance")))
-        self.class_balance_switch = SwitchButton()
+        # A plain check box, not a SwitchButton: the animated switch was
+        # reported to freeze/crash the window when toggled on some systems.
+        self.class_balance_switch = CheckBox(t("training.label.imbalance"))
         balance_row.addWidget(self.class_balance_switch)
         balance_row.addStretch()
         hyperopt_content_layout.addLayout(balance_row)
@@ -708,6 +706,22 @@ class TrainingPage(QWidget):
         usage_log.event("Training", "click", "Cancel Duplicated Config button")
         self._clear_pending_config()
 
+    def _sync_predictors_with_outcome(self, *_args) -> None:
+        """The outcome variable can't also be a predictor: list every column
+        except the chosen outcome, keeping the user's other selections."""
+        outcome = self.primary_combo.currentText().strip()
+        chosen = {i.text() for i in self.features_list.selectedItems()}
+        self.features_list.blockSignals(True)
+        self.features_list.clear()
+        for col in self._all_columns:
+            if col == outcome:
+                continue
+            self.features_list.addItem(col)
+            if col in chosen:
+                self.features_list.item(self.features_list.count() - 1).setSelected(True)
+        self.features_list.blockSignals(False)
+        self.features_list.itemSelectionChanged.emit()
+
     def _select_all_predictors(self) -> None:
         usage_log.event("Training", "click", "Select All Predictors button")
         for i in range(self.features_list.count()):
@@ -727,8 +741,8 @@ class TrainingPage(QWidget):
         columns = list(active_df.columns)
         self.primary_combo.clear()
         self.primary_combo.addItems(columns)
-        self.features_list.clear()
-        self.features_list.addItems(columns)
+        self._all_columns = columns
+        self._sync_predictors_with_outcome()
         # Populate secondary outcomes list with available columns (can be mapped from presets)
         try:
             self.secondary_list.clear()
@@ -772,6 +786,9 @@ class TrainingPage(QWidget):
                                 it.setSelected(True)
                     except Exception:
                         pass
+                form = state.get('training_form')
+                if isinstance(form, dict):
+                    self._restore_form_state(form)
                 # selected secondary outcomes
                 so = state.get('secondary_outcomes') or state.get('secondary')
                 if so and isinstance(so, list):
@@ -801,10 +818,19 @@ class TrainingPage(QWidget):
         # target/predictors are what the user just chose to reproduce.
         self._apply_pending_selection()
 
-        # Connect change signals to persist user choices
+        # Connect change signals to persist user choices (once: this method
+        # runs again for every dataset load)
+        if getattr(self, "_state_signals_connected", False):
+            return
+        self._state_signals_connected = True
         try:
             self.primary_combo.currentIndexChanged.connect(lambda _: self._save_project_state())
             self.features_list.itemSelectionChanged.connect(lambda: self._save_project_state())
+            for w in self._form_widgets().values():
+                for sig in ("currentIndexChanged", "valueChanged", "toggled"):
+                    if hasattr(w, sig):
+                        getattr(w, sig).connect(self._on_form_changed)
+                        break
             self.inclusion_builder.rules_changed.connect(lambda: self._save_project_state())
             self.exclusion_builder.rules_changed.connect(lambda: self._save_project_state())
         except Exception:
@@ -835,6 +861,11 @@ class TrainingPage(QWidget):
                 extra['secondary_outcomes'] = sec
             except Exception:
                 pass
+            # Model Configuration choices
+            try:
+                extra['training_form'] = self._collect_form_state()
+            except Exception:
+                pass
             # rules
             try:
                 extra['inclusion_rules'] = self.inclusion_builder.get_rules()
@@ -852,6 +883,56 @@ class TrainingPage(QWidget):
                 log.warning("Failed to save project state from TrainingPage")
         except Exception:
             pass
+
+    def _form_widgets(self) -> dict:
+        """The Model Configuration controls that are remembered per project."""
+        return {
+            "problem_type": self.problem_type_combo, "metric": self.metric_combo,
+            "time_budget": self.time_budget, "test_split": self.test_split,
+            "random_seed": self.random_seed, "search_strategy": self.hyperopt_strategy,
+            "max_iterations": self.hyperopt_trials, "parallel_trials": self.parallel_trials,
+            "early_stop_mode": self.early_stop_mode, "early_stop": self.early_stop,
+            "missing_values": self.missing_strategy_combo, "class_imbalance": self.class_balance_switch,
+        }
+
+    def _collect_form_state(self) -> dict:
+        state: dict = {}
+        for key, w in self._form_widgets().items():
+            if hasattr(w, "currentIndex"):      # (a Fluent ComboBox also has isChecked)
+                state[key] = int(w.currentIndex())
+            elif hasattr(w, "isChecked"):
+                state[key] = bool(w.isChecked())
+            else:
+                state[key] = w.value()
+        return state
+
+    def _restore_form_state(self, state: dict) -> None:
+        """Re-apply the Model Configuration saved with the project."""
+        widgets = self._form_widgets()
+        self._restoring_form = True
+        try:
+            for key in ("problem_type", "metric", "search_strategy", "early_stop_mode",
+                        "missing_values", "time_budget", "test_split", "random_seed",
+                        "max_iterations", "parallel_trials", "early_stop", "class_imbalance"):
+                if key not in state:
+                    continue
+                w, v = widgets[key], state[key]
+                try:
+                    if hasattr(w, "currentIndex"):
+                        if 0 <= int(v) < w.count():
+                            w.setCurrentIndex(int(v))
+                    elif hasattr(w, "isChecked"):
+                        w.setChecked(bool(v))
+                    else:
+                        w.setValue(v)
+                except Exception:  # noqa: BLE001
+                    pass
+        finally:
+            self._restoring_form = False
+
+    def _on_form_changed(self, *_args) -> None:
+        if not getattr(self, "_restoring_form", False):
+            self._save_project_state()
 
     def _preview_rules(self, mode: str = 'include') -> None:
         """Run preview of the inclusion/exclusion rules against active df."""
@@ -1571,6 +1652,7 @@ class TrainingPage(QWidget):
                 "rows_used_after_exclusions_and_rules": int(rows_used),
                 "outlier_or_removed_rows_excluded": len(dm.excluded_rows) if dm is not None else 0,
                 "columns_hidden": sorted(dm.excluded_columns) if dm is not None else [],
+                "changes_record": "data_changes.json (in this model's folder)",
             },
             "outcome": target,
             "predictors": list(features),
@@ -1904,6 +1986,15 @@ class TrainingPage(QWidget):
                                 json.dumps(settings, indent=2, default=str), encoding="utf-8")
                         except Exception as exc:  # noqa: BLE001
                             log.warning(f"TrainingPage: could not save training settings — {exc}")
+
+                    # The changes made to the dataset on the Data page (rows /
+                    # columns removed, types overridden...), so the model can
+                    # be traced back to the exact data it saw.
+                    dm = self._data_model
+                    if dm is not None and dm.filepath and self._project_dir is not None:
+                        from hamelin.core.dataset_changes import copy_to_model, save_record
+                        save_record(dm, self._project_dir)
+                        copy_to_model(self._project_dir, dm.filepath, checkpoint_dir)
 
                     # Every test-set prediction, saved alongside the model -
                     # takes more disk space than just the aggregate metrics,

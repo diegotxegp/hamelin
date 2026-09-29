@@ -22,6 +22,7 @@ Usage:
 
 import yaml
 from pathlib import Path
+from hamelin.utils.paths import workspace_dir
 from typing import Any, Optional, Dict
 from copy import deepcopy
 
@@ -49,7 +50,7 @@ class ConfigManager:
     def __init__(self):
         """Initialize configuration manager."""
         if not ConfigManager._initialized:
-            self.config_dir = Path(__file__).parent.parent.parent.parent / "workspace" / "config"
+            self.config_dir = workspace_dir() / "config"
             self.config_file = self.config_dir / "app_config.yaml"
             self._config: Dict[str, Any] = {}
             self._defaults: Dict[str, Any] = self._get_defaults()

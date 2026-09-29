@@ -17,6 +17,7 @@ Version: 2.0
 from dataclasses import dataclass, field, asdict
 from datetime import date, datetime
 from pathlib import Path
+from hamelin.utils.paths import workspace_dir
 from typing import List, Optional, Dict, Any
 import json
 import re
@@ -398,7 +399,7 @@ class ProjectRepository:
     
     # Default Projects/ directory: always anchored to the repo root regardless of CWD.
     # src/hamelin/core/project.py → parent.parent.parent.parent == repo root
-    _DEFAULT_BASE = Path(__file__).resolve().parent.parent.parent.parent / "workspace" / "Projects"
+    _DEFAULT_BASE = workspace_dir() / "Projects"
 
     def __init__(self, base_path: Path = None):
         """

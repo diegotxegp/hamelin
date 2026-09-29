@@ -32,6 +32,10 @@ from hamelin.utils.theme_colors import apply_tooltip_theme, on_theme_changed
 from hamelin.i18n import t
 
 
+# Pages that are visible but not yet available to end users (Prediction, Forecasting).
+LOCKED_PAGES = True
+
+
 class MainWindow(MSFluentWindow):
     """
     Main application window.
@@ -50,20 +54,12 @@ class MainWindow(MSFluentWindow):
         super().__init__()
         log.info("Initializing Main Window")
 
-        # Pays Ludwig's automl-module import cost (tens of seconds - it
-        # pulls in most of Ludwig's schema/encoder/decoder registry, see
-        # prewarm_ludwig_type_inference()'s docstring) in the background
-        # instead of on the user's first dataset load in the Data page.
-        # Deferred via QTimer.singleShot(0, ...) rather than started here
-        # directly: a plain Python thread still contends for the GIL with
-        # this constructor's own synchronous page-building work (and
-        # _auto_load_project()'s disk I/O right after it), which was
-        # slowing down Home's very first paint. singleShot(0) only fires
-        # once Qt's event loop is actually running (after __init__ returns
-        # and the window is already shown), not synchronously here.
-        QTimer.singleShot(
-            0, lambda: threading.Thread(target=prewarm_ludwig_type_inference, daemon=True).start()
-        )
+        # Ludwig's automl module costs seconds to import (see
+        # prewarm_ludwig_type_inference()).  Doing that at launch made the
+        # whole UI sluggish (the import thread competes for the GIL), so it
+        # is started only when the user opens the Data or Training page -
+        # i.e. shortly before a dataset is loaded - see _log_page_navigation.
+        self._ludwig_prewarmed = False
 
         # Window properties
         self.setWindowTitle(t("home.title"))
@@ -203,11 +199,11 @@ class MainWindow(MSFluentWindow):
             t("nav.evaluation")
         )
 
-        self.addSubInterface(
+        self._lock_nav_item(self.addSubInterface(
             self.prediction_page,
             FluentIcon.PLAY,
             t("nav.prediction")
-        )
+        ))
 
         # Dashboard: removed from the nav for now (its useful bits -
         # timestamps, provenance, notes - are moving into the Evaluation page
@@ -215,11 +211,11 @@ class MainWindow(MSFluentWindow):
         # still exists and is kept up to date via set_data_model() etc.
         # below, just not reachable from the sidebar.
 
-        self.addSubInterface(
+        self._lock_nav_item(self.addSubInterface(
             self.forecasting_page,
             FluentIcon.HISTORY,
             t("nav.forecasting")
-        )
+        ))
 
         # Help and settings at bottom.
         self.addSubInterface(
@@ -237,6 +233,17 @@ class MainWindow(MSFluentWindow):
         )
 
         log.debug("Navigation initialized with 9 pages")
+
+    def _lock_nav_item(self, item) -> None:
+        """Grey out a navigation entry whose page is not available yet.
+
+        The pages stay in the code base (and are fully tested); flipping
+        ``LOCKED_PAGES`` off re-enables them.
+        """
+        if not LOCKED_PAGES or item is None:
+            return
+        item.setEnabled(False)
+        item.setToolTip(t("nav.locked"))
 
     def _prefill_training_from_duplicate(self, payload: dict) -> None:
         """Bridge the Evaluation page's "Duplicate & Retrain" to the Training
@@ -450,6 +457,9 @@ class MainWindow(MSFluentWindow):
             return
         page_name = PAGE_DISPLAY_NAMES.get(widget.objectName(), widget.objectName())
         usage_log.event(page_name, "navigate", "page opened")
+        if not self._ludwig_prewarmed and widget in (self.data_page, self.training_page):
+            self._ludwig_prewarmed = True
+            threading.Thread(target=prewarm_ludwig_type_inference, daemon=True).start()
 
     def _on_training_finished(self, result) -> None:
         """

@@ -14,7 +14,7 @@ def page(qtbot):
 def test_time_budget_is_in_seconds_with_500_default(page):
     assert page.time_budget.value() == 500
     assert page.time_budget.suffix() == ""  # unit lives in the row title, not the field
-    assert page.time_budget.minimum() == 300
+    assert page.time_budget.minimum() == 100
 
 
 def test_default_model_name_prefilled(page):
