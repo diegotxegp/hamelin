@@ -31,6 +31,7 @@ from qfluentwidgets import (
 from hamelin.analytics.history_visualizer import HistoryVisualizer
 from hamelin.core.model_history import ModelHistory
 from hamelin.utils.logger import log
+from hamelin.i18n import t
 from hamelin.view.widgets.table_theme import style_table_widget
 
 
@@ -96,7 +97,7 @@ class ModelHistoryWidget(QWidget):
         # ---- Summary row ----
         summary_row = QHBoxLayout()
 
-        self._lbl_total = BodyLabel("No training runs yet.")
+        self._lbl_total = BodyLabel(t("common.txt.no_training_runs_yet"))
         self._lbl_best = BodyLabel("")
         self._lbl_best.setStyleSheet("color: #0078d4; font-weight: 600;")
 
@@ -104,7 +105,7 @@ class ModelHistoryWidget(QWidget):
         self._btn_toggle.setFixedWidth(150)
         self._btn_toggle.clicked.connect(self._toggle_table)
 
-        summary_row.addWidget(StrongBodyLabel("Training History"))
+        summary_row.addWidget(StrongBodyLabel(t("common.txt.training_history")))
         summary_row.addSpacing(16)
         summary_row.addWidget(self._lbl_total)
         summary_row.addSpacing(16)
@@ -146,7 +147,7 @@ class ModelHistoryWidget(QWidget):
 
     def _refresh(self) -> None:
         if self._viz is None:
-            self._lbl_total.setText("No training runs yet.")
+            self._lbl_total.setText(t("common.txt.no_training_runs_yet"))
             self._lbl_best.setText("")
             self._btn_toggle.setEnabled(False)
             self._table.setModel(None)
@@ -156,18 +157,18 @@ class ModelHistoryWidget(QWidget):
         count = stats["count"]
 
         if count == 0:
-            self._lbl_total.setText("No training runs yet.")
+            self._lbl_total.setText(t("common.txt.no_training_runs_yet"))
             self._lbl_best.setText("")
             self._btn_toggle.setEnabled(False)
             self._table.setModel(None)
             return
 
         self._btn_toggle.setEnabled(True)
-        self._lbl_total.setText(f"{count} run{'s' if count != 1 else ''}")
+        self._lbl_total.setText(t("common.txt.0_run_1").format(count, 's' if count != 1 else ''))
 
         best = stats["best"]
         if best is not None:
-            self._lbl_best.setText(f"Best accuracy: {best:.1%}")
+            self._lbl_best.setText(t("common.txt.best_accuracy_0_1").format(best))
         else:
             self._lbl_best.setText("")
 
@@ -215,12 +216,12 @@ class ModelHistoryWidget(QWidget):
         self._table_container.setVisible(self._table_visible)
         if self._table_visible:
             self._btn_toggle.setIcon(FluentIcon.UP)
-            self._btn_toggle.setText("Hide history")
+            self._btn_toggle.setText(t("common.txt.hide_history"))
         else:
             self._btn_toggle.setIcon(FluentIcon.DOWN)
-            self._btn_toggle.setText("Show history")
+            self._btn_toggle.setText(t("common.txt.show_history"))
 
     def _show_error(self, message: str) -> None:
-        self._lbl_total.setText(f"Error: {message}")
+        self._lbl_total.setText(t("common.txt.error_0").format(message))
         self._lbl_best.setText("")
         self._btn_toggle.setEnabled(False)

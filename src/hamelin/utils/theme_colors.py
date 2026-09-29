@@ -111,9 +111,24 @@ def colors() -> ThemeColors:
 
 
 def on_theme_changed(apply_fn) -> None:
-    """Call *apply_fn* now, and again every time the app's theme changes."""
+    """Call *apply_fn* now, and again every time the app's theme changes.
+
+    The subscription is dropped by itself once *apply_fn* fails because the
+    widget it styles has been destroyed (dialogs, cards rebuilt on every
+    selection, ...); otherwise every later theme switch would raise
+    "Internal C++ object already deleted" for each dead widget.
+    """
+    def apply(*_args) -> None:
+        try:
+            apply_fn()
+        except RuntimeError:  # wrapped C++ object already deleted
+            try:
+                qconfig.themeChanged.disconnect(apply)
+            except (RuntimeError, TypeError):
+                pass
+
     apply_fn()
-    qconfig.themeChanged.connect(apply_fn)
+    qconfig.themeChanged.connect(apply)
 
 
 def bind_style(widget, style_fn) -> None:
@@ -190,8 +205,91 @@ def tooltip_qss() -> str:
             color: {c.text_primary};
             border: 1px solid {c.border};
             padding: 4px 8px;
+            opacity: 255;
         }}
     """
+
+
+def file_dialog_qss() -> str:
+    """Theme for Qt's own (non-native) open/save dialogs, which otherwise
+    stay in the platform's light style whatever the app theme is. Native
+    dialogs (Windows, macOS) ignore this and follow the OS."""
+    c = colors()
+    return f"""
+        QFileDialog, QFileDialog QWidget {{
+            background-color: {c.card_background};
+            color: {c.text_primary};
+        }}
+        QFileDialog QListView, QFileDialog QTreeView {{
+            background-color: {c.table_row};
+            alternate-background-color: {c.table_row_alt};
+            border: 1px solid {c.border};
+            selection-background-color: {c.list_item_selected_bg};
+            selection-color: {c.text_primary};
+        }}
+        QFileDialog QHeaderView::section {{
+            background-color: {c.table_header_bg};
+            color: {c.text_primary};
+            border: 1px solid {c.table_header_border};
+            padding: 4px;
+        }}
+        QFileDialog QLineEdit, QFileDialog QComboBox {{
+            background-color: {c.table_row};
+            color: {c.text_primary};
+            border: 1px solid {c.border};
+            border-radius: 4px;
+            padding: 3px 6px;
+        }}
+        QFileDialog QComboBox QAbstractItemView {{
+            background-color: {c.table_row};
+            color: {c.text_primary};
+            selection-background-color: {c.list_item_selected_bg};
+        }}
+        QFileDialog QPushButton {{
+            background-color: {c.table_header_bg};
+            color: {c.text_primary};
+            border: 1px solid {c.border};
+            border-radius: 4px;
+            padding: 4px 14px;
+        }}
+        QFileDialog QPushButton:hover {{ background-color: {c.list_item_selected_bg}; }}
+        QFileDialog QToolButton {{ background-color: transparent; border: none; }}
+        QFileDialog QToolButton:hover {{ background-color: {c.list_item_selected_bg}; }}
+    """
+
+
+def apply_tooltip_theme() -> None:
+    """Style every tooltip for the current theme: the QToolTip rule above
+    plus the QToolTip palette. The rule alone left the tip window's
+    background unpainted (a see-through window: black on some desktops)
+    under the dark theme while its text turned light, so the text could not
+    be read; the palette gives the tip an opaque base colour of its own."""
+    from PySide6.QtGui import QColor, QPalette
+    from PySide6.QtWidgets import QApplication, QToolTip
+
+    c = colors()
+    app = QApplication.instance()
+    if app is not None:
+        app.setStyleSheet(tooltip_qss() + file_dialog_qss())
+    palette = QToolTip.palette()
+    palette.setColor(QPalette.ColorRole.ToolTipBase, QColor(c.card_background))
+    palette.setColor(QPalette.ColorRole.ToolTipText, QColor(c.text_primary))
+    palette.setColor(QPalette.ColorRole.Window, QColor(c.card_background))
+    palette.setColor(QPalette.ColorRole.WindowText, QColor(c.text_primary))
+    QToolTip.setPalette(palette)
+
+
+def apply_transparent_container(widget) -> None:
+    """Let the app's themed background show through *widget* and everything
+    inside it (the pages' scroll-area content), keeping tooltips readable.
+
+    A bare ``background: transparent;`` on a container also reaches the
+    tooltips of the widgets inside it, and a widget-level rule beats the
+    application-level QToolTip rule, so every tooltip on the page came out
+    see-through (light text on nothing, in the dark theme). The QToolTip rule
+    is therefore repeated in the same sheet, after the transparent one so it
+    wins. Re-applied on theme changes because tooltip_qss() is themed."""
+    on_theme_changed(lambda: widget.setStyleSheet("QWidget { background: transparent; } " + tooltip_qss()))
 
 
 def scroll_area_qss() -> str:

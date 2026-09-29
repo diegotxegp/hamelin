@@ -1,5 +1,6 @@
 """Visual Rule Builder widget
 """
+from hamelin.i18n import t
 from PySide6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QTableWidget, QTableWidgetItem,
     QSizePolicy, QMessageBox
@@ -55,9 +56,9 @@ class RuleBuilder(QWidget):
     def _init_ui(self):
         self.layout = QVBoxLayout(self)
         toolbar = QHBoxLayout()
-        self.add_btn = PushButton('Add rule')
-        self.preview_btn = PushButton('Preview')
-        self.count_lbl = BodyLabel('Matches: 0')
+        self.add_btn = PushButton(t("common.txt.add_rule"))
+        self.preview_btn = PushButton(t("common.txt.preview"))
+        self.count_lbl = BodyLabel(t("common.txt.matches_0_2"))
         toolbar.addWidget(self.add_btn)
         toolbar.addWidget(self.preview_btn)
         toolbar.addWidget(self.count_lbl)
@@ -131,7 +132,7 @@ class RuleBuilder(QWidget):
         If df is None, clears preview.
         """
         if df is None or df.empty:
-            self.count_lbl.setText('Matches: 0')
+            self.count_lbl.setText(t("common.txt.matches_0_2"))
             self.sample_table.clear()
             self.sample_table.setColumnCount(0)
             self.sample_table.setRowCount(0)
@@ -139,7 +140,7 @@ class RuleBuilder(QWidget):
 
         rules = self.get_rules()
         out = apply_rules(df, rules, mode=mode)
-        self.count_lbl.setText(f"Matches: {out['count']}")
+        self.count_lbl.setText(t("common.txt.matches_0").format(out['count']))
         sample = out['sample']
         if sample is None or sample.empty:
             self.sample_table.clear()

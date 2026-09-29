@@ -105,6 +105,11 @@ class TestKeyNaming:
             "dashboard.",  # Dashboard page
             "settings.",  # Settings page
             "help.",   # Help page
+            "common.",  # shared widgets
+            "advice.",  # result advice
+            "eval.",   # Evaluation page
+            "prediction.",  # Prediction page
+            "config.",  # Config dialog
         ]
         
         for key in EN.keys():

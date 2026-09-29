@@ -24,10 +24,11 @@ import pandas as pd
 
 from hamelin.utils.logger import log
 from hamelin.utils.usage_logger import usage_log
+from hamelin.utils.export_paths import default_export_path
 from hamelin.utils.exceptions import DataLoadError
 from hamelin.model.data_model import DataModel
 from hamelin.view.widgets import HelpButton, PageHelpButton, attach_help_popup, style_table_widget
-from hamelin.view.widgets.theme_colors import apply_scroll_area_theme, bind_style, colors, isDarkTheme, on_theme_changed
+from hamelin.view.widgets.theme_colors import apply_scroll_area_theme, bind_style, colors, isDarkTheme, on_theme_changed, apply_transparent_container
 from hamelin.analytics.variable_analyzer import VariableAnalyzerWorker
 from hamelin.core.dataset_registry import DatasetRegistry
 from hamelin.view.pages.table1_page import Table1Page
@@ -172,7 +173,7 @@ class DataPage(QWidget):
         # doesn't follow Hamelin's light/dark theme - make it transparent so
         # the correctly themed background behind it shows through instead.
         apply_scroll_area_theme(scroll)
-        container.setStyleSheet("background: transparent;")
+        apply_transparent_container(container)
 
         outer = QVBoxLayout(self)
         outer.setContentsMargins(0, 0, 0, 0)
@@ -239,7 +240,7 @@ class DataPage(QWidget):
         proj_ds_layout = QHBoxLayout(self._project_datasets_section)
         proj_ds_layout.setContentsMargins(0, 8, 0, 0)
         proj_ds_layout.setSpacing(10)
-        proj_ds_lbl = BodyLabel("Project datasets:")
+        proj_ds_lbl = BodyLabel(t("data.txt.project_datasets"))
         bind_style(proj_ds_lbl, lambda c: f"color: {c.text_secondary}; font-size: 12px;")
         proj_ds_layout.addWidget(proj_ds_lbl)
         self._dataset_combo = ComboBox(self)
@@ -308,7 +309,7 @@ class DataPage(QWidget):
         preview_header.addWidget(help_btn)
         preview_header.addStretch()
         
-        preview_info = BodyLabel("(All rows — use scroll)")
+        preview_info = BodyLabel(t("data.txt.all_rows_use_scroll"))
         bind_style(preview_info, lambda c: f"color: {c.text_secondary}; font-size: 11px;")
         preview_header.addWidget(preview_info)
         
@@ -382,9 +383,7 @@ class DataPage(QWidget):
         self._exclude_outliers_btn.setIcon(FluentIcon.FILTER)
         attach_help_popup(
             self._exclude_outliers_btn,
-            "Automatically mark rows where any numeric value is more than 3 standard "
-            "deviations from the column mean. Excluded rows are hidden from model training "
-            "but never deleted from the file."
+            t("data.txt.automatically_mark_rows_where_any_numeri")
         )
         self._exclude_outliers_btn.clicked.connect(self._exclude_outliers)
         self._exclude_outliers_btn.setEnabled(False)
@@ -392,7 +391,7 @@ class DataPage(QWidget):
 
         self._restore_outliers_btn = PushButton(t("data.btn.restore"), self)
         self._restore_outliers_btn.setIcon(FluentIcon.SYNC)
-        attach_help_popup(self._restore_outliers_btn, "Clear all outlier exclusions and include every row again")
+        attach_help_popup(self._restore_outliers_btn, t("data.txt.clear_all_outlier_exclusions_and_include"))
         self._restore_outliers_btn.clicked.connect(self._restore_excluded_rows)
         self._restore_outliers_btn.setEnabled(False)
         outlier_actions.addWidget(self._restore_outliers_btn)
@@ -433,7 +432,7 @@ class DataPage(QWidget):
         self._var_progress.stop()
         variables_layout.addWidget(self._var_progress)
 
-        self._var_status_lbl = BodyLabel("Analysing variable types...")
+        self._var_status_lbl = BodyLabel(t("data.txt.analysing_variable_types"))
         bind_style(
             self._var_status_lbl,
             lambda c: f"color: {c.text_secondary}; font-style: italic; font-size: 11px;",
@@ -490,12 +489,12 @@ class DataPage(QWidget):
 
         self._export_format_combo = ComboBox()
         self._export_format_combo.addItems(["CSV", "Excel (.xlsx)", "Word (.docx)"])
-        attach_help_popup(self._export_format_combo, "File format used by the Export button")
+        attach_help_popup(self._export_format_combo, t("data.txt.file_format_used_by_the_export"))
         export_group.addWidget(self._export_format_combo)
 
         export_btn = PushButton(t("data.btn.export"), self)
         export_btn.setIcon(FluentIcon.SAVE)
-        attach_help_popup(export_btn, "Export the dataset in the format selected above, applying any hidden columns/rows")
+        attach_help_popup(export_btn, t("data.txt.export_the_dataset_in_the_format"))
         export_btn.clicked.connect(self._export_data)
         export_group.addWidget(export_btn)
 
@@ -506,15 +505,14 @@ class DataPage(QWidget):
         reload_btn.setIcon(FluentIcon.SYNC)
         attach_help_popup(
             reload_btn,
-            "Revert every variable back to its originally inferred type. "
-            "Does not touch the dataset itself (values, rows, columns)."
+            t("data.txt.revert_every_variable_back_to_its")
         )
         reload_btn.clicked.connect(self._reset_variable_types)
         actions_row1.addWidget(reload_btn)
 
         quality_report_btn = PushButton(t("data.btn.quality"), self)
         quality_report_btn.setIcon(FluentIcon.DOCUMENT)
-        attach_help_popup(quality_report_btn, "Save a CSV with per-variable statistics: type, missing count, min/max/mean")
+        attach_help_popup(quality_report_btn, t("data.txt.save_a_csv_with_per_variable"))
         quality_report_btn.clicked.connect(self._generate_quality_report)
         actions_row1.addWidget(quality_report_btn)
 
@@ -522,11 +520,7 @@ class DataPage(QWidget):
         remove_duplicates_btn.setIcon(FluentIcon.BROOM)
         attach_help_popup(
             remove_duplicates_btn,
-            "Hide every duplicate row, keeping the first occurrence of "
-            "each - same rows the Data Summary's \"duplicate rows "
-            "detected\" warning is counting. Like Remove Selected, this "
-            "only hides them (Restore All brings them back), it never "
-            "changes the underlying dataset."
+            t("data.txt.hide_every_duplicate_row_keeping_the")
         )
         remove_duplicates_btn.clicked.connect(self._remove_duplicates)
         actions_row1.addWidget(remove_duplicates_btn)
@@ -546,7 +540,7 @@ class DataPage(QWidget):
         summary_layout = QVBoxLayout(self._summary_card)
         summary_layout.setContentsMargins(20, 20, 20, 20)
         summary_layout.setSpacing(8)
-        summary_title = StrongBodyLabel("Data Summary")
+        summary_title = StrongBodyLabel(t("data.txt.data_summary"))
         summary_layout.addWidget(summary_title)
         self._summary_label = QLabel()
         self._summary_label.setTextInteractionFlags(
@@ -572,9 +566,9 @@ class DataPage(QWidget):
         summary_scroll.setFixedHeight(380)
         summary_layout.addWidget(summary_scroll)
 
-        export_summary_btn = PushButton("Export Data Summary", self)
+        export_summary_btn = PushButton(t("data.txt.export_data_summary"), self)
         export_summary_btn.setIcon(FluentIcon.DOCUMENT)
-        attach_help_popup(export_summary_btn, "Save the Data Summary text to a .txt file to share with colleagues")
+        attach_help_popup(export_summary_btn, t("data.txt.save_the_data_summary_text_to"))
         export_summary_btn.clicked.connect(self._export_summary)
         summary_layout.addWidget(export_summary_btn, alignment=Qt.AlignLeft)
 
@@ -639,7 +633,7 @@ class DataPage(QWidget):
         log.info("Opening file browser")
         _DATASETS_DIR.mkdir(parents=True, exist_ok=True)
         file_path, _ = QFileDialog.getOpenFileName(
-            self,
+            self.window(),
             t("data.dialog.select"),
             str(_DATASETS_DIR),
             t("data.dialog.filters")
@@ -671,6 +665,7 @@ class DataPage(QWidget):
         """
         if project_dir is None:
             self._project_dir = None
+            self.table1_section.set_project_dir(None)
             self._dataset_registry = None
             self._project_datasets_section.setVisible(False)
             return
@@ -685,6 +680,7 @@ class DataPage(QWidget):
             # Treat as short_name and ask the repo for the real path
             self._project_dir = ProjectRepository().get_project_path(str(project_dir))
 
+        self.table1_section.set_project_dir(self._project_dir)
         self._dataset_registry = DatasetRegistry(self._project_dir)
         self._refresh_dataset_combo()
         # Auto-load the last-used dataset if requested and no data is currently loaded
@@ -734,8 +730,8 @@ class DataPage(QWidget):
         path = self._dataset_registry.dataset_path(filename)
         if not path.exists():
             InfoBar.error(
-                title="File not found",
-                content=f"{filename} no longer exists in the project folder.",
+                title=t("data.txt.file_not_found"),
+                content=t("data.txt.0_no_longer_exists_in_the").format(filename),
                 orient=Qt.Horizontal,
                 isClosable=True,
                 position=InfoBarPosition.TOP,
@@ -797,8 +793,8 @@ class DataPage(QWidget):
 
         if not file_path:
             InfoBar.warning(
-                title="No File Selected",
-                content="Please select a data file first.",
+                title=t("data.txt.no_file_selected"),
+                content=t("data.txt.please_select_a_data_file_first"),
                 orient=Qt.Horizontal,
                 isClosable=True,
                 position=InfoBarPosition.TOP,
@@ -827,7 +823,7 @@ class DataPage(QWidget):
                 log.debug("No project state loaded or failed to apply it")
         except DataLoadError as exc:
             InfoBar.error(
-                title="Load Error",
+                title=t("data.txt.load_error"),
                 content=str(exc),
                 orient=Qt.Horizontal,
                 isClosable=True,
@@ -872,10 +868,7 @@ class DataPage(QWidget):
             else:
                 display_df[col] = display_df[col].fillna("").astype(str).replace("nan", "")
 
-        for row_idx in range(len(display_df)):
-            for col_idx in range(len(display_df.columns)):
-                val = display_df.iloc[row_idx, col_idx]
-                self.data_table.setItem(row_idx, col_idx, QTableWidgetItem(val))
+        self._fill_preview_table(display_df)
         self._size_columns_to_headers(self.data_table)
 
         # ── Variable table: show progress bar, launch Ludwig in background ──
@@ -897,8 +890,8 @@ class DataPage(QWidget):
         self._set_selection_mode("columns")
 
         InfoBar.success(
-            title="Data Loaded",
-            content=f"{dm.n_rows} rows × {dm.n_columns} columns loaded successfully.",
+            title=t("data.txt.data_loaded"),
+            content=t("data.txt.0_rows_1_columns_loaded_successfully").format(dm.n_rows, dm.n_columns),
             orient=Qt.Horizontal,
             isClosable=True,
             position=InfoBarPosition.TOP,
@@ -934,8 +927,8 @@ class DataPage(QWidget):
                     if getattr(self._dataset_registry, 'last_action', None) == 'existing':
                         log.info(f"Dataset already exists in project: {dest}")
                         InfoBar.info(
-                            title="Dataset exists",
-                            content=f"A dataset with the same name already exists in Projects/{self._project_dir.name}/data/ — loaded existing file.",
+                            title=t("data.txt.dataset_exists"),
+                            content=t("data.txt.a_dataset_with_the_same_name").format(self._project_dir.name),
                             orient=Qt.Horizontal,
                             isClosable=True,
                             position=InfoBarPosition.TOP,
@@ -945,8 +938,8 @@ class DataPage(QWidget):
                     else:
                         log.info(f"Dataset saved to project: {dest}")
                         InfoBar.success(
-                            title="Saved to Project",
-                            content=f"Dataset copied to Projects/{self._project_dir.name}/data/",
+                            title=t("data.txt.saved_to_project"),
+                            content=t("data.txt.dataset_copied_to_projects_0_data").format(self._project_dir.name),
                             orient=Qt.Horizontal,
                             isClosable=True,
                             position=InfoBarPosition.TOP,
@@ -962,7 +955,7 @@ class DataPage(QWidget):
             except Exception as exc:
                 log.error(f"Could not save dataset to project: {exc}\n{_tb.format_exc()}")
                 InfoBar.warning(
-                    title="Could not save to project",
+                    title=t("data.txt.could_not_save_to_project"),
                     content=str(exc),
                     orient=Qt.Horizontal,
                     isClosable=True,
@@ -1008,6 +1001,23 @@ class DataPage(QWidget):
         'timeseries', 'sequence', 'vector', 'set', 'bag',
         'image', 'audio', 'h3',
     ]
+
+    def _fill_preview_table(self, display_df: pd.DataFrame) -> None:
+        """Put *display_df* (already strings) into the preview table.
+
+        Reads the frame once as plain Python lists instead of one
+        ``df.iloc[row, col]`` per cell (each of which costs ~0.2 ms: a
+        30-column, 3 800-row dataset took ~25 s just to show) and repaints
+        once at the end instead of after every item.
+        """
+        table = self.data_table
+        table.setUpdatesEnabled(False)
+        try:
+            for row_idx, row in enumerate(display_df.to_numpy(dtype=object).tolist()):
+                for col_idx, val in enumerate(row):
+                    table.setItem(row_idx, col_idx, QTableWidgetItem(val))
+        finally:
+            table.setUpdatesEnabled(True)
 
     def _start_analyzer_worker(self, df: pd.DataFrame) -> None:
         """Launch a background type-inference worker for *df*.
@@ -1063,8 +1073,8 @@ class DataPage(QWidget):
         self._var_progress.setVisible(False)
         self._var_status_lbl.setVisible(False)
         InfoBar.warning(
-            title="Variable Analysis Failed",
-            content=f"Could not infer variable types: {message}",
+            title=t("data.txt.variable_analysis_failed"),
+            content=t("data.txt.could_not_infer_variable_types_0").format(message),
             orient=Qt.Horizontal, isClosable=True,
             position=InfoBarPosition.TOP, duration=6000, parent=self,
         )
@@ -1192,7 +1202,7 @@ class DataPage(QWidget):
 
         # Build dialog
         dialog = QDialog(self)
-        dialog.setWindowTitle(f"Set variable type — {col_name}")
+        dialog.setWindowTitle(t("data.txt.set_variable_type_0").format(col_name))
         dlg_layout = QVBoxLayout(dialog)
 
         # Combo with Ludwig types (use keys from mapping plus common fallbacks)
@@ -1218,7 +1228,7 @@ class DataPage(QWidget):
         elif inferred and inferred in ordered:
             type_combo.setCurrentText(inferred)
 
-        dlg_layout.addWidget(StrongBodyLabel(f"Column: {col_name}"))
+        dlg_layout.addWidget(StrongBodyLabel(t("data.txt.column_0").format(col_name)))
         dlg_layout.addWidget(type_combo)
 
         buttons = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
@@ -1230,15 +1240,15 @@ class DataPage(QWidget):
             try:
                 self._apply_column_type(col_name, chosen)
                 InfoBar.success(
-                    title="Type set",
-                    content=f"{col_name} set to '{chosen}'",
+                    title=t("data.txt.type_set"),
+                    content=t("data.txt.0_set_to_1").format(col_name, chosen),
                     orient=Qt.Horizontal, isClosable=True,
                     position=InfoBarPosition.TOP, duration=3000, parent=self,
                 )
             except Exception as exc:
                 log.exception(f"Failed to set column type: {exc}")
                 InfoBar.error(
-                    title="Error",
+                    title=t("data.txt.error"),
                     content=str(exc), orient=Qt.Horizontal, isClosable=True,
                     position=InfoBarPosition.TOP, duration=4000, parent=self,
                 )
@@ -1325,8 +1335,8 @@ class DataPage(QWidget):
             selected = self.data_table.selectionModel().selectedColumns()
             if not selected:
                 InfoBar.warning(
-                    title="Nothing Selected",
-                    content="Click a column header to select a column.",
+                    title=t("data.txt.nothing_selected"),
+                    content=t("data.txt.click_a_column_header_to_select"),
                     orient=Qt.Horizontal, isClosable=True,
                     position=InfoBarPosition.TOP, duration=3000, parent=self,
                 )
@@ -1356,8 +1366,8 @@ class DataPage(QWidget):
             selected = self.data_table.selectionModel().selectedRows()
             if not selected:
                 InfoBar.warning(
-                    title="Nothing Selected",
-                    content="Click a row number to select a row.",
+                    title=t("data.txt.nothing_selected"),
+                    content=t("data.txt.click_a_row_number_to_select"),
                     orient=Qt.Horizontal, isClosable=True,
                     position=InfoBarPosition.TOP, duration=3000, parent=self,
                 )
@@ -1448,8 +1458,8 @@ class DataPage(QWidget):
         ]
         if not dup_indices:
             InfoBar.success(
-                title="No Duplicates",
-                content="No duplicate rows found.",
+                title=t("data.txt.no_duplicates"),
+                content=t("data.txt.no_duplicate_rows_found"),
                 orient=Qt.Horizontal, isClosable=True,
                 position=InfoBarPosition.TOP, duration=3000, parent=self,
             )
@@ -1473,8 +1483,8 @@ class DataPage(QWidget):
         self._restore_col_btn.setEnabled(True)
 
         InfoBar.success(
-            title="Duplicates Removed",
-            content=f"{len(dup_indices)} duplicate row(s) hidden.",
+            title=t("data.txt.duplicates_removed"),
+            content=t("data.txt.0_duplicate_row_s_hidden").format(len(dup_indices)),
             orient=Qt.Horizontal, isClosable=True,
             position=InfoBarPosition.TOP, duration=4000, parent=self,
         )
@@ -1543,10 +1553,7 @@ class DataPage(QWidget):
             else:
                 display_df[col] = display_df[col].fillna("").astype(str).replace("nan", "")
 
-        for row_idx in range(len(display_df)):
-            for col_idx in range(len(display_df.columns)):
-                val = display_df.iloc[row_idx, col_idx]
-                self.data_table.setItem(row_idx, col_idx, QTableWidgetItem(val))
+        self._fill_preview_table(display_df)
         self._size_columns_to_headers(self.data_table)
 
         # Relaunch variable analyzer for the active df
@@ -1572,8 +1579,8 @@ class DataPage(QWidget):
         usage_log.event("Data", "click", "Export button", self._export_format_combo.currentText())
         if self._data_model is None or self._data_model.df is None:
             InfoBar.warning(
-                title="No Data",
-                content="Load a dataset first.",
+                title=t("data.txt.no_data"),
+                content=t("data.txt.load_a_dataset_first"),
                 orient=Qt.Horizontal, isClosable=True,
                 position=InfoBarPosition.TOP, duration=3000, parent=self,
             )
@@ -1582,7 +1589,8 @@ class DataPage(QWidget):
         fmt = self._export_format_combo.currentText()
         default_name, file_filter = self._EXPORT_FORMATS.get(fmt, self._EXPORT_FORMATS["CSV"])
         path, _ = QFileDialog.getSaveFileName(
-            self, t("data.btn.export"), default_name, file_filter,
+            self.window(), t("data.btn.export"),
+            default_export_path(self._project_dir, "tables", default_name), file_filter,
         )
         if not path:
             return
@@ -1612,7 +1620,7 @@ class DataPage(QWidget):
                 df_export.to_csv(path, index=False)
         except Exception as exc:
             InfoBar.error(
-                title="Export failed",
+                title=t("data.txt.export_failed"),
                 content=str(exc),
                 orient=Qt.Horizontal, isClosable=True,
                 position=InfoBarPosition.TOP, duration=6000, parent=self,
@@ -1625,8 +1633,8 @@ class DataPage(QWidget):
             if self._removed_columns else ""
         )
         InfoBar.success(
-            title="Exported",
-            content=f"Saved {len(df_export.columns)} columns to {path}{removed_note}",
+            title=t("data.txt.exported"),
+            content=t("data.txt.saved_0_columns_to_1_2").format(len(df_export.columns), path, removed_note),
             orient=Qt.Horizontal, isClosable=True,
             position=InfoBarPosition.TOP, duration=4000, parent=self,
         )
@@ -1642,18 +1650,18 @@ class DataPage(QWidget):
 
         if self._data_model is None or self._data_model.df is None:
             InfoBar.warning(
-                title="No dataset loaded",
-                content="Please load a dataset before generating a quality report.",
+                title=t("data.txt.no_dataset_loaded"),
+                content=t("data.txt.please_load_a_dataset_before_generating"),
                 orient=Qt.Horizontal, isClosable=True,
                 position=InfoBarPosition.TOP, duration=4000, parent=self,
             )
             return
 
         path, _ = QFileDialog.getSaveFileName(
-            self,
-            "Save Quality Report",
-            "quality_report.csv",
-            "CSV files (*.csv);;All Files (*)",
+            self.window(),
+            t("data.txt.save_quality_report"),
+            default_export_path(self._project_dir, "reports", "quality_report.csv"),
+            t("data.txt.csv_files_csv_all_files"),
         )
         if not path:
             return
@@ -1689,8 +1697,8 @@ class DataPage(QWidget):
         report_df.to_csv(path, index=False, encoding="utf-8-sig")  # utf-8-sig for Excel compat
 
         InfoBar.success(
-            title="Report saved",
-            content=f"Quality report with {len(rows)} variables saved to {path}",
+            title=t("data.txt.report_saved"),
+            content=t("data.txt.quality_report_with_0_variables_saved").format(len(rows), path),
             orient=Qt.Horizontal, isClosable=True,
             position=InfoBarPosition.TOP, duration=5000, parent=self,
         )
@@ -1702,14 +1710,15 @@ class DataPage(QWidget):
         usage_log.event("Data", "click", "Export Data Summary button")
         if self._summary_label is None or not self._summary_card.isVisible():
             InfoBar.warning(
-                title="No summary",
-                content="Load a dataset to generate the summary first.",
+                title=t("data.txt.no_summary"),
+                content=t("data.txt.load_a_dataset_to_generate_the"),
                 orient=Qt.Horizontal, isClosable=True,
                 position=InfoBarPosition.TOP, duration=3000, parent=self,
             )
             return
         path, _ = QFileDialog.getSaveFileName(
-            self, "Export Summary", "dataset_summary.txt", "Text files (*.txt);;Markdown (*.md);;All files (*.*)"
+            self.window(), t("data.txt.export_summary"),
+            default_export_path(self._project_dir, "reports", "dataset_summary.txt"), t("data.txt.text_files_txt_markdown_md_all")
         )
         if not path:
             return
@@ -1717,8 +1726,8 @@ class DataPage(QWidget):
             text = self._summary_label.text()
             Path(path).write_text(text, encoding='utf-8')
             InfoBar.success(
-                title="Summary exported",
-                content=f"Summary saved to {Path(path).name}",
+                title=t("data.txt.summary_exported"),
+                content=t("data.txt.summary_saved_to_0").format(Path(path).name),
                 orient=Qt.Horizontal, isClosable=True,
                 position=InfoBarPosition.TOP, duration=3000, parent=self,
             )
@@ -1727,7 +1736,7 @@ class DataPage(QWidget):
         except Exception as exc:
             log.exception(f"Failed to export summary: {exc}")
             InfoBar.error(
-                title="Export failed",
+                title=t("data.txt.export_failed"),
                 content=str(exc), orient=Qt.Horizontal, isClosable=True,
                 position=InfoBarPosition.TOP, duration=6000, parent=self,
             )
@@ -1743,24 +1752,23 @@ class DataPage(QWidget):
         total = len(self._data_model.excluded_rows)
         if n == 0 and total == 0:
             InfoBar.warning(
-                title="No outliers found",
-                content="No rows exceed ³3 SD threshold in any numeric column.",
+                title=t("data.txt.no_outliers_found"),
+                content=t("data.txt.no_rows_exceed_3_sd_threshold"),
                 orient=Qt.Horizontal, isClosable=True,
                 position=InfoBarPosition.TOP, duration=4000, parent=self,
             )
             return
         if n == 0:
             InfoBar.info(
-                title="No new outliers",
-                content=f"{total} row(s) already excluded. Use \"Restore Excluded\" to reset.",
+                title=t("data.txt.no_new_outliers"),
+                content=t("data.txt.0_row_s_already_excluded_use").format(total),
                 orient=Qt.Horizontal, isClosable=True,
                 position=InfoBarPosition.TOP, duration=4000, parent=self,
             )
         else:
             InfoBar.success(
-                title="Outliers excluded",
-                content=f"{n} row(s) newly excluded ({total} total). "
-                         "They will be omitted from model training.",
+                title=t("data.txt.outliers_excluded"),
+                content=t("data.txt.0_row_s_newly_excluded_1").format(n, total),
                 orient=Qt.Horizontal, isClosable=True,
                 position=InfoBarPosition.TOP, duration=5000, parent=self,
             )
@@ -1784,8 +1792,8 @@ class DataPage(QWidget):
         if self._restore_outliers_btn is not None:
             self._restore_outliers_btn.setEnabled(False)
         InfoBar.success(
-            title="Exclusions cleared",
-            content="All rows restored for analysis.",
+            title=t("data.txt.exclusions_cleared"),
+            content=t("data.txt.all_rows_restored_for_analysis"),
             orient=Qt.Horizontal, isClosable=True,
             position=InfoBarPosition.TOP, duration=3000, parent=self,
         )
@@ -1804,7 +1812,7 @@ class DataPage(QWidget):
             self._outliers_lbl.setText("")
         else:
             n = len(self._data_model.excluded_rows)
-            self._outliers_lbl.setText(f"⚠️ {n} row(s) excluded as outliers")
+            self._outliers_lbl.setText(t("data.txt.0_row_s_excluded_as_outliers").format(n))
 
     # ── Dataset summary generation ───────────────────────────────────
     def _format_bytes(self, nbytes: int) -> str:
@@ -2087,13 +2095,14 @@ class DataPage(QWidget):
         self._summary_label.setText(text)
         self._summary_card.setVisible(True)
 
-        # Auto-save summary to project data folder if a project is active
+        # Auto-save summary to the project's reports folder if a project is
+        # active (it is a report, not a dataset: not in data/)
         try:
             if self._project_dir and file_name:
-                proj_data_dir = (Path(self._project_dir) / "data").resolve()
-                proj_data_dir.mkdir(parents=True, exist_ok=True)
+                proj_reports_dir = (Path(self._project_dir) / "results" / "reports").resolve()
+                proj_reports_dir.mkdir(parents=True, exist_ok=True)
                 summary_fname = f"{Path(file_name).stem}_summary.txt"
-                summary_path = proj_data_dir / summary_fname
+                summary_path = proj_reports_dir / summary_fname
                 summary_path.write_text(text, encoding="utf-8")
         except Exception as exc:
             log.exception(f"Failed to save dataset summary: {exc}")

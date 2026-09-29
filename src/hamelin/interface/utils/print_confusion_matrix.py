@@ -106,7 +106,7 @@ def compute_confusion_matrix(model_path: str, dataset_path: str, threshold: floa
     # anything saved without test_predictions.csv AND without a resolvable
     # dataset_path (e.g. description.json - the only place that's recorded -
     # doesn't exist for models saved straight via LudwigModel.save(), i.e.
-    # model_checkpoints/, as opposed to Ludwig's own train()/auto_train()
+    # results/models/, as opposed to Ludwig's own train()/auto_train()
     # run output). Raise clearly here instead of pd.read_csv(None) blowing
     # up with a confusing traceback.
     if not dataset_path:

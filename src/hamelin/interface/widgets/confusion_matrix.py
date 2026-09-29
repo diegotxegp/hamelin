@@ -486,7 +486,7 @@ class ConfusionMatrixWidget(BackgroundWidget):
 
         # get_model_dataset() reads description.json, which Ludwig only
         # writes as part of its own train()/auto_train() run output - not
-        # written by LudwigModel.save() (model_checkpoints/), so this comes
+        # written by LudwigModel.save() (results/models/), so this comes
         # back None for most models now. That alone used to stop this
         # whole page short - compute_confusion_matrix() only actually needs
         # it as a fallback when test_predictions.csv wasn't saved, so it's

@@ -19,7 +19,7 @@ from hamelin.utils.logger import log
 from hamelin.utils.usage_logger import usage_log
 from hamelin.utils.config_manager import config
 from hamelin.view.widgets import HelpButton, PageHelpButton
-from hamelin.view.widgets.theme_colors import apply_scroll_area_theme, bind_style
+from hamelin.view.widgets.theme_colors import apply_scroll_area_theme, bind_style, apply_transparent_container
 from hamelin.i18n import t, set_language
 
 
@@ -54,7 +54,7 @@ class SettingsPage(QWidget):
         # background shows through instead of QScrollArea's own opaque,
         # theme-blind palette background.
         apply_scroll_area_theme(scroll)
-        container.setStyleSheet("background: transparent;")
+        apply_transparent_container(container)
 
         outer = QVBoxLayout(self)
         outer.setContentsMargins(0, 0, 0, 0)
@@ -225,8 +225,10 @@ class SettingsPage(QWidget):
         authors_label = BodyLabel(
             "Diego García-Prieto  (diego.garciaprieto@unican.es)\n"
             "Camilo Palazuelos  (camilo.palazuelos@unican.es)\n"
-            "Rafael Duque  (rafael.duque@unican.es)\n\n"
-            f"{t('settings.about.university')}"
+            "Rafael Duque  (rafael.duque@unican.es)\n"
+            "Mano Domingo  (mano.domingo@bordeaux-inp.fr)\n\n"
+            f"{t('settings.about.university')}\n"
+            f"{t('settings.about.enseirb')}"
         )
         about_layout.addWidget(authors_label)
 

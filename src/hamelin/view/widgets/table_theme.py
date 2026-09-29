@@ -51,7 +51,9 @@ Usage::
 from PySide6.QtGui import QColor, QPalette
 from PySide6.QtWidgets import QFrame, QTableWidget
 
-from hamelin.view.widgets.theme_colors import colors, on_theme_changed, scrollbar_qss, table_header_qss, table_qss
+from hamelin.view.widgets.theme_colors import (
+    colors, on_theme_changed, scrollbar_qss, table_header_qss, table_qss, tooltip_qss,
+)
 
 
 def style_table_widget(table: QTableWidget) -> None:
@@ -72,7 +74,7 @@ def style_table_widget(table: QTableWidget) -> None:
         palette.setColor(QPalette.ColorRole.Text, QColor(c.text_primary))
         palette.setColor(QPalette.ColorRole.Mid, QColor(c.table_gridline))  # gridlines
         table.setPalette(palette)
-        table.setStyleSheet(table_qss() + scrollbar_qss())
+        table.setStyleSheet(table_qss() + scrollbar_qss() + tooltip_qss())
         table.horizontalHeader().setStyleSheet(table_header_qss())
         # The row-number header - separate widget from the column one above,
         # so it needs the same rule again or it's left on its own unstyled

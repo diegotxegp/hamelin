@@ -1,12 +1,9 @@
 """
 Tests for MainWindow's navigation sidebar.
 
-Covers two regressions:
-- "Models" used to be added as a plain navigationInterface.addItem()
-  placeholder, then swapped for a real addSubInterface() page on first
-  click by removing and re-adding it - which appended it to the end of the
-  sidebar instead of leaving it where it started (see main_window.py's
-  _LazyPage / _open_interface_page).
+Covers:
+- Evaluation and Prediction are real nav pages, in that order, between
+  Training and Forecasting, and visiting them never reshuffles the sidebar.
 - Dashboard is temporarily removed from the nav, but dashboard_page itself
   must keep working in the background (set_data_model, refresh, etc. are
   still called on it from elsewhere in MainWindow).
@@ -50,48 +47,43 @@ def test_dashboard_page_still_works_in_the_background(window):
     window.dashboard_page.refresh()  # must not raise
 
 
-def test_models_item_is_between_training_and_forecasting(window):
+def test_evaluation_and_predict_sit_between_training_and_forecasting(window):
     order = _nav_order(window)
-    assert order.index("TrainingPage") < order.index("modelsPage") < order.index("ForecastingPage")
+    assert (
+        order.index("TrainingPage")
+        < order.index("EvaluationPage")
+        < order.index("PredictionPage")
+        < order.index("ForecastingPage")
+    )
 
 
-def test_models_nav_position_survives_first_visit(window, monkeypatch):
-    before = _nav_order(window)
-
-    # No project open: _open_interface_page() returns early (InfoBar
-    # warning), same as before this fix - the nav item still must not move.
-    window.switchTo(window.models_page)
-
-    assert _nav_order(window) == before
+def test_no_legacy_models_item(window):
+    assert "modelsPage" not in _nav_order(window)
 
 
-def test_models_nav_position_survives_loading_the_real_dashboard(window):
+def test_nav_order_survives_visiting_the_new_pages(window):
     proj = Path(tempfile.mkdtemp())
-    (proj / "model_checkpoints").mkdir()
-    window.training_page._project_dir = proj
-
-    before = _nav_order(window)
-    window.switchTo(window.models_page)  # triggers the full first-load path
-
-    assert _nav_order(window) == before
-    assert window.models_page.layout() is not None
-    assert window.models_page.layout().count() > 0
-    assert hasattr(window, "interface_page")
-
-
-def test_models_nav_position_survives_revisits(window):
-    proj = Path(tempfile.mkdtemp())
-    (proj / "model_checkpoints").mkdir()
-    window.training_page._project_dir = proj
-
-    window.switchTo(window.models_page)
+    (proj / "results" / "models").mkdir(parents=True)
+    window.evaluation_page.set_project_dir(proj)
+    window.prediction_page.set_project_dir(proj)
     before = _nav_order(window)
 
-    window.switchTo(window.home_page)
-    window.switchTo(window.models_page)
-    window.switchTo(window.home_page)
-    window.switchTo(window.models_page)
+    for _ in range(2):
+        window.switchTo(window.evaluation_page)
+        window.switchTo(window.prediction_page)
+        window.switchTo(window.home_page)
 
     assert _nav_order(window) == before
-    # exactly one "modelsPage" entry - no duplicate item was inserted
-    assert _nav_order(window).count("modelsPage") == 1
+    assert before.count("EvaluationPage") == 1
+    assert before.count("PredictionPage") == 1
+
+
+def test_duplicate_request_prefills_and_opens_training(window):
+    payload = {
+        "based_on": "m1", "new_run_name": "m1_copy",
+        "config": {"input_features": [{"name": "a", "type": "number"}],
+                   "output_features": [{"name": "y", "type": "binary"}]},
+    }
+    window.evaluation_page.duplicate_requested.emit(payload)
+    assert window.training_page.model_name_edit.text() == "m1_copy"
+    assert window.stackedWidget.currentWidget() is window.training_page

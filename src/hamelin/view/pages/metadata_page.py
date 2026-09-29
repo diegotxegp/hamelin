@@ -43,7 +43,7 @@ from hamelin.core.dataset_registry import DatasetRegistry
 from hamelin.core.model_history import ModelHistory
 from hamelin.view.widgets.help_button import HelpButton
 from hamelin.view.widgets.page_help import PageHelpButton
-from hamelin.view.widgets.theme_colors import apply_scroll_area_theme, bind_style
+from hamelin.view.widgets.theme_colors import apply_scroll_area_theme, bind_style, apply_transparent_container
 from hamelin.i18n import t
 
 
@@ -148,11 +148,11 @@ class MetadataPage(QWidget):
         # background shows through instead of QScrollArea's own opaque,
         # theme-blind palette background.
         apply_scroll_area_theme(scroll)
-        self._cards_container.setStyleSheet("background: transparent;")
+        apply_transparent_container(self._cards_container)
         layout.addWidget(scroll)
 
         self._no_projects_lbl = BodyLabel(
-            "No projects yet — click \"New Project\" to get started."
+            t("metadata.txt.no_projects_yet_click_new_project")
         )
         bind_style(self._no_projects_lbl, lambda c: f"color: {c.text_secondary};")
         self._no_projects_lbl.setAlignment(Qt.AlignCenter)
@@ -269,7 +269,7 @@ class MetadataPage(QWidget):
         # background shows through instead of QScrollArea's own opaque,
         # theme-blind palette background.
         apply_scroll_area_theme(scroll)
-        container.setStyleSheet("background: transparent;")
+        apply_transparent_container(container)
 
         outer = QVBoxLayout(root)
         outer.setContentsMargins(0, 0, 0, 0)
@@ -304,9 +304,7 @@ class MetadataPage(QWidget):
         bh_row = QHBoxLayout()
         bh_row.addWidget(StrongBodyLabel(t("metadata.section.basic")))
         bh_row.addWidget(HelpButton(
-            "Enter the study name, short acronym, protocol number, principal "
-            "investigator, contact e-mail, institution, and study type. "
-            "Fields marked * are required to save."
+            t("metadata.txt.enter_the_study_name_short_acronym")
         ))
         bh_row.addStretch()
         basic_layout.addLayout(bh_row)
@@ -363,10 +361,7 @@ class MetadataPage(QWidget):
         eh_row = QHBoxLayout()
         eh_row.addWidget(StrongBodyLabel(t("metadata.section.ethics")))
         eh_row.addWidget(HelpButton(
-            "Which ethics/IRB committee approved this study, its approval "
-            "number, and the approval date. Optional, but every study "
-            "protocol reserves a section for this - fill it in once "
-            "approval comes through if it isn't available yet."
+            t("metadata.txt.which_ethics_irb_committee_approved_this")
         ))
         eh_row.addStretch()
         ethics_layout.addLayout(eh_row)
@@ -397,8 +392,7 @@ class MetadataPage(QWidget):
         rh_row = QHBoxLayout()
         rh_row.addWidget(StrongBodyLabel(t("metadata.section.recruitment")))
         rh_row.addWidget(HelpButton(
-            "Set the target sample size and study timeline. This enables the "
-            "Forecasting tab to predict when you will reach your enrollment goal."
+            t("metadata.txt.set_the_target_sample_size_and")
         ))
         rh_row.addStretch()
         recruit_layout.addLayout(rh_row)
@@ -434,10 +428,7 @@ class MetadataPage(QWidget):
         dh_row = QHBoxLayout()
         dh_row.addWidget(StrongBodyLabel(t("metadata.section.objectives")))
         dh_row.addWidget(HelpButton(
-            "The primary objective is the single main clinical question this "
-            "study answers - what generated reports lead with. Secondary "
-            "objectives are any additional questions the study also looks "
-            "at; one per line, and optional."
+            t("metadata.txt.the_primary_objective_is_the_single")
         ))
         dh_row.addStretch()
         desc_layout.addLayout(dh_row)
@@ -531,7 +522,7 @@ class MetadataPage(QWidget):
             self._repository.create_project(metadata)
         except (ValidationError, DataSaveError) as exc:
             InfoBar.error(
-                title="Error", content=str(exc),
+                title=t("data.txt.error"), content=str(exc),
                 orient=Qt.Horizontal, isClosable=True, duration=6000,
                 position=InfoBarPosition.TOP, parent=self,
             )
@@ -578,8 +569,8 @@ class MetadataPage(QWidget):
 
         if failed:
             InfoBar.error(
-                title="Some Projects Not Deleted",
-                content=f"Failed: {', '.join(failed)}",
+                title=t("metadata.txt.some_projects_not_deleted"),
+                content=t("metadata.txt.failed_0").format(', '.join(failed)),
                 orient=Qt.Horizontal, isClosable=True, duration=6000,
                 position=InfoBarPosition.TOP, parent=self,
             )
@@ -772,7 +763,7 @@ class MetadataPage(QWidget):
             metadata = self._build_metadata()
         except ValidationError as exc:
             InfoBar.error(
-                title="Validation Error", content=str(exc),
+                title=t("metadata.txt.validation_error"), content=str(exc),
                 orient=Qt.Horizontal, isClosable=True, duration=6000,
                 position=InfoBarPosition.TOP, parent=self,
             )
@@ -783,15 +774,15 @@ class MetadataPage(QWidget):
             self._current_metadata = metadata
         except (ValidationError, DataSaveError) as exc:
             InfoBar.error(
-                title="Save Error", content=str(exc),
+                title=t("metadata.txt.save_error"), content=str(exc),
                 orient=Qt.Horizontal, isClosable=True, duration=6000,
                 position=InfoBarPosition.TOP, parent=self,
             )
             return
 
         InfoBar.success(
-            title="Project Saved",
-            content=f"\'{metadata.short_name}\' saved to Projects/{metadata.short_name}/",
+            title=t("metadata.txt.project_saved"),
+            content=t("metadata.txt.0_saved_to_projects_1").format(metadata.short_name, metadata.short_name),
             orient=Qt.Horizontal, isClosable=True, duration=4000,
             position=InfoBarPosition.TOP, parent=self,
         )

@@ -27,7 +27,7 @@ def get_model_paths(results_dir=None):
         # flat or nested under "model/") rather than by folder-name prefix.
         # Used to only accept names starting with "experiment_run" - Ludwig's
         # own default naming - which meant a folder saved under a different
-        # scheme (e.g. Hamelin's model_checkpoints/<model_id>/) was invisible
+        # scheme (e.g. Hamelin's results/models/<model_id>/) was invisible
         # here even though its contents were in the exact shape this function
         # already knows how to read.
         model_file = p / "model" / "model_hyperparameters.json"
@@ -338,13 +338,17 @@ def get_project_info(results_dir=None):
     """Metadata for the clinical project/study a model belongs to, read
     straight from Hamelin's own metadata.json - one level above
     RESULTS_DIR, since Hamelin always points RESULTS_DIR at
-    "<project_dir>/model_checkpoints" (see MainWindow._open_interface_page).
+    "<project_dir>/results/models" (see MainWindow._open_interface_page).
     Returns {} when there's no such file - e.g. the standalone interface
     app (no INTERFACE_RESULTS_DIR override), which has no notion of a
     "project" at all - so callers can just skip showing this rather than
     show something wrong."""
     root = Path(results_dir if results_dir is not None else RESULTS_DIR)
-    metadata_file = root.parent / "metadata.json"
+    # <project>/results/models -> metadata.json lives at the project root.
+    metadata_file = next(
+        (p / "metadata.json" for p in (root.parent.parent, root.parent) if (p / "metadata.json").exists()),
+        root.parent / "metadata.json",
+    )
 
     if not metadata_file.exists():
         return {}
@@ -450,7 +454,7 @@ def detect_model_type_from_ludwig(model_path):
 
     description.json is written by Ludwig's own train()/auto_train() run
     output (ludwig_runs/) - it's not written by LudwigModel.save(), so it's
-    absent for anything saved to model_checkpoints/ (every model trained
+    absent for anything saved to results/models/ (every model trained
     since the switch away from ludwig_runs/ as the canonical model
     location). model_hyperparameters.json (written by LudwigModel.save())
     carries the same "type" per input feature though, so the same

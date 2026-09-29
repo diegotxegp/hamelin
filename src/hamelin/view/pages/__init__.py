@@ -11,6 +11,8 @@ from .metadata_page import MetadataPage
 from .data_page import DataPage
 from .forecasting_page import ForecastingPage
 from .training_page import TrainingPage
+from .evaluation_page import EvaluationPage
+from .prediction_page import PredictionPage
 from .dashboard_page import DashboardPage
 from .settings_page import SettingsPage
 
@@ -21,6 +23,8 @@ __all__ = [
     'DataPage',
     'ForecastingPage',
     'TrainingPage',
+    'EvaluationPage',
+    'PredictionPage',
     'DashboardPage',
     'SettingsPage'
 ]

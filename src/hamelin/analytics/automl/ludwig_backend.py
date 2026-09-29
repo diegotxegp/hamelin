@@ -624,8 +624,28 @@ def _fields_to_user_config(fields: dict, target: str) -> dict:
     # TrainingPage) rather than gated on "moved off default", since the
     # UI's own default already matches Ludwig's, so sending it unchanged
     # is a no-op.
+    #
+    # "early_stop_mode" (see TrainingPage) decides how it is used:
+    #   auto      - nothing is sent. AutoML's default hyperparameter search
+    #               uses an async-hyperband scheduler that stops weak trials
+    #               by itself, and Ludwig forces trainer.early_stop to -1
+    #               whenever a scheduler is active (ludwig/schema/
+    #               model_types/utils.py), so sending a value here would
+    #               only trigger a "Can't utilize early_stop" warning.
+    #   patience  - classic early stopping: each trial stops once its
+    #               validation metric has not improved for N evaluation
+    #               rounds. That needs the scheduler out of the way, i.e.
+    #               executor.scheduler.type = "fifo" (see below).
+    #   off       - trainer.early_stop = -1 with the fifo scheduler: every
+    #               trial runs all its epochs (or until the time budget).
+    # Without a mode (older callers) the value is passed through as before.
     early_stop = fields.get("early_stop")
-    if early_stop is not None:
+    early_stop_mode = fields.get("early_stop_mode")
+    if early_stop_mode == "patience" and early_stop is not None:
+        cfg.setdefault("trainer", {})["early_stop"] = int(early_stop)
+    elif early_stop_mode == "off":
+        cfg.setdefault("trainer", {})["early_stop"] = -1
+    elif early_stop_mode is None and early_stop is not None:
         cfg.setdefault("trainer", {})["early_stop"] = int(early_stop)
 
     # Ludwig docs (configuration/preprocessing.md, "Data Balancing"):
@@ -671,11 +691,13 @@ def _fields_to_user_config(fields: dict, target: str) -> dict:
         # get several of them hard-killed by Ray mid-run (confirmed
         # locally - see the "2 worker(s) were killed due to the node
         # running low on memory" crash this was written for). Capping it
-        # here even in the "no custom search settings" case trades some
+        # here even in the "no custom search settings" case (unless the user
+        # set "Parallel trials" themselves, which always wins) trades some
         # wall-clock time for not crashing on modest hardware; still
         # overridable by explicitly setting a Search Strategy + Parallel
         # trials above.
-        hopt = {"executor": {"max_concurrent_trials": _DEFAULT_MAX_CONCURRENT_TRIALS}}
+        hopt = {"executor": {"max_concurrent_trials": int(
+            fields.get("parallel_trials") or _DEFAULT_MAX_CONCURRENT_TRIALS)}}
 
     if metric:
         # Ludwig runs its own default hyperparameter search regardless of
@@ -695,6 +717,9 @@ def _fields_to_user_config(fields: dict, target: str) -> dict:
         hopt["output_feature"] = target
         hopt["metric"] = metric
         hopt["goal"] = "minimize" if metric in _MINIMIZE_METRICS else "maximize"
+
+    if early_stop_mode in ("patience", "off"):
+        hopt.setdefault("executor", {})["scheduler"] = {"type": "fifo"}
 
     cfg["hyperopt"] = hopt
 
@@ -838,7 +863,10 @@ class LudwigBackend(AutoMLBackend):
 
         config = kwargs.get("config")
         if config is not None:
-            return self._run_with_config(train_df, test_df, target, config, random_seed)
+            return self._run_with_config(
+                train_df, test_df, target, config, random_seed,
+                output_directory=kwargs.get("output_directory"),
+            )
 
         # --- Lazy import ---
         try:
@@ -881,7 +909,7 @@ class LudwigBackend(AutoMLBackend):
         # locally and confirmed against the real traceback. Nothing this
         # app reads later lives in here (see LudwigTrainer's own docstring
         # - ludwig_runs/ is Ludwig's disposable internal trial dump, not
-        # the model_checkpoints/ this app actually keeps), so it's safe to
+        # the results/models/ this app actually keeps), so it's safe to
         # always start from an empty hyperopt/ folder rather than trying
         # to selectively identify just the "bad" state file.
         hyperopt_dir = os.path.join(output_directory, "hyperopt")
@@ -1088,6 +1116,7 @@ class LudwigBackend(AutoMLBackend):
     def _run_with_config(
         self, train_df: pd.DataFrame, test_df: pd.DataFrame, target: str, config: dict,
         random_seed: int = 42,
+        output_directory: str | None = None,
     ) -> AutoMLResult:
         """Train with a fixed Ludwig config instead of letting auto_train
         pick one. No hyperopt trials, no time budget - just train the given
@@ -1123,7 +1152,15 @@ class LudwigBackend(AutoMLBackend):
             # output feature types and are just as exposed to Ludwig's
             # numeric-binary-cast blind spot as an auto-generated config.
             model = LudwigModel(config=config, backend="local")
-            model.train(dataset=_normalize_binary_columns(train_df, config))
+            # LudwigModel.train() writes its run artifacts to "results"
+            # relative to the current directory unless told otherwise, which
+            # scattered a stray results/ folder wherever the app was
+            # launched. Keep them with the project's other Ludwig runs (the
+            # trained model itself is saved separately, under results/models/).
+            train_kwargs = {}
+            if output_directory:
+                train_kwargs["output_directory"] = os.path.join(output_directory, "config_runs")
+            model.train(dataset=_normalize_binary_columns(train_df, config), **train_kwargs)
         except Exception as exc:
             raise RuntimeError(f"Ludwig training with fixed config failed: {exc}") from exc
 

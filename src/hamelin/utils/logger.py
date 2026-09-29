@@ -24,6 +24,25 @@ from typing import Optional
 from datetime import datetime
 
 
+LOG_RETENTION_DAYS = 30
+
+
+def _prune_old_logs(log_dir: Path, days: int = LOG_RETENTION_DAYS) -> None:
+    """Delete daily technical logs (hamelin_YYYY-MM-DD.log and their
+    rotated .1-.5 copies) older than *days*; one file per day would
+    otherwise pile up forever. usage_log.csv is study data and is never
+    touched."""
+    import time
+
+    cutoff = time.time() - days * 86400
+    for f in log_dir.glob("hamelin_*.log*"):
+        try:
+            if f.is_file() and f.stat().st_mtime < cutoff:
+                f.unlink()
+        except OSError:
+            pass
+
+
 class HamelinLogger:
     """
     Centralized logger for HAMELIN application.
@@ -69,6 +88,8 @@ class HamelinLogger:
         if self.logger.handlers:
             return
         
+        _prune_old_logs(log_dir)
+
         # File handler with rotation (max 10MB, keep 5 backups)
         log_file = log_dir / f"hamelin_{datetime.now().strftime('%Y-%m-%d')}.log"
         file_handler = logging.handlers.RotatingFileHandler(

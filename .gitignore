@@ -19,3 +19,6 @@ wheels/
 # not authored by this project, kept locally only. docs/hamelin/ (this
 # project's own future manual) is NOT covered by this and stays tracked.
 /docs/ludwig/
+
+# Stray Ludwig/test output written relative to the working directory
+/results/

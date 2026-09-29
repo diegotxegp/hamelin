@@ -72,7 +72,6 @@ def test_prefill_shows_banner_and_greys_the_model_card(page):
 
     assert page._pending_banner.isVisibleTo(page) is True
     assert page.model_card.isEnabled() is False
-    assert page._step4_label.isEnabled() is False
 
 
 def test_selection_survives_a_dataset_loaded_after_the_handoff(page):

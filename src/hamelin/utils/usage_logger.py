@@ -99,6 +99,8 @@ PAGE_DISPLAY_NAMES = {
     "DataPage": "Data",
     "ForecastingPage": "Forecasting",
     "TrainingPage": "Training",
+    "EvaluationPage": "Evaluation",
+    "PredictionPage": "Prediction",
     "DashboardPage": "Dashboard",
     "SettingsPage": "Settings",
     "HelpPage": "Help",
@@ -118,3 +120,34 @@ def infer_page_name(widget) -> str:
             return name
         w = w.parent()
     return "Unknown"
+
+
+_infobar_logging_installed = False
+
+
+def install_infobar_logging() -> None:
+    """Record every warning/error banner shown to the user as a usage-log
+    event (``warning_shown`` / ``error_shown``, element = banner title,
+    detail = its text), so a usability study can count the mistakes and
+    problems a participant ran into without instrumenting each call site.
+    Idempotent."""
+    global _infobar_logging_installed
+    if _infobar_logging_installed:
+        return
+    from qfluentwidgets import InfoBar
+
+    def wrap(kind: str):
+        original = getattr(InfoBar, kind)
+
+        def logged(*args, **kwargs):
+            title = kwargs.get("title", args[0] if args else "")
+            content = kwargs.get("content", args[1] if len(args) > 1 else "")
+            page = infer_page_name(kwargs.get("parent"))
+            usage_log.event(page, f"{kind}_shown", str(title), str(content)[:200])
+            return original(*args, **kwargs)
+
+        setattr(InfoBar, kind, staticmethod(logged))
+
+    for kind in ("warning", "error"):
+        wrap(kind)
+    _infobar_logging_installed = True

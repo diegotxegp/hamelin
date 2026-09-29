@@ -27,8 +27,9 @@ from hamelin.analytics.automl.base import AutoMLResult
 from hamelin.analytics.ludwig_trainer import LudwigTrainerWorker
 from hamelin.utils.logger import log
 from hamelin.utils.usage_logger import usage_log
+from hamelin.utils.export_paths import default_export_path
 from hamelin.view.widgets import HelpButton, ModelHistoryWidget, ModelResultsWidget, PageHelpButton, TrainingTimelineWidget, attach_help_popup, attach_help_popup_hover
-from hamelin.view.widgets.theme_colors import apply_scroll_area_theme, bind_style, colors, isDarkTheme, list_item_qss, on_theme_changed, scrollbar_qss
+from hamelin.view.widgets.theme_colors import apply_scroll_area_theme, bind_style, colors, isDarkTheme, list_item_qss, on_theme_changed, scrollbar_qss, apply_transparent_container
 from hamelin.view.widgets.rule_builder import RuleBuilder
 from hamelin.i18n import t
 
@@ -99,6 +100,12 @@ _METRICS_BY_TYPE = {
         ("training.metric.rmspe", "root_mean_squared_percentage_error"),
     ],
 }
+# How early stopping is applied (see LudwigBackend._fields_to_user_config).
+_EARLY_STOP_MODES = [
+    ("training.earlystop.auto", "auto"),
+    ("training.earlystop.patience", "patience"),
+    ("training.earlystop.off", "off"),
+]
 _SEARCH_STRATEGIES = [
     ("training.strategy.none", "none"),
     ("training.strategy.random", "random"),
@@ -116,6 +123,26 @@ _MISSING_STRATEGIES = [
     ("training.missingstrategy.bfill", "bfill"),
     ("training.missingstrategy.droprow", "drop_row"),
 ]
+
+
+def recommended_parallel_trials() -> int:
+    """How many hyperparameter trials to run at once on THIS computer.
+
+    Every trial is a full training process (about one CPU core and 1-2 GB
+    of RAM), so the safe number is bounded by both: one per core, and one
+    per 2 GB of memory, never fewer than 1 nor more than 8. On a 4-core,
+    7 GB laptop that gives 3, which is also what avoided the out-of-memory
+    kills seen with Ludwig's own unlimited default.
+    """
+    import os
+
+    cores = os.cpu_count() or 2
+    try:
+        import psutil
+        ram_gb = psutil.virtual_memory().total / 2 ** 30
+    except Exception:  # noqa: BLE001
+        ram_gb = 4.0
+    return int(max(1, min(cores, ram_gb // 2, 8)))
 
 
 class TrainingPage(QWidget):
@@ -161,8 +188,10 @@ class TrainingPage(QWidget):
         # which would otherwise wipe the selection.
         self._pending_target: str = ""
         self._pending_features: list[str] = []
+        self._run_settings: dict | None = None   # snapshot of the run in progress
         log.debug("Initializing Training Page")
         self._init_ui()
+        self._refresh_default_model_name()
 
     def _add_form_row(self, form: QFormLayout, label_text: str, widget) -> None:
         label = BodyLabel(label_text)
@@ -261,7 +290,7 @@ class TrainingPage(QWidget):
         # of just an incidental first click.
         attach_help_popup_hover(
             self.features_list,
-            "Select predictor variables (features). Use 'Select all' as a shortcut, then deselect irrelevant fields."
+            t("training.txt.select_predictor_variables_features_use_")
         )
         variables_layout.addWidget(self.features_list)
 
@@ -280,11 +309,7 @@ class TrainingPage(QWidget):
         # item click here selects/deselects it, not a request for help).
         attach_help_popup_hover(
             self.secondary_list,
-            "Optional: other outcomes to predict at the same time as the main one, in "
-            "the same model (a real multi-output model, not just extra notes). E.g. main "
-            "outcome 'Mortality', with 'Length_of_stay' and 'Readmission_30d' also ticked "
-            "here — the model is then trained to predict all three together. Leave empty "
-            "if you only care about the main outcome above."
+            t("training.txt.optional_other_outcomes_to_predict_at")
         )
         variables_layout.addWidget(self.secondary_list)
 
@@ -329,8 +354,7 @@ class TrainingPage(QWidget):
         self.inclusion_builder = RuleBuilder(columns=[], parent=self)
         attach_help_popup(
             self.inclusion_builder,
-            "Add inclusion rules visually (column + operator + value).\n"
-            "Click Preview to see matches and sample rows."
+            t("training.txt.add_inclusion_rules_visually_column_oper")
         )
         criteria_layout.addWidget(self.inclusion_builder)
         
@@ -342,8 +366,7 @@ class TrainingPage(QWidget):
         self.exclusion_builder = RuleBuilder(columns=[], parent=self)
         attach_help_popup(
             self.exclusion_builder,
-            "Add exclusion rules visually (column + operator + value).\n"
-            "Click Preview to see remaining matches and sample rows."
+            t("training.txt.add_exclusion_rules_visually_column_oper")
         )
         criteria_layout.addWidget(self.exclusion_builder)
 
@@ -410,7 +433,10 @@ class TrainingPage(QWidget):
         # so it's what shows up wherever a model gets picked by name later
         # (Dashboard history, the "interface" comparison tool) instead of
         # an opaque auto-generated ID.
+        # Pre-filled with a free name ("model_1", "model_2", ...) so the
+        # user can just press Start; typing their own replaces it.
         self.model_name_edit = LineEdit()
+        self._auto_model_name = ""
         self._add_form_row(basic_form, t("training.label.modelname"), self.model_name_edit)
 
         # Problem type
@@ -443,9 +469,10 @@ class TrainingPage(QWidget):
         # are only removed via setSymbolVisible(False), not
         # setButtonSymbols().
         self.time_budget = SpinBox()
-        self.time_budget.setRange(5, 1440)
-        self.time_budget.setValue(60)
-        self.time_budget.setSuffix(" minutes")
+        # Always seconds. Minimum 300 = the old 5-minute floor: below that
+        # Ray Tune's scheduler rejects the search (grace_period > max_t).
+        self.time_budget.setRange(300, 86400)
+        self.time_budget.setValue(500)
         self.time_budget.setSymbolVisible(False)
         self._add_form_row(advanced_form, t("training.label.timebudget"), self.time_budget)
 
@@ -472,23 +499,42 @@ class TrainingPage(QWidget):
 
         # Number of trials
         self.hyperopt_trials = SpinBox()
+        # 10 is both the minimum and the default. It is an upper bound: the
+        # time budget always wins, so a short budget (say 300 s) simply
+        # stops the search before all iterations have run.
         self.hyperopt_trials.setRange(10, 500)
-        self.hyperopt_trials.setValue(50)
+        self.hyperopt_trials.setValue(10)
         self._add_form_row(advanced_form, t("training.label.maxiterations"), self.hyperopt_trials)
 
         # Parallelization
         self.parallel_trials = SpinBox()
         self.parallel_trials.setRange(1, 16)
-        self.parallel_trials.setValue(4)
+        self.parallel_trials.setValue(recommended_parallel_trials())
+        attach_help_popup(
+            self.parallel_trials,
+            t("training.txt.parallel_trials_help").format(recommended_parallel_trials()),
+        )
         self._add_form_row(advanced_form, t("training.label.paralleltrials"), self.parallel_trials)
 
-        # Early stopping (trainer.early_stop, configuration/trainer.md):
-        # consecutive evaluation rounds with no improvement before Ludwig
-        # stops training. Default 5, matching Ludwig's own; -1 disables it.
-        self.early_stop = SpinBox()
-        self.early_stop.setRange(-1, 100)
+        # Early stopping. Three explicit modes instead of one number that
+        # Ludwig silently overrode during AutoML's search (it forces
+        # trainer.early_stop to -1 while a trial scheduler is active):
+        #   Automatic - Ludwig's own scheduler stops weak trials (default);
+        #   Patience  - each trial stops after N evaluation rounds without
+        #               improvement (trainer.early_stop, configuration/
+        #               trainer.md), which needs the scheduler switched to fifo;
+        #   Off       - every trial trains all its epochs.
+        self.early_stop_mode = ComboBox()
+        self.early_stop_mode.addItems([t(label) for label, _ in _EARLY_STOP_MODES])
+        attach_help_popup(self.early_stop_mode, t("training.earlystop.help"))
+        self._add_form_row(advanced_form, t("training.label.earlystop_mode"), self.early_stop_mode)
+
+        self.early_stop = SpinBox()          # patience, in evaluation rounds
+        self.early_stop.setRange(1, 100)
         self.early_stop.setValue(5)
+        self.early_stop.setEnabled(False)
         self._add_form_row(advanced_form, t("training.label.earlystop"), self.early_stop)
+        self.early_stop_mode.currentIndexChanged.connect(self._on_early_stop_mode_changed)
 
         hyperopt_content_layout.addLayout(advanced_form)
 
@@ -524,13 +570,6 @@ class TrainingPage(QWidget):
 
         self.model_card = model_card
         main_layout.addWidget(model_card)
-        # Step 4 header
-        step4_label = BodyLabel("Step 4 — Model configuration: choose problem type, metrics and CV")
-        bind_style(step4_label, lambda c: f"font-weight:600; color: {c.text_primary};")
-        attach_help_popup(step4_label, "Adjust model settings. Defaults come from presets but are editable by the clinician or data scientist.")
-        self._step4_label = step4_label
-        main_layout.addWidget(step4_label)
-        
         # 5. Training Control Card
         training_card = CardWidget()
         training_layout = QVBoxLayout(training_card)
@@ -562,13 +601,17 @@ class TrainingPage(QWidget):
         self.stop_training_btn.clicked.connect(self._stop_training)
         control_buttons.addWidget(self.stop_training_btn)
 
+        self.preview_config_btn = PushButton(t("training.btn.preview_config"), self)
+        self.preview_config_btn.setIcon(FluentIcon.VIEW)
+        attach_help_popup(self.preview_config_btn, t("training.help.preview_config"))
+        self.preview_config_btn.clicked.connect(self._on_preview_config_clicked)
+        control_buttons.addWidget(self.preview_config_btn)
+
         self.import_config_btn = PushButton(t("training.btn.import_config"), self)
         self.import_config_btn.setIcon(FluentIcon.FOLDER)
         attach_help_popup(
             self.import_config_btn,
-            "Train using a fixed Ludwig config from a JSON file instead of "
-            "letting AutoML pick the architecture - e.g. a config exported "
-            "by the 'duplicate this model with different hyperparameters' tool."
+            t("training.txt.train_using_a_fixed_ludwig_config")
         )
         self.import_config_btn.clicked.connect(self._on_import_config_clicked)
         control_buttons.addWidget(self.import_config_btn)
@@ -619,7 +662,7 @@ class TrainingPage(QWidget):
         # background shows through instead of QScrollArea's own opaque,
         # theme-blind palette background.
         apply_scroll_area_theme(scroll)
-        content.setStyleSheet("background: transparent;")
+        apply_transparent_container(content)
 
         # Page layout
         page_layout = QVBoxLayout(self)
@@ -648,7 +691,7 @@ class TrainingPage(QWidget):
         if not is_binary:
             self.class_balance_switch.setChecked(False)
             self.class_balance_switch.setToolTip(
-                "Class balancing is only supported for binary outcomes in Ludwig."
+                t("training.txt.class_balancing_is_only_supported_for")
             )
         else:
             self.class_balance_switch.setToolTip("")
@@ -815,8 +858,8 @@ class TrainingPage(QWidget):
         usage_log.event("Training", "click", f"Preview {'Inclusion' if mode == 'include' else 'Exclusion'} Rules button")
         if self._data_model is None or self._data_model.df is None:
             InfoBar.warning(
-                title="No dataset",
-                content="Load a dataset first to preview rules.",
+                title=t("training.txt.no_dataset"),
+                content=t("training.txt.load_a_dataset_first_to_preview"),
                 orient=Qt.Horizontal, isClosable=True,
                 position=InfoBarPosition.TOP, duration=3000, parent=self,
             )
@@ -852,6 +895,7 @@ class TrainingPage(QWidget):
         from pathlib import Path
         self._project_dir = Path(project_dir) if project_dir else None
         log.debug(f"TrainingPage: project_dir set to {self._project_dir}")
+        self._refresh_default_model_name()
         # Populate presets combo from training_schemas folder if available
         try:
             if hasattr(self, 'preset_combo'):
@@ -866,6 +910,28 @@ class TrainingPage(QWidget):
         except Exception as exc:  # noqa: BLE001
             log.warning(f"Could not populate presets combo: {exc}")
 
+
+    def _suggest_model_name(self) -> str:
+        """First "model_N" not already used by a saved model of this
+        project (the checkpoint folders under results/models/)."""
+        taken = set()
+        if self._project_dir is not None:
+            folder = Path(self._project_dir) / "results" / "models"
+            if folder.is_dir():
+                taken = {p.name for p in folder.iterdir()}
+        n = 1
+        while f"model_{n}" in taken:
+            n += 1
+        return f"model_{n}"
+
+    def _refresh_default_model_name(self) -> None:
+        """Put the suggested name in the field, unless the user has typed
+        their own (anything other than empty or the previous suggestion)."""
+        current = self.model_name_edit.text().strip()
+        if current and current != self._auto_model_name:
+            return
+        self._auto_model_name = self._suggest_model_name()
+        self.model_name_edit.setText(self._auto_model_name)
 
     def _set_status(self, state: str, message: str = "") -> None:
         """Update status label text and colour for the given state.
@@ -891,14 +957,14 @@ class TrainingPage(QWidget):
     def _on_preview_preset(self) -> None:
         """Load the selected preset JSON and show it in the preview box."""
         if self._project_dir is None:
-            InfoBar.warning(title="No project", content="Open a project first.", orient=Qt.Horizontal, isClosable=True, position=InfoBarPosition.TOP, duration=3000, parent=self)
+            InfoBar.warning(title=t("training.txt.no_project"), content=t("training.txt.open_a_project_first"), orient=Qt.Horizontal, isClosable=True, position=InfoBarPosition.TOP, duration=3000, parent=self)
             return
         if not hasattr(self, 'preset_combo'):
-            InfoBar.warning(title="Presets disabled", content="Preset preview is not available.", orient=Qt.Horizontal, isClosable=True, position=InfoBarPosition.TOP, duration=3000, parent=self)
+            InfoBar.warning(title=t("training.txt.presets_disabled"), content=t("training.txt.preset_preview_is_not_available"), orient=Qt.Horizontal, isClosable=True, position=InfoBarPosition.TOP, duration=3000, parent=self)
             return
         name = self.preset_combo.currentText().strip()
         if not name:
-            InfoBar.warning(title="No preset selected", content="Choose a preset from the dropdown.", orient=Qt.Horizontal, isClosable=True, position=InfoBarPosition.TOP, duration=3000, parent=self)
+            InfoBar.warning(title=t("training.txt.no_preset_selected"), content=t("training.txt.choose_a_preset_from_the_dropdown"), orient=Qt.Horizontal, isClosable=True, position=InfoBarPosition.TOP, duration=3000, parent=self)
             return
         path = self._project_dir / 'training_schemas' / name
         try:
@@ -911,22 +977,22 @@ class TrainingPage(QWidget):
             except Exception:
                 pretty = text
             self.preset_preview.setPlainText(pretty)
-            InfoBar.success(title="Preset loaded", content=f"Previewing {name}", orient=Qt.Horizontal, isClosable=True, position=InfoBarPosition.TOP, duration=3000, parent=self)
+            InfoBar.success(title=t("training.txt.preset_loaded"), content=t("training.txt.previewing_0").format(name), orient=Qt.Horizontal, isClosable=True, position=InfoBarPosition.TOP, duration=3000, parent=self)
         except Exception as exc:  # noqa: BLE001
             log.warning(f"Could not load preset {path}: {exc}")
-            InfoBar.error(title="Load failed", content=str(exc), orient=Qt.Horizontal, isClosable=True, position=InfoBarPosition.TOP, duration=4000, parent=self)
+            InfoBar.error(title=t("training.txt.load_failed"), content=str(exc), orient=Qt.Horizontal, isClosable=True, position=InfoBarPosition.TOP, duration=4000, parent=self)
 
     def _on_apply_preset(self) -> None:
         """Apply preset to Training UI: fill inclusion/exclusion and set primary outcome if possible."""
         if self._project_dir is None:
-            InfoBar.warning(title="No project", content="Open a project first.", orient=Qt.Horizontal, isClosable=True, position=InfoBarPosition.TOP, duration=3000, parent=self)
+            InfoBar.warning(title=t("training.txt.no_project"), content=t("training.txt.open_a_project_first"), orient=Qt.Horizontal, isClosable=True, position=InfoBarPosition.TOP, duration=3000, parent=self)
             return
         if not hasattr(self, 'preset_combo'):
-            InfoBar.warning(title="Presets disabled", content="Applying presets is not available.", orient=Qt.Horizontal, isClosable=True, position=InfoBarPosition.TOP, duration=3000, parent=self)
+            InfoBar.warning(title=t("training.txt.presets_disabled"), content=t("training.txt.applying_presets_is_not_available"), orient=Qt.Horizontal, isClosable=True, position=InfoBarPosition.TOP, duration=3000, parent=self)
             return
         name = self.preset_combo.currentText().strip()
         if not name:
-            InfoBar.warning(title="No preset selected", content="Choose a preset from the dropdown.", orient=Qt.Horizontal, isClosable=True, position=InfoBarPosition.TOP, duration=3000, parent=self)
+            InfoBar.warning(title=t("training.txt.no_preset_selected"), content=t("training.txt.choose_a_preset_from_the_dropdown"), orient=Qt.Horizontal, isClosable=True, position=InfoBarPosition.TOP, duration=3000, parent=self)
             return
         path = self._project_dir / 'training_schemas' / name
         try:
@@ -975,7 +1041,7 @@ class TrainingPage(QWidget):
                         self.primary_combo.setCurrentIndex(idx)
                 else:
                     # If not a column, show a message for clinician to map it manually
-                    InfoBar.info(title="Primary outcome", content=f"Preset primary outcome: {po_label}. Map it to a dataset column if needed.", orient=Qt.Horizontal, isClosable=True, position=InfoBarPosition.TOP, duration=5000, parent=self)
+                    InfoBar.info(title=t("training.txt.primary_outcome"), content=t("training.txt.preset_primary_outcome_0_map_it").format(po_label), orient=Qt.Horizontal, isClosable=True, position=InfoBarPosition.TOP, duration=5000, parent=self)
             # Set secondary outcomes if present in preset
             sos = obj.get('secondary_outcomes') or obj.get('secondary') or []
             if sos and isinstance(sos, list):
@@ -1005,15 +1071,15 @@ class TrainingPage(QWidget):
                         self.preset_preview.append('\nSecondary outcomes:\n' + '\n'.join(parsed))
                     except Exception:
                         pass
-            InfoBar.success(title="Preset applied", content=f"Applied {name}", orient=Qt.Horizontal, isClosable=True, position=InfoBarPosition.TOP, duration=3000, parent=self)
+            InfoBar.success(title=t("training.txt.preset_applied"), content=t("training.txt.applied_0").format(name), orient=Qt.Horizontal, isClosable=True, position=InfoBarPosition.TOP, duration=3000, parent=self)
         except Exception as exc:  # noqa: BLE001
             log.warning(f"Could not apply preset {path}: {exc}")
-            InfoBar.error(title="Apply failed", content=str(exc), orient=Qt.Horizontal, isClosable=True, position=InfoBarPosition.TOP, duration=4000, parent=self)
+            InfoBar.error(title=t("training.txt.apply_failed"), content=str(exc), orient=Qt.Horizontal, isClosable=True, position=InfoBarPosition.TOP, duration=4000, parent=self)
 
     def _on_preview_derived_csv(self) -> None:
         """Preview the derived CSV specified by common default location or preset export setting."""
         if self._project_dir is None:
-            InfoBar.warning(title="No project", content="Open a project first.", orient=Qt.Horizontal, isClosable=True, position=InfoBarPosition.TOP, duration=3000, parent=self)
+            InfoBar.warning(title=t("training.txt.no_project"), content=t("training.txt.open_a_project_first"), orient=Qt.Horizontal, isClosable=True, position=InfoBarPosition.TOP, duration=3000, parent=self)
             return
         # Try default derived path
         default_path = self._project_dir / 'data' / 'UPS-BaseComplete_derived.csv'
@@ -1027,19 +1093,19 @@ class TrainingPage(QWidget):
                 if hasattr(self, 'preset_preview'):
                     self.preset_preview.setPlainText(sample)
                 else:
-                    InfoBar.success(title="Derived CSV preview", content=f"Showing first rows of {default_path.name}", orient=Qt.Horizontal, isClosable=True, position=InfoBarPosition.TOP, duration=3000, parent=self)
+                    InfoBar.success(title=t("training.txt.derived_csv_preview"), content=t("training.txt.showing_first_rows_of_0").format(default_path.name), orient=Qt.Horizontal, isClosable=True, position=InfoBarPosition.TOP, duration=3000, parent=self)
                 return
             except Exception as exc:  # noqa: BLE001
                 log.warning(f"Could not preview derived CSV: {exc}")
-                InfoBar.error(title="Preview failed", content=str(exc), orient=Qt.Horizontal, isClosable=True, position=InfoBarPosition.TOP, duration=4000, parent=self)
+                InfoBar.error(title=t("training.txt.preview_failed"), content=str(exc), orient=Qt.Horizontal, isClosable=True, position=InfoBarPosition.TOP, duration=4000, parent=self)
                 return
-        InfoBar.warning(title="No derived CSV", content=f"No derived CSV found at {default_path}", orient=Qt.Horizontal, isClosable=True, position=InfoBarPosition.TOP, duration=4000, parent=self)
+        InfoBar.warning(title=t("training.txt.no_derived_csv"), content=t("training.txt.no_derived_csv_found_at_0").format(default_path), orient=Qt.Horizontal, isClosable=True, position=InfoBarPosition.TOP, duration=4000, parent=self)
 
     def _on_save_preset(self) -> None:
         """Save current UI settings as a preset JSON in training_schemas."""
         usage_log.event("Training", "click", "Save Preset button")
         if self._project_dir is None:
-            InfoBar.warning(title="No project", content="Open a project first.", orient=Qt.Horizontal, isClosable=True, position=InfoBarPosition.TOP, duration=3000, parent=self)
+            InfoBar.warning(title=t("training.txt.no_project"), content=t("training.txt.open_a_project_first"), orient=Qt.Horizontal, isClosable=True, position=InfoBarPosition.TOP, duration=3000, parent=self)
             return
         # ask for filename (default folder training_schemas)
         schema_dir = self._project_dir / 'training_schemas'
@@ -1088,12 +1154,12 @@ class TrainingPage(QWidget):
                     self.preset_combo.addItem(fname.name)
                 except Exception:
                     pass
-            InfoBar.success(title="Preset saved", content=f"Saved {fname.name}", orient=Qt.Horizontal, isClosable=True, position=InfoBarPosition.TOP, duration=3000, parent=self)
+            InfoBar.success(title=t("training.txt.preset_saved"), content=t("training.txt.saved_0").format(fname.name), orient=Qt.Horizontal, isClosable=True, position=InfoBarPosition.TOP, duration=3000, parent=self)
             log.info(f"Preset saved to {fname}")
             usage_log.event("Training", "saved", "Preset", fname.name)
         except Exception as exc:  # noqa: BLE001
             log.warning(f"Could not save preset {fname}: {exc}")
-            InfoBar.error(title="Save failed", content=str(exc), orient=Qt.Horizontal, isClosable=True, position=InfoBarPosition.TOP, duration=4000, parent=self)
+            InfoBar.error(title=t("training.txt.save_failed"), content=str(exc), orient=Qt.Horizontal, isClosable=True, position=InfoBarPosition.TOP, duration=4000, parent=self)
 
     def _on_reset_preset(self) -> None:
         """Reset inclusion/exclusion editors and primary selection to empty/defaults."""
@@ -1105,7 +1171,7 @@ class TrainingPage(QWidget):
             pass
         self.preset_preview.clear()
         # do not change primary combo selection automatically
-        InfoBar.info(title="Reset", content="Cleared inclusion/exclusion fields.", orient=Qt.Horizontal, isClosable=True, position=InfoBarPosition.TOP, duration=2500, parent=self)
+        InfoBar.info(title=t("training.txt.reset"), content=t("training.txt.cleared_inclusion_exclusion_fields"), orient=Qt.Horizontal, isClosable=True, position=InfoBarPosition.TOP, duration=2500, parent=self)
 
     # ------------------------------------------------------------------
     # Training workflow
@@ -1186,8 +1252,8 @@ class TrainingPage(QWidget):
         """
         if self._trainer_worker is not None and self._trainer_worker.isRunning():
             InfoBar.warning(
-                title="Training already in progress",
-                content="Wait for the current run to finish (or stop it) before starting another.",
+                title=t("training.txt.training_already_in_progress"),
+                content=t("training.txt.wait_for_the_current_run_to"),
                 orient=Qt.Horizontal, isClosable=True,
                 position=InfoBarPosition.TOP, duration=4000, parent=self,
             )
@@ -1196,8 +1262,8 @@ class TrainingPage(QWidget):
         if elapsed >= _MIN_RESTART_GAP_S:
             return False
         InfoBar.warning(
-            title="Please wait a moment",
-            content="The previous run just finished cleaning up — try again in a second or two.",
+            title=t("training.txt.please_wait_a_moment"),
+            content=t("training.txt.the_previous_run_just_finished_cleaning"),
             orient=Qt.Horizontal, isClosable=True,
             position=InfoBarPosition.TOP, duration=4000, parent=self,
         )
@@ -1233,7 +1299,8 @@ class TrainingPage(QWidget):
             "Search Strategy": self.hyperopt_strategy.currentText(),
             "Max Iterations": self.hyperopt_trials.value(),
             "Parallel Trials": self.parallel_trials.value(),
-            "Early Stopping": self.early_stop.value(),
+            "Early Stopping Mode": self.early_stop_mode.currentText(),
+            "Early Stopping Patience": self.early_stop.value(),
             "Handle Class Imbalance": self.class_balance_switch.isChecked(),
             "Missing Numeric Values Strategy": (
                 self.missing_strategy_combo.currentText()
@@ -1279,6 +1346,40 @@ class TrainingPage(QWidget):
                 )
         return None
 
+    def _collect_config_fields(self) -> dict:
+        """The model-config card's current choices, as the flat ``fields``
+        dict LudwigBackend turns into a partial Ludwig config (see
+        LudwigBackend._fields_to_user_config). Shared by the real training
+        run and the "Preview Config" button so both always agree."""
+        # Only settings the user moved off their neutral default get
+        # forced onto Ludwig; a never-touched card still trains exactly
+        # like plain auto_train.
+        fields: dict = {}
+        # Unlike metric/search below, there's no neutral "let Ludwig
+        # decide" option here - the combo always shows one of the 3
+        # real choices, so it's always forced rather than only when
+        # non-default.
+        fields["problem_type"] = _PROBLEM_TYPES[self.problem_type_combo.currentIndex()][1]
+        # Always sent - the UI's own default (5) already matches
+        # Ludwig's, so sending it unchanged is a no-op.
+        fields["early_stop_mode"] = _EARLY_STOP_MODES[self.early_stop_mode.currentIndex()][1]
+        fields["early_stop"] = int(self.early_stop.value())
+        if self.metric_combo.currentIndex() != 0:
+            fields["metric"] = self._current_metrics[self.metric_combo.currentIndex()][1]
+        search = _SEARCH_STRATEGIES[self.hyperopt_strategy.currentIndex()][1]
+        # Always sent: it used to be ignored unless a search strategy was
+        # picked, so "Parallel trials = 4" silently ran with a hidden cap of 3.
+        fields["parallel_trials"] = int(self.parallel_trials.value())
+        if search != "none":
+            fields["search"] = search
+            fields["max_iter"] = int(self.hyperopt_trials.value())
+        if self.class_balance_switch.isChecked():
+            fields["class_imbalance"] = True
+        missing_strategy = _MISSING_STRATEGIES[self.missing_strategy_combo.currentIndex()][1]
+        if missing_strategy is not None:
+            fields["missing_strategy"] = missing_strategy
+        return fields
+
     def _start_training(self):
         """Validate config, build a LudwigTrainerWorker and start it."""
         usage_log.event("Training", "click", "Start Training button")
@@ -1289,8 +1390,8 @@ class TrainingPage(QWidget):
 
         if self._data_model is None or self._data_model.df is None:
             InfoBar.warning(
-                title="No dataset loaded",
-                content="Please load a dataset in the Data tab before starting training.",
+                title=t("data.txt.no_dataset_loaded"),
+                content=t("training.txt.please_load_a_dataset_in_the"),
                 orient=Qt.Horizontal, isClosable=True,
                 position=InfoBarPosition.TOP, duration=4000, parent=self,
             )
@@ -1298,8 +1399,8 @@ class TrainingPage(QWidget):
 
         if not self.model_name_edit.text().strip():
             InfoBar.warning(
-                title="No model name",
-                content="Enter a name for this model before starting.",
+                title=t("training.txt.no_model_name"),
+                content=t("training.txt.enter_a_name_for_this_model"),
                 orient=Qt.Horizontal, isClosable=True,
                 position=InfoBarPosition.TOP, duration=4000, parent=self,
             )
@@ -1308,8 +1409,8 @@ class TrainingPage(QWidget):
         target = self.primary_combo.currentText().strip()
         if not target:
             InfoBar.warning(
-                title="No target variable",
-                content="Select a target variable (outcome) before starting.",
+                title=t("training.txt.no_target_variable"),
+                content=t("training.txt.select_a_target_variable_outcome_before"),
                 orient=Qt.Horizontal, isClosable=True,
                 position=InfoBarPosition.TOP, duration=4000, parent=self,
             )
@@ -1323,8 +1424,8 @@ class TrainingPage(QWidget):
             features = self._features_from_config(self._pending_config, target)
         if not features:
             InfoBar.warning(
-                title="No features selected",
-                content="Select at least one predictor variable.",
+                title=t("training.txt.no_features_selected"),
+                content=t("training.txt.select_at_least_one_predictor_variable"),
                 orient=Qt.Horizontal, isClosable=True,
                 position=InfoBarPosition.TOP, duration=4000, parent=self,
             )
@@ -1346,14 +1447,14 @@ class TrainingPage(QWidget):
             mismatch = self._problem_type_mismatch(problem_type, target)
             if mismatch:
                 InfoBar.error(
-                    title="Prediction Type doesn't match this column",
+                    title=t("training.txt.prediction_type_doesn_t_match_this"),
                     content=mismatch,
                     orient=Qt.Horizontal, isClosable=True,
                     position=InfoBarPosition.TOP, duration=8000, parent=self,
                 )
                 return
 
-        time_limit_s = 0 if train_from_config else self.time_budget.value() * 60
+        time_limit_s = 0 if train_from_config else self.time_budget.value()
 
         self.start_training_btn.setEnabled(False)
         self.stop_training_btn.setEnabled(True)
@@ -1397,30 +1498,7 @@ class TrainingPage(QWidget):
                 "test_split": float(self.test_split.value()),
                 "random_seed": int(self.random_seed.value()),
             }
-            # Only settings the user moved off their neutral default get
-            # forced onto Ludwig; a never-touched card still trains exactly
-            # like plain auto_train.
-            fields: dict = {}
-            # Unlike metric/search below, there's no neutral "let Ludwig
-            # decide" option here - the combo always shows one of the 3
-            # real choices, so it's always forced rather than only when
-            # non-default.
-            fields["problem_type"] = _PROBLEM_TYPES[self.problem_type_combo.currentIndex()][1]
-            # Always sent - the UI's own default (5) already matches
-            # Ludwig's, so sending it unchanged is a no-op.
-            fields["early_stop"] = int(self.early_stop.value())
-            if self.metric_combo.currentIndex() != 0:
-                fields["metric"] = self._current_metrics[self.metric_combo.currentIndex()][1]
-            search = _SEARCH_STRATEGIES[self.hyperopt_strategy.currentIndex()][1]
-            if search != "none":
-                fields["search"] = search
-                fields["max_iter"] = int(self.hyperopt_trials.value())
-                fields["parallel_trials"] = int(self.parallel_trials.value())
-            if self.class_balance_switch.isChecked():
-                fields["class_imbalance"] = True
-            missing_strategy = _MISSING_STRATEGIES[self.missing_strategy_combo.currentIndex()][1]
-            if missing_strategy is not None:
-                fields["missing_strategy"] = missing_strategy
+            fields = self._collect_config_fields()
             if fields:
                 backend_kwargs["user_config_fields"] = fields
             # Ticked "Secondary outcomes" become additional Ludwig output
@@ -1439,6 +1517,14 @@ class TrainingPage(QWidget):
                 backend_kwargs["secondary_outcomes"] = secondary_outcomes
         if self._project_dir is not None:
             backend_kwargs['output_directory'] = str(self._project_dir / "ludwig_runs")
+
+        try:
+            self._run_settings = self._snapshot_settings(
+                target, features, len(df), train_from_config,
+                backend_kwargs.get("secondary_outcomes"))
+        except Exception as exc:  # noqa: BLE001
+            log.warning(f"TrainingPage: could not snapshot training settings — {exc}")
+            self._run_settings = None
 
         self._trainer_worker = LudwigTrainerWorker(
             df=df,
@@ -1459,6 +1545,90 @@ class TrainingPage(QWidget):
         self._log_filled_fields()
         usage_log.event("Training", "started", self.model_name_edit.text().strip(), f"target={target}, features={len(features)}")
 
+    def _snapshot_settings(self, target: str, features: list, rows_used: int,
+                           from_config: bool, secondary: list | None = None) -> dict:
+        """Everything chosen on this page for the run about to start, as one
+        JSON-able dict. Saved next to the trained model as
+        training_settings.json, so a single file answers "how was this model
+        trained?": the Ludwig config Hamelin sent (partial - AutoML fills in
+        the architecture) plus the settings that are not part of a Ludwig
+        config at all (holdout, seed, time budget, patient selection...)."""
+        from datetime import datetime, timezone
+
+        from hamelin import __version__
+        from hamelin.analytics.automl.ludwig_backend import _fields_to_user_config
+
+        dm = self._data_model
+        fields = {} if from_config else self._collect_config_fields()
+        settings: dict = {
+            "saved_by": f"Hamelin {__version__} - Training page",
+            "started_utc": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+            "model_name": self.model_name_edit.text().strip(),
+            "trained_from_fixed_config": from_config,
+            "dataset": {
+                "file": str(dm.filepath) if dm is not None and dm.filepath else None,
+                "rows_in_file": int(len(dm.df)) if dm is not None and dm.df is not None else None,
+                "rows_used_after_exclusions_and_rules": int(rows_used),
+                "outlier_or_removed_rows_excluded": len(dm.excluded_rows) if dm is not None else 0,
+                "columns_hidden": sorted(dm.excluded_columns) if dm is not None else [],
+            },
+            "outcome": target,
+            "predictors": list(features),
+            "secondary_outcomes": list(secondary or []),
+            "patient_selection": {
+                "inclusion_rules": self.inclusion_builder.get_rules() or [],
+                "exclusion_rules": self.exclusion_builder.get_rules() or [],
+            },
+        }
+        if from_config:
+            settings["ludwig_config_used"] = self._pending_config
+        else:
+            settings["model_configuration"] = {
+                "prediction_type": _PROBLEM_TYPES[self.problem_type_combo.currentIndex()][1],
+                "evaluation_metric": fields.get("metric", "Ludwig default"),
+                "time_budget_seconds": int(self.time_budget.value()),
+                "final_evaluation_holdout": float(self.test_split.value()),
+                "random_seed": int(self.random_seed.value()),
+                "hyperparameter_search_strategy": _SEARCH_STRATEGIES[self.hyperopt_strategy.currentIndex()][1],
+                "max_iterations": int(self.hyperopt_trials.value()),
+                "parallel_trials": int(self.parallel_trials.value()),
+                "early_stopping_mode": fields["early_stop_mode"],
+                "early_stopping_patience_rounds": int(self.early_stop.value()),
+                "missing_numeric_values_strategy": fields.get("missing_strategy", "Ludwig default"),
+                "handle_class_imbalance": bool(fields.get("class_imbalance", False)),
+            }
+            settings["notes"] = [
+                "early_stopping_mode: 'auto' lets Ludwig's own trial scheduler stop weak trials "
+                "(Ludwig forces trainer.early_stop to -1 while that scheduler is active); "
+                "'patience' stops each trial after N evaluation rounds without improvement "
+                "(hyperopt scheduler switched to fifo); 'off' trains every trial to the end.",
+                "final_evaluation_holdout and random_seed are applied by Hamelin when it splits "
+                "the data; the seed is also given to Ludwig's search.",
+                "time_budget_seconds is Ludwig's hyperopt executor.time_budget_s: a limit on the "
+                "search, so the whole run (start-up, last trial, evaluation) takes a bit longer.",
+            ]
+            settings["partial_ludwig_config_sent"] = _fields_to_user_config(fields, target)
+        return settings
+
+    def _on_early_stop_mode_changed(self) -> None:
+        """The patience field only means something in "patience" mode."""
+        self.early_stop.setEnabled(_EARLY_STOP_MODES[self.early_stop_mode.currentIndex()][1] == "patience")
+
+    def _on_preview_config_clicked(self) -> None:
+        """Show the Ludwig config this run would use, without training."""
+        usage_log.event("Training", "click", "Preview Config button")
+        from hamelin.analytics.automl.ludwig_backend import _fields_to_user_config
+        from hamelin.view.widgets.config_dialog import show_config_dialog
+
+        target = self.primary_combo.currentText().strip()
+        if self._pending_config is not None:
+            config = self._pending_config
+            note = t("training.preview_config.note.staged")
+        else:
+            config = _fields_to_user_config(self._collect_config_fields(), target)
+            note = t("training.preview_config.note.auto")
+        show_config_dialog(self, t("training.preview_config.title"), config, note)
+
     def _on_import_config_clicked(self) -> None:
         usage_log.event("Training", "click", "Import Config button")
         self._start_training_from_config()
@@ -1473,8 +1643,8 @@ class TrainingPage(QWidget):
 
         if self._data_model is None or self._data_model.df is None:
             InfoBar.warning(
-                title="No dataset loaded",
-                content="Please load a dataset in the Data tab before starting training.",
+                title=t("data.txt.no_dataset_loaded"),
+                content=t("training.txt.please_load_a_dataset_in_the"),
                 orient=Qt.Horizontal, isClosable=True,
                 position=InfoBarPosition.TOP, duration=4000, parent=self,
             )
@@ -1482,8 +1652,8 @@ class TrainingPage(QWidget):
 
         if not self.model_name_edit.text().strip():
             InfoBar.warning(
-                title="No model name",
-                content="Enter a name for this model before starting.",
+                title=t("training.txt.no_model_name"),
+                content=t("training.txt.enter_a_name_for_this_model"),
                 orient=Qt.Horizontal, isClosable=True,
                 position=InfoBarPosition.TOP, duration=4000, parent=self,
             )
@@ -1492,15 +1662,15 @@ class TrainingPage(QWidget):
         target = self.primary_combo.currentText().strip()
         if not target:
             InfoBar.warning(
-                title="No target variable",
-                content="Select a target variable (outcome) before starting.",
+                title=t("training.txt.no_target_variable"),
+                content=t("training.txt.select_a_target_variable_outcome_before"),
                 orient=Qt.Horizontal, isClosable=True,
                 position=InfoBarPosition.TOP, duration=4000, parent=self,
             )
             return
 
         path, _ = QFileDialog.getOpenFileName(
-            self, "Select Config File", "", "JSON files (*.json);;All Files (*)",
+            self.window(), t("training.txt.select_config_file"), "", t("training.txt.json_files_json_all_files"),
         )
         if not path:
             return
@@ -1511,7 +1681,7 @@ class TrainingPage(QWidget):
             config = payload.get("config", payload)
         except Exception as exc:  # noqa: BLE001
             InfoBar.error(
-                title="Could not read config file",
+                title=t("training.txt.could_not_read_config_file"),
                 content=str(exc),
                 orient=Qt.Horizontal, isClosable=True,
                 position=InfoBarPosition.TOP, duration=6000, parent=self,
@@ -1527,10 +1697,9 @@ class TrainingPage(QWidget):
 
         if not features:
             InfoBar.warning(
-                title="No features to train on",
+                title=t("training.txt.no_features_to_train_on"),
                 content=(
-                    "Neither the features list nor the imported config "
-                    "names any predictor variables."
+                    t("training.txt.neither_the_features_list_nor_the")
                 ),
                 orient=Qt.Horizontal, isClosable=True,
                 position=InfoBarPosition.TOP, duration=5000, parent=self,
@@ -1550,6 +1719,12 @@ class TrainingPage(QWidget):
         config_backend_kwargs = {"config": config}
         if self._project_dir is not None:
             config_backend_kwargs['output_directory'] = str(self._project_dir / "ludwig_runs")
+        try:
+            self._pending_config = self._pending_config if self._pending_config is not None else config
+            self._run_settings = self._snapshot_settings(target, features or [], len(df), True)
+        except Exception as exc:  # noqa: BLE001
+            log.warning(f"TrainingPage: could not snapshot training settings — {exc}")
+            self._run_settings = None
 
         self._trainer_worker = LudwigTrainerWorker(
             df=df,
@@ -1624,7 +1799,6 @@ class TrainingPage(QWidget):
         active = self._pending_config is not None
         self._pending_banner.setVisible(active)
         self.model_card.setEnabled(not active)
-        self._step4_label.setEnabled(not active)
 
     def _on_training_finished(self, result: AutoMLResult) -> None:
         """Handle successful training: populate UI, persist, emit signal."""
@@ -1680,7 +1854,7 @@ class TrainingPage(QWidget):
                 # Save the actual Ludwig model (weights + config), not just
                 # its metrics, so other tools can reload it later.
                 if result.trained_model is not None:
-                    checkpoints_dir = Path(self._project_dir) / "model_checkpoints"
+                    checkpoints_dir = Path(self._project_dir) / "results" / "models"
                     # Named after what the user typed in "Model name" (section
                     # 3) instead of the raw model_id UUID - this folder name
                     # is what shows up wherever a model gets picked by name
@@ -1719,6 +1893,18 @@ class TrainingPage(QWidget):
                         except Exception as exc:  # noqa: BLE001
                             log.warning(f"TrainingPage: could not save run description — {exc}")
 
+                    # Everything chosen on this page for this run (see
+                    # _snapshot_settings): one readable file next to the
+                    # model's own Ludwig config.
+                    if getattr(self, "_run_settings", None):
+                        try:
+                            settings = dict(self._run_settings)
+                            settings["saved_model_folder"] = str(checkpoint_dir)
+                            (checkpoint_dir / "training_settings.json").write_text(
+                                json.dumps(settings, indent=2, default=str), encoding="utf-8")
+                        except Exception as exc:  # noqa: BLE001
+                            log.warning(f"TrainingPage: could not save training settings — {exc}")
+
                     # Every test-set prediction, saved alongside the model -
                     # takes more disk space than just the aggregate metrics,
                     # but means the confusion matrix (and, later, a real
@@ -1756,6 +1942,12 @@ class TrainingPage(QWidget):
             except Exception as exc:  # noqa: BLE001
                 log.warning(f"TrainingPage: could not persist record — {exc}")
 
+        # The winning model is saved above; Ludwig's per-trial dumps (hundreds
+        # of MB of checkpoints) are of no further use.
+        if self._project_dir is not None:
+            from hamelin.core.project_layout import remove_trial_dumps
+            remove_trial_dumps(self._project_dir)
+
         # Notify MainWindow (→ DashboardPage.refresh, history widgets)
         self.training_finished.emit(result)
 
@@ -1763,6 +1955,9 @@ class TrainingPage(QWidget):
         """Handle worker error or cancellation."""
         log.warning(f"TrainingPage: training error — {message}")
         self._last_training_end_ts = time.monotonic()
+        if self._project_dir is not None:
+            from hamelin.core.project_layout import remove_trial_dumps
+            remove_trial_dumps(self._project_dir)
         self._clear_pending_config()
         self.start_training_btn.setEnabled(True)
         self.stop_training_btn.setEnabled(False)
@@ -1775,7 +1970,7 @@ class TrainingPage(QWidget):
             return
         self._set_status("error", f"Error: {message}")
         InfoBar.error(
-            title="Training failed",
+            title=t("training.txt.training_failed"),
             content=message,
             orient=Qt.Horizontal, isClosable=True,
             position=InfoBarPosition.TOP, duration=6000, parent=self,
@@ -1785,6 +1980,7 @@ class TrainingPage(QWidget):
         """Reload the history and timeline widgets after a training run."""
         self._history_widget.load(project_dir)
         self._timeline_widget.load(project_dir)
+        self._refresh_default_model_name()
         log.debug("TrainingPage: history widgets refreshed")
     
     def _stop_training(self):
@@ -1810,18 +2006,18 @@ class TrainingPage(QWidget):
 
         if self._last_result is None:
             InfoBar.warning(
-                title="No trained model",
-                content="Train a model first before exporting.",
+                title=t("training.txt.no_trained_model"),
+                content=t("training.txt.train_a_model_first_before_exporting"),
                 orient=Qt.Horizontal, isClosable=True,
                 position=InfoBarPosition.TOP, duration=4000, parent=self,
             )
             return
 
         path, _ = QFileDialog.getSaveFileName(
-            self,
-            "Save Model Report",
-            "hamelin_model.json",
-            "JSON files (*.json);;All Files (*)",
+            self.window(),
+            t("training.txt.save_model_report"),
+            default_export_path(self._project_dir, "reports", "hamelin_model.json"),
+            t("training.txt.json_files_json_all_files"),
         )
         if not path:
             return
@@ -1857,8 +2053,8 @@ class TrainingPage(QWidget):
 
         Path(path).write_text(json.dumps(export_data, indent=2, default=str), encoding="utf-8")
         InfoBar.success(
-            title="Model report saved",
-            content=f"Saved to {path}",
+            title=t("training.txt.model_report_saved"),
+            content=t("training.txt.saved_to_0").format(path),
             orient=Qt.Horizontal, isClosable=True,
             position=InfoBarPosition.TOP, duration=4000, parent=self,
         )

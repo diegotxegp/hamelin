@@ -23,6 +23,7 @@ from qfluentwidgets import (
 
 from hamelin.utils.logger import log
 from hamelin.utils.usage_logger import usage_log
+from hamelin.utils.export_paths import default_export_path
 from hamelin.model.data_model import DataModel
 from hamelin.analytics.table1_generator import Table1Generator
 from hamelin.view.widgets import HelpButton, attach_help_popup
@@ -49,6 +50,7 @@ class Table1Page(QWidget):
         self._generator: Table1Generator | None = None
         self._table_df = None
         self._project_metadata = None
+        self._project_dir = None
         # column -> its row's checkbox in _var_list (custom row widgets,
         # not native checkable QListWidgetItems - needed to show a
         # recommendation hint on the right side of each row)
@@ -85,14 +87,9 @@ class Table1Page(QWidget):
         vars_layout.setSpacing(10)
 
         vars_header = QHBoxLayout()
-        vars_title = StrongBodyLabel("Select Variables for Table 1")
+        vars_title = StrongBodyLabel(t("table1.txt.select_variables_for_table_1"))
         vars_help = HelpButton(
-            "Tick which variables to include in Table 1. Columns Hamelin "
-            "thinks should probably be excluded (identifiers, free text, "
-            "zero-variance columns...) or that look like a good grouping "
-            "variable are flagged on the right of each row - click "
-            "\"Apply All Recommendations\" to act on them automatically, "
-            "or decide yourself per variable."
+            t("table1.txt.tick_which_variables_to_include_in")
         )
         vars_header.addWidget(vars_title)
         vars_header.addWidget(vars_help)
@@ -122,7 +119,7 @@ class Table1Page(QWidget):
         self._select_none_btn = PushButton(t("training.btn.deselect.all"), self)
         self._select_none_btn.clicked.connect(self._select_none_vars)
         self._select_none_btn.setEnabled(False)
-        self._apply_rec_btn = PushButton("Apply All Recommendations", self)
+        self._apply_rec_btn = PushButton(t("table1.txt.apply_all_recommendations"), self)
         self._apply_rec_btn.setIcon(FluentIcon.ACCEPT)
         self._apply_rec_btn.clicked.connect(self._apply_recommendations)
         self._apply_rec_btn.setEnabled(False)
@@ -134,19 +131,9 @@ class Table1Page(QWidget):
 
         vars_layout.addSpacing(6)
         settings_header = QHBoxLayout()
-        settings_title = StrongBodyLabel("Table Settings")
+        settings_title = StrongBodyLabel(t("table1.txt.table_settings"))
         settings_help = HelpButton(
-            "Grouping Variable: pick a categorical column to split the table into "
-            "columns and add a between-group statistical test (t-test/ANOVA for "
-            "numeric variables, Chi-square/Fisher's exact for categorical ones). "
-            "Leave it as 'None' for one overall column with no group comparison.\n\n"
-            "Missing data: choose whether rows with a missing value are kept "
-            "(shown as 'missing' in the table) or dropped entirely before the "
-            "table is built.\n\n"
-            "Show p-values: only applies when a grouping variable is selected. "
-            "A p-value < 0.05 means the groups differ significantly on that "
-            "variable; untick this for a purely descriptive Table 1 with no "
-            "group comparison shown."
+            t("table1.txt.grouping_variable_pick_a_categorical_col")
         )
         settings_header.addWidget(settings_title)
         settings_header.addWidget(settings_help)
@@ -154,7 +141,7 @@ class Table1Page(QWidget):
         vars_layout.addLayout(settings_header)
 
         group_row = QHBoxLayout()
-        group_label = BodyLabel("Grouping Variable:")
+        group_label = BodyLabel(t("table1.txt.grouping_variable"))
         group_label.setFixedWidth(160)
         self._group_combo = ComboBox()
         self._group_combo.addItem("None")
@@ -164,8 +151,7 @@ class Table1Page(QWidget):
         vars_layout.addLayout(group_row)
 
         config_info = BodyLabel(
-            "Select a categorical variable to compare groups (e.g. Treatment vs Control).\n"
-            "Leave as 'None' for overall descriptive statistics only."
+            t("table1.txt.select_a_categorical_variable_to_compare")
         )
         bind_style(config_info, lambda c: f"color: {c.text_secondary}; font-size: 12px;")
         config_info.setWordWrap(True)
@@ -173,7 +159,7 @@ class Table1Page(QWidget):
 
         # Missing data handling
         missing_row = QHBoxLayout()
-        missing_label = BodyLabel("Missing data:")
+        missing_label = BodyLabel(t("table1.txt.missing_data"))
         missing_label.setFixedWidth(160)
         self._missing_combo = ComboBox()
         self._missing_combo.addItem("Include all rows (show as missing)")
@@ -208,7 +194,7 @@ class Table1Page(QWidget):
 
         self._export_format_combo = ComboBox()
         self._export_format_combo.addItems(["CSV", "Excel (.xlsx)", "Word (.docx)"])
-        attach_help_popup(self._export_format_combo, "File format used by the Export button")
+        attach_help_popup(self._export_format_combo, t("data.txt.file_format_used_by_the_export"))
         export_group.addWidget(self._export_format_combo)
 
         self._export_btn = PushButton(t("table1.btn.export"), self)
@@ -272,6 +258,10 @@ class Table1Page(QWidget):
             color = exclude_color if kind == "exclude" else grouping_color
             hint.setStyleSheet(f"color: {color}; font-size: 11px; font-style: italic;")
 
+    def set_project_dir(self, project_dir) -> None:
+        """Where Export opens by default (results/tables/ of the project)."""
+        self._project_dir = project_dir
+
     def set_project_metadata(self, metadata) -> None:
         """Receive the current project's ProjectMetadata (see MainWindow),
         so the next Table 1 export can carry study name/protocol/
@@ -316,11 +306,11 @@ class Table1Page(QWidget):
 
             reason = self._rec_exclude_reasons.get(col)
             if reason:
-                hint = BodyLabel(f"(recommendation: exclude — {reason})")
+                hint = BodyLabel(t("table1.txt.recommendation_exclude_0").format(reason))
                 self._var_hints.append((hint, "exclude"))
                 row_layout.addWidget(hint)
             elif col == self._rec_grouping:
-                hint = BodyLabel(f"(recommendation: grouping variable — {self._rec_grouping_reason})")
+                hint = BodyLabel(t("table1.txt.recommendation_grouping_variable_0").format(self._rec_grouping_reason))
                 self._var_hints.append((hint, "grouping"))
                 row_layout.addWidget(hint)
 
@@ -454,8 +444,8 @@ class Table1Page(QWidget):
                 self._group_combo.setCurrentIndex(idx)
 
         InfoBar.success(
-            title="Recommendations applied",
-            content=f"{len(exclude_set)} variables excluded, grouping set to '{grouping or 'None'}'",
+            title=t("table1.txt.recommendations_applied"),
+            content=t("table1.txt.0_variables_excluded_grouping_set_to").format(len(exclude_set), grouping or 'None'),
             orient=Qt.Horizontal,
             isClosable=True,
             duration=4000,
@@ -515,10 +505,7 @@ class Table1Page(QWidget):
                     InfoBar.error(
                         title=t("table1.msg.generation.error"),
                         content=(
-                            "No rows remain after excluding any row missing "
-                            f"a value in one of the {len(variables)} selected "
-                            "variables. Try fewer variables, or switch "
-                            "'Missing data' back to 'Include all rows'."
+                            t("table1.txt.no_rows_remain_after_excluding_any").format(len(variables))
                         ),
                         orient=Qt.Horizontal,
                         isClosable=True,
@@ -574,8 +561,8 @@ class Table1Page(QWidget):
 
         n_vars = len(self._table_df)
         InfoBar.success(
-            title="Table 1 Generated",
-            content=f"{n_vars} variables processed successfully.",
+            title=t("table1.txt.table_1_generated"),
+            content=t("table1.txt.0_variables_processed_successfully").format(n_vars),
             orient=Qt.Horizontal,
             isClosable=True,
             duration=3000,
@@ -612,7 +599,8 @@ class Table1Page(QWidget):
         fmt = self._export_format_combo.currentText()
         default_name, file_filter = self._EXPORT_FORMATS.get(fmt, self._EXPORT_FORMATS["CSV"])
         path, _ = QFileDialog.getSaveFileName(
-            self, t("table1.btn.export"), default_name, file_filter,
+            self.window(), t("table1.btn.export"),
+            default_export_path(self._project_dir, "tables", default_name), file_filter,
         )
         if not path:
             return
@@ -628,7 +616,7 @@ class Table1Page(QWidget):
                 self._generator.export_to_csv(path)
             InfoBar.success(
                 title=t("table1.msg.exported"),
-                content=f"{fmt} saved to {path}",
+                content=t("table1.txt.0_saved_to_1").format(fmt, path),
                 orient=Qt.Horizontal,
                 isClosable=True,
                 duration=4000,

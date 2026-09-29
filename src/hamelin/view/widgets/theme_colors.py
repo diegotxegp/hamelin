@@ -17,6 +17,8 @@ from hamelin.utils.theme_colors import (
     apply_scroll_area_theme,
     bind_style,
     colors,
+    apply_tooltip_theme,
+    apply_transparent_container,
     isDarkTheme,
     list_item_qss,
     on_theme_changed,
@@ -26,6 +28,7 @@ from hamelin.utils.theme_colors import (
     style_figure,
     table_header_qss,
     table_qss,
+    tooltip_qss,
 )
 
 __all__ = [

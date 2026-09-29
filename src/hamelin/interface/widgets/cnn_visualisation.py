@@ -1,5 +1,7 @@
 from pathlib import Path
 
+from hamelin.utils.paths import resources_dir
+
 from PySide6.QtCore import Qt, QSize, QRect, QPoint
 from PySide6.QtGui import QMovie, QPainter, QColor, QPen, QBrush, QFont, QPolygon
 from PySide6.QtWidgets import (
@@ -231,7 +233,7 @@ class CNNVisualisationWidget(QWidget):
 
         # Anchored to this file's own location, not the process's cwd -
         # see utils/widgets.py's ASSETS_DIR comment for why.
-        self.gif_path = Path(__file__).resolve().parent.parent / "utils" / "generated_gifs" / "cnn.gif"
+        self.gif_path = resources_dir() / "model_type_gifs" / "cnn.gif"
         self.movie = None
 
         self.stack = QStackedWidget()

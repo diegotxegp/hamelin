@@ -13,10 +13,11 @@ Sections
      and Table 1 (baseline characteristics), which lives at the bottom of
      this same page rather than as its own tab or its own Help section
   5. Training — outcome, predictors, model types, metrics, hyperopt
-  6. Models — comparing and inspecting every trained model, own section
+  6. Evaluation — inspecting, comparing and reusing every trained model,
      kept right after Training to match the nav bar's own ordering
-  7. Forecasting — date column, parameters, reading the chart
-  8. Glossary — technical and clinical terms
+  7. Prediction — applying a trained model to new, unlabeled data
+  8. Forecasting — date column, parameters, reading the chart
+  9. Glossary — technical and clinical terms
 
   Settings and Dashboard aren't documented here on purpose: Settings is
   self-explanatory on screen (toggles/dropdowns, nothing to explain), and
@@ -55,7 +56,7 @@ from qfluentwidgets import (
 from hamelin.utils.logger import log
 from hamelin.utils.usage_logger import usage_log
 from hamelin.utils.paths import resources_dir
-from hamelin.view.widgets.theme_colors import apply_scroll_area_theme, bind_style
+from hamelin.view.widgets.theme_colors import apply_scroll_area_theme, bind_style, apply_transparent_container
 from hamelin.i18n import t
 
 # Real app screenshots referenced by a few blocks below (see the "image"
@@ -104,14 +105,16 @@ _SECTIONS: list[dict] = [
                     "Table 1 (baseline characteristics) is generated right there too, "
                     "as the last section of the Data tab — it is no longer a separate tab.\n"
                     "  3. TRAINING — train an AutoML predictive model.\n"
-                    "  4. MODELS — a dedicated page (right after Training in the nav bar) "
-                    "to inspect and compare every model you've trained in this project.\n\n"
+                    "  4. EVALUATION — a dedicated page (right after Training in the nav bar) "
+                    "to inspect and compare every model you've trained in this project.\n"
+                    "  5. PREDICTION — apply a trained model to new patients whose outcome is "
+                    "unknown.\n\n"
                     "FORECASTING is optional — it predicts when you will reach your "
-                    "enrollment target and sits in the nav bar right after Models; use it "
+                    "enrollment target and sits in the nav bar right after Prediction; use it "
                     "if that is relevant to your study, it is not part of the core flow above.\n\n"
                     "Each step is a tab in the left navigation bar (Help and Settings are "
-                    "pinned at the bottom; everything else, including Models and "
-                    "Forecasting, is in the main list).  You can go back and forward at "
+                    "pinned at the bottom; everything else, including Evaluation, "
+                    "Prediction and Forecasting, is in the main list).  You can go back and forward at "
                     "any time."
                 ),
                 "image": "home_page.png",
@@ -186,7 +189,12 @@ _SECTIONS: list[dict] = [
                     "        metadata.json     — project metadata\n"
                     "        data/             — datasets linked to this project\n"
                     "        data/dataset_index.json  — registry of datasets\n"
-                    "        results/          — training results and exports\n\n"
+                    "        results/          — training results and exports\n"
+                    "        results/models/   — one folder per trained model (weights, config, "
+                    "test predictions)\n"
+                    "        results/tables/, reports/, forecasts/, predictions/ — suggested "
+                    "location for everything you export (Table 1, quality report, forecast, "
+                    "predictions...)\n\n"
                     "You can back up the entire Projects/ folder to any location."
                 ),
             },
@@ -575,9 +583,10 @@ _SECTIONS: list[dict] = [
                     "ML-technical than something a non-technical user needs to reason about "
                     "day to day.\n\n"
                     "Model name:\n"
-                    "  A short name for this training run — required.  It becomes the name of "
+                    "  A short name for this training run; pre-filled with a free name (model_1, "
+                    "model_2...), type your own to replace it.  It becomes the name of "
                     "the folder where the trained model is saved, and is what you'll see later "
-                    "in the Model Training History and in the 'Models' page, so pick something "
+                    "in the Model Training History and in the 'Evaluation' page, so pick something "
                     "you'll recognise (e.g. 'Mortality_v1').\n\n"
                     "Prediction type:\n"
                     "  Binary classification — the outcome has exactly two values (Yes/No, 0/1).\n"
@@ -601,8 +610,9 @@ _SECTIONS: list[dict] = [
                 "text": (
                     "Click '▶ Advanced options' in the Model Configuration card to reveal "
                     "the rest of the settings.  Defaults are fine for most studies.\n\n"
-                    "Time budget (minutes):\n"
-                    "  Hard limit on search time.  Training stops when this is reached "
+                    "Time budget (seconds):\n"
+                    "  Hard limit on search time, always in seconds (default 500, minimum 300).  "
+                    "Training stops when this is reached "
                     "even if the max iterations have not been completed.  Typed directly "
                     "(no up/down arrows).\n\n"
                     "Final evaluation holdout (%):\n"
@@ -612,7 +622,7 @@ _SECTIONS: list[dict] = [
                     "Random Seed:\n"
                     "  Ensures that splits and random operations produce the same result every time "
                     "you re-run the training.  Use the same seed to reproduce a result exactly.\n\n"
-                    "Search strategy (hyperparameter optimisation):\n"
+                    "Hyperparameter search strategy:\n"
                     "  No optimisation — use Ludwig's defaults (fastest, good starting point).\n"
                     "  Random search — try random combinations.  Fast but less thorough.\n"
                     "  Bayesian optimisation — uses results from previous trials to choose "
@@ -622,18 +632,26 @@ _SECTIONS: list[dict] = [
                     "Max. iterations:\n"
                     "  Maximum number of different configurations to try, once a search "
                     "strategy other than 'No optimisation' is selected.  More iterations → "
-                    "better model, more time.  Recommended: 50–100.\n\n"
+                    "better model, more time.  Minimum and default: 10.  It is an upper limit: "
+                    "the time budget always takes priority, so with a short budget (e.g. 300 s) the "
+                    "search stops before all iterations have run.\n\n"
                     "Parallel trials:\n"
-                    "  Number of CPU cores to use simultaneously.  "
-                    "Increase for faster search; decrease if the computer becomes unresponsive.\n\n"
-                    "Early stopping (rounds):\n"
-                    "  How many consecutive evaluation rounds can pass with no improvement "
-                    "before training stops automatically.  Default: 5.  Set to -1 to disable "
-                    "it and always run the full time budget/iterations.\n\n"
-                    "Missing numeric values strategy:\n"
-                    "  How Ludwig fills missing values in NUMBER columns: Ludwig default "
-                    "(fills with 0), column mean, most frequent value, forward fill, "
-                    "backward fill, or drop the row entirely.\n\n"
+                    "  How many trials run at the same time, whatever the search strategy.  The "
+                    "default is chosen for your computer from its CPU cores and RAM (3 on a "
+                    "4-core, 8 GB laptop).  Each trial is a full training process, so it uses about one CPU "
+                    "core and 1–2 GB of RAM: do not go above your number of cores or what your "
+                    "memory allows (e.g. 4 cores and 8 GB → 3–4).  More trials in parallel finish "
+                    "the search sooner; too many can freeze the computer or get trials killed.\n\n"
+                    "Early stopping:\n"
+                    "  Ends a training trial before it wastes time or overfits.  Three modes.  "
+                    "Automatic (recommended): Ludwig's own search scheduler stops weak trials as "
+                    "soon as they fall behind and keeps the promising ones; nothing to tune.  "
+                    "Stop when no longer improving: each trial stops once its validation score has "
+                    "not improved for the number of evaluation rounds set in 'Patience' (default "
+                    "5); the search then runs without the automatic scheduler, so it may need more "
+                    "of the time budget.  Off: every trial trains all its epochs, up to the time "
+                    "budget; slowest.  (Ludwig cannot combine a patience value with its automatic "
+                    "scheduler, which is why they are separate modes.)\n\n"
                     "Handle Class Imbalance:\n"
                     "  On/off switch — enable it when one outcome category is much rarer than "
                     "the other.  Only available for Binary classification — Ludwig doesn't "
@@ -657,7 +675,12 @@ _SECTIONS: list[dict] = [
                     "the cards.  A confusion matrix and ROC curve are also shown for "
                     "classification tasks, when available.\n"
                     "5. Click 'Stop' at any time to cancel.  "
-                    "Partial results up to the last completed trial are displayed."
+                    "Partial results up to the last completed trial are displayed.\n\n"
+                    "Want to see what will be sent to Ludwig before you start?  Click "
+                    "'Preview Config': a read-only window shows the configuration built from "
+                    "your Model Configuration choices (AutoML fills in the rest during "
+                    "training).  After training, the model's complete final configuration is "
+                    "available from the Evaluation page via 'View Config'."
                 ),
             },
             {
@@ -690,63 +713,125 @@ _SECTIONS: list[dict] = [
                     "  In clinical settings, FN (missed cases) is usually more costly than FP.\n\n"
                     "The green box below the charts is an automatically generated one-line "
                     "summary in plain language — it always adapts to whichever of the two "
-                    "result types you're looking at."
+                    "result types you're looking at.\n\n"
+                    "Below it, 'How to read this result' explains in English whether the result "
+                    "is good, moderate or weak and why (for example, accuracy compared with always "
+                    "guessing the most common outcome), how reliable the estimate is (test-set "
+                    "size, 95% confidence interval, overfitting, suspiciously high scores), how it "
+                    "could be improved (predictors, more patients, missing-value strategy, "
+                    "hyperparameter search, class imbalance, decision threshold) and what to keep "
+                    "in mind before relying on it (external validation, calibration, subgroups).  "
+                    "It is generated by explicit rules of thumb, not by an AI model, so it is "
+                    "reproducible; it helps you interpret the numbers and does not replace "
+                    "clinical or statistical judgement.  The same text appears for every model in "
+                    "the Evaluation page."
                 ),
             },
             {
                 "heading": "Exporting the trained model",
                 "text": (
-                    "Click 'Export Trained Model' to save the model artefacts to a ZIP file.\n"
-                    "This archive can be used to:\n"
-                    "  — Make predictions on new patients in the future.\n"
-                    "  — Share the model with collaborators.\n"
-                    "  — Archive the model for audit / reproducibility purposes.\n\n"
-                    "Training results (metrics, charts) are also saved automatically in the "
-                    "project's results/ folder every time training completes."
+                    "Click 'Export Trained Model' to save a JSON report of the last run "
+                    "(model type, outcome, predictors, dataset, metrics and hyperparameters); "
+                    "the save dialog opens in the project's results/reports/ folder.  It is "
+                    "meant for auditing and reproducibility notes.\n\n"
+                    "The trained model itself is not in that file: every trained model is "
+                    "also saved automatically in the project's "
+                    "results/models/ folder, in its own subfolder, every time training "
+                    "completes.  Its exact configuration can be reviewed at any time from "
+                    "the Evaluation page (View Config)."
                 ),
             },
         ],
     },
 
-    # ── 6. Models ──────────────────────────────────────────────────────────────
-    # Training and Forecasting; see section 6, block 8 for the original
-    # placement of this content) ───────────────────────────────────────
+    # ── 6. Evaluation ──────────────────────────────────────────────────────────
     {
-        "icon": FluentIcon.ROBOT,
-        "title": "6 · Models",
-        "summary": "Compare and inspect every model you've trained in this project.",
+        "icon": FluentIcon.VIEW,
+        "title": "6 · Evaluation",
+        "summary": "Inspect, compare and reuse every model you've trained in this project.",
         "blocks": [
             {
-                "heading": "What is the Models page?",
+                "heading": "What is the Evaluation page?",
                 "text": (
-                    "The 'Models' item in the navigation bar (between Training and "
-                    "Forecasting) opens a dedicated view for everything you've trained in "
-                    "this project so far, not just the most recent run.  It is a normal page "
-                    "in the nav bar, not a separate window — leaving it is just clicking any "
-                    "other nav item.  Open a project first: this page needs one to know where "
-                    "to look for trained models."
+                    "The 'Evaluation' item in the navigation bar (right after Training) shows everything you've trained in this project so far, not just the most recent run.  It is a normal page in the nav bar — leaving it is just clicking any other nav item.  Open a project first: this page needs one to know where to look for trained models.\n"
+                    "\n"
+                    "It has two tabs at the top: 'Models' (list and inspect) and 'Compare'.  The list has one row per trained model (favourite star, name, outcome, algorithm, main test metric and date).  Click a row to inspect it; Ctrl/Shift-click to select several."
+                ),
+                "image": "evaluation_page.png",
+            },
+            {
+                "heading": "Models tab: inspecting one model",
+                "text": (
+                    "Select one row to see, below the list:\n"
+                    "• Details: when it was trained, dataset, seed, algorithm family, what it predicts, predictor variables, and how many patients it was evaluated on.\n"
+                    "• Summary cards and a plain-language reading of the results, as right after training.\n"
+                    "• Test metrics: one tile per metric measured on patients the model never saw, with a 95% confidence interval where it can be computed.  If the test predictions have a patient attribute with few values (e.g. sex), 'Break down by' shows accuracy per group instead, flagging groups with fewer than 30 patients.\n"
+                    "• Confusion matrix: rows are the true outcome, columns the prediction; switch between counts and %, click any cell to list the patients in it, and — for two-class models — change the decision threshold (default 50%) to see how mistakes trade off.  Next to it, the ROC curve.\n"
+                    "• Notes (saved with the model) and 'Export report' (project, model, variables and metrics as CSV or PDF).\n"
+                    "\n"
+                    "Buttons under the list: View Config (the exact Ludwig configuration, read-only and copyable), Duplicate and Retrain (pre-fills the Training page with that configuration under a new name and switches you to it; nothing is saved until you start training), Delete selected, Delete non-favorites (both ask for confirmation), and Open models folder.  Click the ☆ of a row to mark a favourite."
                 ),
             },
             {
-                "heading": "What you can do here",
+                "heading": "Compare tab",
                 "text": (
-                    "• Compare several trained models side by side on the metric of your "
-                    "choice.\n"
-                    "• Inspect a single model in depth (confusion matrix, ROC curve, "
-                    "hyperparameters used).\n"
-                    "• Duplicate a model with slightly different settings to try a variation "
-                    "without starting from scratch — this pre-fills the Training page with "
-                    "that configuration and switches you to it; nothing is saved until you "
-                    "actually start training.\n"
-                    "• Mark favourites and clean up models you no longer need."
+                    "Tick two or more models (or select rows in the Models tab and press 'Compare selected').  Choose the metric, then a view:\n"
+                    "• Table: ranked by the chosen metric (click a column header to re-rank, click a ☆ to mark a favourite); the best value of each metric is in bold.  'Confidence intervals' adds 95% intervals.\n"
+                    "• Graph: one bar per model, best in green.\n"
+                    "• Heatmap: models against metrics; brighter is better within each column (lower-is-better metrics are inverted).\n"
+                    "• Radar: one model against the average of those ticked.\n"
+                    "'What matters most' jumps to the metric that answers a clinical priority (detect real cases, avoid false alarms, balance, overall).  'Test metrics' / 'Train metrics' switches the split, 'All metrics' hides the less important ones, 'Favorites only' filters.  With exactly two models ticked, 'Compare settings' lists the settings that differ.  Only compare models that predict the same outcome on the same kind of data.  'Export' saves the chart or table as PNG/PDF plus a CSV of the numbers."
+                ),
+            },
+            {
+                "heading": "Where models are stored",
+                "text": (
+                    "Every trained model is saved in its own folder inside the project:\n"
+                    "\n"
+                    "    workspace/Projects/<ACRONYM>/results/models/<model name>/\n"
+                    "\n"
+                    "It holds the model weights, its full configuration (model_hyperparameters.json), the training report and, for most runs, the test-set predictions (test_predictions.csv).  Favourites are kept in results/models/favorites.json and notes in each model's notes.txt.  Projects created with earlier versions, which kept models in a model_checkpoints/ folder, are migrated automatically the first time they are opened."
                 ),
             },
         ],
     },
-    # ── 7. Forecasting ─────────────────────────────────────────────────────────
+
+    # ── 7. Prediction ─────────────────────────────────────────────────────────────
+    {
+        "icon": FluentIcon.PLAY,
+        "title": "7 · Prediction",
+        "summary": "Use a trained model on new patients whose outcome isn't known yet.",
+        "blocks": [
+            {
+                "heading": "What is the Prediction page?",
+                "text": (
+                    "The 'Prediction' item in the navigation bar (right after Evaluation) applies a trained model to a new dataset that has no outcome column — for example, patients recruited after the model was trained — and gives back a prediction for each row.  Nothing here changes the model or your project data."
+                ),
+            },
+            {
+                "heading": "Step by step",
+                "text": (
+                    "1. Model: pick a model trained in this project, or choose 'Browse external model…' and select any folder that contains a saved Ludwig model (a model_hyperparameters.json file), e.g. one shared by a colleague.\n"
+                    "2. New data: click Browse and load a file (same formats as the Data page).  The outcome column is not needed.\n"
+                    "3. Check: HAMELIN compares the file's columns with the predictors the model was trained on.  If any are missing they are listed in red and 'Run prediction' stays disabled; extra columns are kept and simply passed through.\n"
+                    "4. Click 'Run prediction'.  It runs in the background, so you can keep using the app."
+                ),
+                "image": "prediction_page.png",
+            },
+            {
+                "heading": "Reading and exporting the results",
+                "text": (
+                    "The preview shows your original columns followed by the model's output: predicted_<outcome> (the prediction), confidence_<outcome> (how sure the model is about the predicted class) and prob_<outcome>_<class> (the probability of each possible class).  For a regression model only the predicted value is given.\n"
+                    "\n"
+                    "Click 'Export Predictions' to save every row as CSV or Excel.  Treat predictions as decision support, not a diagnosis: a model is only reliable for patients who resemble the ones it was trained on."
+                ),
+            },
+        ],
+    },
+    # ── 8. Forecasting ─────────────────────────────────────────────────────────
     {
         "icon": FluentIcon.HISTORY,
-        "title": "7 · Forecasting",
+        "title": "8 · Forecasting",
         "summary": "Predicting when your study will reach its enrollment target.",
         "blocks": [
             {
@@ -831,10 +916,10 @@ _SECTIONS: list[dict] = [
         ],
     },
 
-    # ── 8. Glossary ────────────────────────────────────────────────────────────
+    # ── 9. Glossary ────────────────────────────────────────────────────────────
     {
         "icon": FluentIcon.BOOK_SHELF,
-        "title": "8 · Glossary",
+        "title": "9 · Glossary",
         "summary": "Definitions of clinical and machine learning terms used in HAMELIN.",
         "blocks": [
             {
@@ -1129,7 +1214,7 @@ class HelpPage(QWidget):
         container = QWidget()
         scroll.setWidget(container)
         apply_scroll_area_theme(scroll)
-        container.setStyleSheet("background: transparent;")
+        apply_transparent_container(container)
 
         outer = QVBoxLayout(self)
         outer.setContentsMargins(0, 0, 0, 0)

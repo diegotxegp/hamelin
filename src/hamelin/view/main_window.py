@@ -18,39 +18,18 @@ from qfluentwidgets import (
 
 from hamelin.view.pages import (
     HomePage, MetadataPage, DataPage,
-    ForecastingPage, TrainingPage, DashboardPage, SettingsPage
+    ForecastingPage, TrainingPage, EvaluationPage, PredictionPage,
+    DashboardPage, SettingsPage
 )
 from hamelin.view.pages.help_page import HelpPage
 from hamelin.core.project import ProjectRepository
+from hamelin.core.project_layout import tidy_project
 from hamelin.analytics.variable_analyzer import prewarm_ludwig_type_inference
 from hamelin.utils.logger import log
 from hamelin.utils.usage_logger import usage_log, PAGE_DISPLAY_NAMES
 from hamelin.utils.config_manager import config
-from hamelin.utils.theme_colors import on_theme_changed, tooltip_qss
+from hamelin.utils.theme_colors import apply_tooltip_theme, on_theme_changed
 from hamelin.i18n import t
-
-
-class _LazyPage(QWidget):
-    """Placeholder added to the nav bar in its real, final slot right away
-    (via addSubInterface, same as every other page) so the "Models" item
-    never has to be removed and re-added later - re-adding it would append
-    it to the end of the nav bar instead of leaving it where it started,
-    which is what made it visibly jump down the sidebar on first click.
-
-    *on_show* is called every time this page becomes visible (not just the
-    first time - see _open_interface_page's own docstring for why the
-    heavy one-time setup and the cheap per-visit refresh live in the same
-    method there) and does the actual lazy loading of content into this
-    widget.
-    """
-
-    def __init__(self, on_show, parent=None):
-        super().__init__(parent)
-        self._on_show = on_show
-
-    def showEvent(self, event):
-        super().showEvent(event)
-        self._on_show()
 
 
 class MainWindow(MSFluentWindow):
@@ -59,8 +38,8 @@ class MainWindow(MSFluentWindow):
 
     Features:
     - Navigation sidebar with progressive enablement
-    - 7 pages: Home, Project, Data (includes Table 1), Training, Models,
-      Forecasting, Help, Settings. Dashboard is temporarily out of the nav
+    - 9 pages: Home, Project, Data (includes Table 1), Training, Evaluation,
+      Prediction, Forecasting, Help, Settings. Dashboard is temporarily out of the nav
       (see _init_navigation) - the page and its state still exist, just
       not reachable from the sidebar.
     - Guided workflow: Project → Data → Analysis (tabs unlock as prerequisites are met)
@@ -92,13 +71,26 @@ class MainWindow(MSFluentWindow):
         # QToolTip is native/unstyled everywhere in this app otherwise -
         # see tooltip_qss()'s docstring. Applied once, app-wide, and kept
         # in sync with Settings > Theme for the rest of this window's life.
-        on_theme_changed(lambda: QApplication.instance().setStyleSheet(tooltip_qss()))
+        on_theme_changed(apply_tooltip_theme)
 
 
         # Get window size from config
         width = config.get('ui.window.width', 1400)
         height = config.get('ui.window.height', 900)
+        # Comfortably inside the usable screen, not flush with it: the OS
+        # adds its own title bar and borders around the window (and a
+        # remote/WSL desktop adds more), so a window exactly as big as the
+        # screen still hangs off its bottom and right edges. On a 1366x768
+        # laptop this gives about 1284x691 instead of 1400x900; the user can
+        # maximize, and that is remembered (see closeEvent).
+        screen = QApplication.primaryScreen()
+        if screen is not None:
+            avail = screen.availableGeometry()
+            width = min(width, int(avail.width() * 0.94))
+            height = min(height, int(avail.height() * 0.90))
         self.resize(width, height)
+        # Reopen maximized if that is how it was closed (see closeEvent).
+        self._start_maximized = bool(config.get('ui.window.maximized', False))
         
         # Application state for progressive enablement
         # TODO: uncomment for production to activate guided workflow
@@ -138,6 +130,8 @@ class MainWindow(MSFluentWindow):
         self.data_page = DataPage(self)
         self.forecasting_page = ForecastingPage(self)
         self.training_page = TrainingPage(self)
+        self.evaluation_page = EvaluationPage(self)
+        self.prediction_page = PredictionPage(self)
         self.metadata_page = MetadataPage(self)
         self.settings_page = SettingsPage(self)
         self.help_page = HelpPage(self)
@@ -159,7 +153,11 @@ class MainWindow(MSFluentWindow):
             lambda: self.switchTo(self.training_page)
         )
         self.dashboard_page.navigate_to_interface.connect(
-            self._open_interface_page
+            lambda: self.switchTo(self.evaluation_page)
+        )
+        # "Duplicate & Retrain" on the Evaluation page → pre-filled Training page
+        self.evaluation_page.duplicate_requested.connect(
+            self._prefill_training_from_duplicate
         )
         # When training finishes, refresh history widgets and dashboard
         self.training_page.training_finished.connect(self._on_training_finished)
@@ -197,22 +195,22 @@ class MainWindow(MSFluentWindow):
             t("nav.training")
         )
 
-        # "Models" opens the standalone "interface" model comparison/
-        # visualisation tool. Its content is heavy to build (imports the
-        # interface codebase, needs a project open) so it's loaded lazily
-        # on first visit - see _open_interface_page - but the nav item
-        # itself is a real addSubInterface() page from the start, added
-        # once in this exact slot, so it never moves in the sidebar.
-        self.models_page = _LazyPage(self._open_interface_page)
-        self.models_page.setObjectName("modelsPage")
+        # Evaluation (inspect/compare/duplicate trained models) and Prediction
+        # (run a trained model on new, unlabeled data) follow Training.
         self.addSubInterface(
-            self.models_page,
+            self.evaluation_page,
             FluentIcon.VIEW,
-            t("nav.models")
+            t("nav.evaluation")
+        )
+
+        self.addSubInterface(
+            self.prediction_page,
+            FluentIcon.PLAY,
+            t("nav.prediction")
         )
 
         # Dashboard: removed from the nav for now (its useful bits -
-        # timestamps, provenance, notes - are moving into the Models page
+        # timestamps, provenance, notes - are moving into the Evaluation page
         # instead; see hamelin_integration_notes.md). dashboard_page itself
         # still exists and is kept up to date via set_data_model() etc.
         # below, just not reachable from the sidebar.
@@ -238,143 +236,12 @@ class MainWindow(MSFluentWindow):
             position=NavigationItemPosition.BOTTOM
         )
 
-        log.debug("Navigation initialized with 7 pages")
-
-    # ======================================================================
-    # EMBEDDED "INTERFACE" DASHBOARD (model comparison / visualisation tool)
-    # ======================================================================
-
-    def _open_interface_page(self) -> None:
-        """
-        Lazily load and show the embedded "interface" dashboard
-        (hamelin.interface, see hamelin/interface/app.py) as a
-        normal embedded page - same as every other page, Hamelin's own
-        side nav stays visible and "Models" stays highlighted while it's
-        showing.
-
-        interface's own pages were built assuming they own the full
-        window: its popups/cards position themselves from ITS OWN widget's
-        current width/height (not the screen's), so squeezed into a
-        narrower space that math still places everything correctly inside
-        it - but several of its rows are laid out with fixed pixel-width
-        buttons/cards that don't shrink, so the row's own natural width can
-        end up wider than what's actually available next to Hamelin's nav.
-        Wrapped in a QScrollArea (below) so that specific case degrades to
-        a horizontal scrollbar instead of clipping or overlapping content,
-        without having to rework interface's own widgets to be responsive.
-        No in-page "Back to Hamelin" button - now that this is a normal
-        nav page, leaving it is just clicking any other nav item.
-
-        Loaded on first use rather than at startup so a problem in that
-        codebase can't prevent Hamelin itself from launching.
-
-        interface's own model scan is pointed at THIS project's
-        model_checkpoints/ folder (see TrainingPage._on_training_finished,
-        which saves one named subfolder per completed run there - NOT
-        ludwig_runs/, which is just Ludwig's own internal hyperopt trial
-        dump, not meant for browsing) every time this is called, not just
-        on first load - otherwise switching to a different Hamelin project
-        and reopening Models would keep showing whichever project (or
-        interface's own unrelated "./results" dev fixtures, if no project
-        had been opened yet the first time) was current the very first
-        time Models was ever opened this session.
-        """
-        from pathlib import Path
-
-        project_dir = self.training_page._project_dir
-        if project_dir is None:
-            InfoBar.warning(
-                title="No project", content="Open a project first.",
-                orient=Qt.Horizontal, isClosable=True,
-                position=InfoBarPosition.TOP, duration=3000, parent=self,
-            )
-            return
-        results_dir = str(Path(project_dir) / "model_checkpoints")
-
-        first_load = getattr(self, "interface_page", None) is None
-        if first_load:
-            try:
-                from hamelin.interface.app import MainWindow as InterfaceMainWindow
-                import hamelin.interface.utils.get_model_paths as interface_gmp
-                from hamelin.interface.utils.theme_state import theme_state as interface_theme
-            except Exception as exc:
-                log.error(f"Failed to load the interface dashboard: {exc}", exc_info=True)
-                return
-
-            self._interface_gmp = interface_gmp
-            self._interface_theme = interface_theme
-            interface_theme.set_dark(isDarkTheme())
-            qconfig.themeChanged.connect(
-                lambda *_: interface_theme.set_dark(isDarkTheme())
-            )
-            # Before constructing InterfaceMainWindow - LandingPage reads
-            # this during its own __init__ (for the "N models available"
-            # badge), so it has to already be correct by the time that runs.
-            self._interface_gmp.RESULTS_DIR = results_dir
-            self.interface_page = InterfaceMainWindow()
-
-            # "Duplicate a model" hands over a tweaked Ludwig config; bring
-            # our own Training page forward, pre-filled from it. Nothing is
-            # saved until the user actually trains.
-            self.interface_page.duplicate_model.open_training_requested.connect(
-                self._prefill_training_from_duplicate
-            )
-
-            # Scroll container - see the docstring above for why. Not
-            # setWidgetResizable(False): that would leave interface_page
-            # pinned to its natural size permanently (always scrolling,
-            # even with room to spare); True makes it fill the available
-            # space and only fall back to scrollbars once its content
-            # can't shrink any further.
-            self.interface_scroll = QScrollArea()
-            self.interface_scroll.setWidget(self.interface_page)
-            self.interface_scroll.setWidgetResizable(True)
-            self.interface_scroll.setFrameShape(QScrollArea.Shape.NoFrame)
-
-            # A bare margin, not just cosmetic: MSFluentWindow is a
-            # frameless window, and on Linux its own resize-grip hit-test
-            # zone is the outer 5px of the whole window (see
-            # qframelesswindow.linux.LinuxFramelessWindowBase.BORDER_WIDTH)
-            # - without this margin, interface_scroll's own vertical
-            # scrollbar sits flush against that edge, so trying to grab it
-            # shows a resize cursor and drags the window instead of
-            # scrolling. Every other Hamelin page already clears this
-            # zone via its own ~30px content margins; interface_scroll had
-            # none of its own.
-            #
-            # Content goes straight into models_page (the real nav page
-            # added once in _init_navigation) instead of a separate
-            # container swapped in via addSubInterface - that swap used to
-            # remove the "models" nav item and re-add it, which appended it
-            # to the end of the sidebar instead of leaving it where it was.
-            container_layout = QVBoxLayout(self.models_page)
-            container_layout.setContentsMargins(0, 0, 8, 8)
-            container_layout.addWidget(self.interface_scroll)
-            log.info("Interface dashboard loaded")
-
-        # Every call, not just first_load - see the docstring above.
-        self._interface_gmp.RESULTS_DIR = results_dir
-        # interface_page itself is only ever built once (first_load), so
-        # its landing page's "N models available" badge (set once in its
-        # own __init__) needs an explicit nudge to reflect a project
-        # switched to *after* that - everything else keyed off
-        # gmp.get_model_names() re-reads it live when shown instead.
-        if not first_load:
-            self.interface_page.landing._refresh_model_badge()
-
-        # interface's own pages are laid out assuming plenty of room (its
-        # own standalone launch always opens showMaximized() - see
-        # interface/app.py's __main__ block) - giving Hamelin's window the
-        # same real estate here is what makes the embedded page look the
-        # same as that, instead of needing the QScrollArea's fallback
-        # scrollbars for room a maximized window would have had anyway.
-        if not self.isMaximized():
-            self.showMaximized()
+        log.debug("Navigation initialized with 9 pages")
 
     def _prefill_training_from_duplicate(self, payload: dict) -> None:
-        """Bridge the embedded dashboard's "duplicate a model" flow to the
-        Training page: pre-fill it from the handed-over Ludwig config and
-        bring it to the front. Nothing is saved until the user trains."""
+        """Bridge the Evaluation page's "Duplicate & Retrain" to the Training
+        page: pre-fill it from the handed-over Ludwig config and bring it to
+        the front. Nothing is saved until the user trains."""
         self.training_page.prefill_from_config(payload)
         self.switchTo(self.training_page)
 
@@ -476,6 +343,9 @@ class MainWindow(MSFluentWindow):
             ("home_page",        lambda: self.home_page.update_stats()),
             ("dashboard_load",   lambda: self.dashboard_page.load_project(str(project_dir)) if project_dir else None),
             ("training_page",    lambda: self.training_page.set_project_dir(project_dir) if project_dir else None),
+            ("evaluation_page",  lambda: self.evaluation_page.set_project_dir(project_dir) if project_dir else None),
+            ("forecasting_dir",  lambda: self.forecasting_page.set_project_dir(project_dir) if project_dir else None),
+            ("prediction_page",     lambda: self.prediction_page.set_project_dir(project_dir) if project_dir else None),
             ("data_page",        lambda: self.data_page.set_project_dir(project_dir, auto_load_last=False) if project_dir else None),
         ]:
             try:
@@ -499,12 +369,16 @@ class MainWindow(MSFluentWindow):
         # real project folder instead of falling back to the bare
         # short_name string.
         project_dir = ProjectRepository().get_project_path(metadata.short_name)
+        self._tidy(project_dir)
         for name, call in [
             ("forecasting_page", lambda: self.forecasting_page.set_project_metadata(metadata)),
             ("dashboard_page",   lambda: self.dashboard_page.set_project_metadata(metadata)),
             ("table1_metadata",  lambda: self.data_page.table1_section.set_project_metadata(metadata)),
             ("dashboard_load",   lambda: self.dashboard_page.load_project(str(project_dir)) if project_dir else None),
             ("training_page",    lambda: self.training_page.set_project_dir(project_dir) if project_dir else None),
+            ("evaluation_page",  lambda: self.evaluation_page.set_project_dir(project_dir) if project_dir else None),
+            ("forecasting_dir",  lambda: self.forecasting_page.set_project_dir(project_dir) if project_dir else None),
+            ("prediction_page",     lambda: self.prediction_page.set_project_dir(project_dir) if project_dir else None),
             ("data_page",        lambda: self.data_page.set_project_dir(project_dir, auto_load_last=False) if project_dir else None),
         ]:
             try:
@@ -543,9 +417,13 @@ class MainWindow(MSFluentWindow):
                 # See the comment in _on_metadata_saved - resolve the real
                 # project folder, not the bare short_name string.
                 project_dir = repo.get_project_path(meta.short_name)
+                self._tidy(project_dir)
                 if project_dir:
                     self.dashboard_page.load_project(str(project_dir))
                     self.training_page.set_project_dir(project_dir)
+                    self.evaluation_page.set_project_dir(project_dir)
+                    self.forecasting_page.set_project_dir(project_dir)
+                    self.prediction_page.set_project_dir(project_dir)
                     self.data_page.set_project_dir(project_dir)
                 # self.enable_data_page()  # TODO: enable for production
                 # try:
@@ -556,6 +434,13 @@ class MainWindow(MSFluentWindow):
                 log.info(f"Auto-loaded single project: {meta.short_name}")
         except Exception as exc:
             log.warning(f"Auto-load project failed (non-critical): {exc}")
+
+    def _tidy(self, project_dir) -> None:
+        """Bring a just-opened project to the current folder layout and drop
+        stale Ludwig trial dumps (unless a training is running right now)."""
+        worker = getattr(self.training_page, "_trainer_worker", None)
+        running = worker is not None and worker.isRunning()
+        tidy_project(project_dir, trial_dumps=not running)
 
     def _log_page_navigation(self, index: int) -> None:
         """Record every page switch in the usability CSV log, whatever
@@ -574,6 +459,8 @@ class MainWindow(MSFluentWindow):
         project_dir = self.training_page._project_dir
         if project_dir:
             self.training_page.refresh_history(project_dir)
+            self.evaluation_page.refresh()
+            self.prediction_page.set_project_dir(project_dir)
         self.dashboard_page.refresh()
         log.info(f"MainWindow: training_finished received — {result.model_type}")
 
@@ -587,6 +474,8 @@ class MainWindow(MSFluentWindow):
             self._splash.setIconSize(QSize(128, 128))
             # Show and ensure the main window is visible and centered
             self.show()
+            if self._start_maximized:
+                self.showMaximized()
             self.raise_()
             self.activateWindow()
 
@@ -622,9 +511,21 @@ class MainWindow(MSFluentWindow):
         """Handle window close event"""
         log.info("Main Window closing")
         
-        # Save window size to config
-        config.set('ui.window.width', self.width())
-        config.set('ui.window.height', self.height())
+        # Remember the size (and whether it was maximized) for next launch.
+        # While maximized the normal size is kept, so un-maximizing later
+        # still gives back the previous window. Persisted to disk here:
+        # config.set() alone only changes memory, so the size used to be
+        # forgotten every time and each launch fell back to 1400x900.
+        maximized = self.isMaximized()
+        size = self.normalGeometry().size() if maximized else self.size()
+        if size.width() > 100 and size.height() > 100:
+            config.set('ui.window.width', size.width())
+            config.set('ui.window.height', size.height())
+        config.set('ui.window.maximized', maximized)
+        try:
+            config.save()
+        except Exception as exc:  # noqa: BLE001
+            log.warning(f"Could not save window size: {exc}")
         
         # Accept close event
         event.accept()

@@ -39,9 +39,10 @@ from hamelin.core.project import ProjectMetadata
 from hamelin.model.data_model import DataModel
 from hamelin.utils.exceptions import ValidationError
 from hamelin.utils.logger import log
+from hamelin.utils.export_paths import default_export_path
 from hamelin.utils.usage_logger import usage_log
 from hamelin.view.widgets import HelpButton, PageHelpButton, style_table_widget
-from hamelin.view.widgets.theme_colors import apply_scroll_area_theme, bind_style, colors, on_theme_changed, style_figure
+from hamelin.view.widgets.theme_colors import apply_scroll_area_theme, bind_style, colors, on_theme_changed, style_figure, apply_transparent_container
 from hamelin.i18n import t
 
 
@@ -68,6 +69,7 @@ class ForecastingPage(QWidget):
         self.setObjectName("ForecastingPage")
         self._data_model: DataModel | None = None
         self._project_metadata: ProjectMetadata | None = None
+        self._project_dir = None
         self._tracker: RecruitmentTracker | None = None
         self._timeline_rows: list = []   # for CSV export
         self._chart_canvas: FigureCanvasQTAgg | None = None
@@ -83,6 +85,10 @@ class ForecastingPage(QWidget):
         self._data_model = dm
         self._populate_date_columns()
         log.info("ForecastingPage received DataModel")
+
+    def set_project_dir(self, project_dir) -> None:
+        """Where the exports open by default (results/forecasts/ of the project)."""
+        self._project_dir = project_dir
 
     def set_project_metadata(self, metadata: ProjectMetadata) -> None:
         """Receive project metadata so target sample size is pre-filled."""
@@ -107,7 +113,7 @@ class ForecastingPage(QWidget):
         # background shows through instead of QScrollArea's own opaque,
         # theme-blind palette background.
         apply_scroll_area_theme(scroll)
-        container.setStyleSheet("background: transparent;")
+        apply_transparent_container(container)
 
         outer = QVBoxLayout(self)
         outer.setContentsMargins(0, 0, 0, 0)
@@ -141,12 +147,7 @@ class ForecastingPage(QWidget):
         title_row = QHBoxLayout()
         title_row.addWidget(StrongBodyLabel(t("forecasting.section.status")))
         title_row.addWidget(HelpButton(
-            "This section updates automatically after running the forecast.\n\n"
-            "• Recruited: patients extracted from the selected date column\n"
-            "• Target: sample size (set below or from Project metadata)\n"
-            "• Remaining: Target − Recruited\n"
-            "• Avg. Rate: patients enrolled per month over the full period\n"
-            "• Study Start: date of the first enrollment found in the dataset"
+            t("forecasting.txt.this_section_updates_automatically_after")
         ))
         title_row.addStretch()
         status_layout.addLayout(title_row)
@@ -175,14 +176,7 @@ class ForecastingPage(QWidget):
         title_row2 = QHBoxLayout()
         title_row2.addWidget(StrongBodyLabel(t("forecasting.section.parameters")))
         title_row2.addWidget(HelpButton(
-            "Configure the inputs needed to generate a forecast.\n\n"
-            "• Enrollment Date Column: column in your dataset that contains\n"
-            "  the date each patient was enrolled / included.\n"
-            "• Target Sample Size: total patients needed to finish the study.\n"
-            "  Pre-filled from Project metadata when available.\n"
-            "• Historical Period: days of history used for velocity estimation.\n"
-            "• Confidence Level: statistical confidence for the interval (0.95 = 95%).\n\n"
-            "Press 'Generate Forecast' to run the analysis."
+            t("forecasting.txt.configure_the_inputs_needed_to_generate")
         ))
         title_row2.addStretch()
         params_layout.addLayout(title_row2)
@@ -339,8 +333,8 @@ class ForecastingPage(QWidget):
         self._log_filled_fields()
         if self._data_model is None or self._data_model.df is None:
             InfoBar.warning(
-                title="No Data Loaded",
-                content="Go to the Data page and load a dataset first.",
+                title=t("forecasting.txt.no_data_loaded"),
+                content=t("forecasting.txt.go_to_the_data_page_and"),
                 orient=Qt.Horizontal, isClosable=True,
                 position=InfoBarPosition.TOP, duration=4000, parent=self,
             )
@@ -349,8 +343,8 @@ class ForecastingPage(QWidget):
         date_col = self._date_col_combo.currentText()
         if not date_col:
             InfoBar.warning(
-                title="No Date Column",
-                content="Select the enrollment date column from the dropdown.",
+                title=t("forecasting.txt.no_date_column"),
+                content=t("forecasting.txt.select_the_enrollment_date_column_from"),
                 orient=Qt.Horizontal, isClosable=True,
                 position=InfoBarPosition.TOP, duration=4000, parent=self,
             )
@@ -379,7 +373,7 @@ class ForecastingPage(QWidget):
             )
         except ValidationError as exc:
             InfoBar.error(
-                title="Data Error", content=str(exc),
+                title=t("forecasting.txt.data_error"), content=str(exc),
                 orient=Qt.Horizontal, isClosable=True,
                 position=InfoBarPosition.TOP, duration=6000, parent=self,
             )
@@ -387,10 +381,9 @@ class ForecastingPage(QWidget):
 
         if n_events == 0:
             InfoBar.warning(
-                title="No Events Found",
+                title=t("forecasting.txt.no_events_found"),
                 content=(
-                    f"Column '{date_col}' contained no valid dates. "
-                    "Make sure it holds enrollment dates."
+                    t("forecasting.txt.column_0_contained_no_valid_dates").format(date_col)
                 ),
                 orient=Qt.Horizontal, isClosable=True,
                 position=InfoBarPosition.TOP, duration=5000, parent=self,
@@ -405,7 +398,7 @@ class ForecastingPage(QWidget):
         self._target_status_lbl.setText(str(target))
         self._remaining_lbl.setText(str(max(0, target - summary["total_enrolled"])))
         rate = summary.get("avg_patients_per_month", 0)
-        self._rate_lbl.setText(f"{rate:.1f} patients/month")
+        self._rate_lbl.setText(t("forecasting.txt.0_1f_patients_month").format(rate))
         self._start_lbl.setText(str(summary.get("first_enrollment", "—")))
 
         # Forecast
@@ -413,7 +406,7 @@ class ForecastingPage(QWidget):
             forecast = tracker.forecast_completion()
         except ValidationError as exc:
             InfoBar.warning(
-                title="Forecast Unavailable", content=str(exc),
+                title=t("forecasting.txt.forecast_unavailable"), content=str(exc),
                 orient=Qt.Horizontal, isClosable=True,
                 position=InfoBarPosition.TOP, duration=5000, parent=self,
             )
@@ -421,8 +414,8 @@ class ForecastingPage(QWidget):
 
         # Update results
         self._completion_lbl.setText(forecast["predicted_completion_date"])
-        self._days_remaining_lbl.setText(f"{forecast['days_remaining']} days")
-        self._ci_lbl.setText(f"±{forecast['confidence_interval_days']} days")
+        self._days_remaining_lbl.setText(t("forecasting.txt.0_days_2").format(forecast['days_remaining']))
+        self._ci_lbl.setText(t("forecasting.txt.0_days").format(forecast['confidence_interval_days']))
         self._r2_lbl.setText(str(forecast.get("r_squared", "—")))
         on_track = forecast.get("on_track", True)
         self._on_track_lbl.setText("✅ Yes" if on_track else "⚠️ No")
@@ -431,10 +424,9 @@ class ForecastingPage(QWidget):
         self._export_csv_btn.setEnabled(True)
 
         InfoBar.success(
-            title="Forecast Generated",
+            title=t("forecasting.txt.forecast_generated"),
             content=(
-                f"{n_events} enrollment events processed. "
-                f"Predicted completion: {forecast['predicted_completion_date']}."
+                t("forecasting.txt.0_enrollment_events_processed_predicted_").format(n_events, forecast['predicted_completion_date'])
             ),
             orient=Qt.Horizontal, isClosable=True,
             position=InfoBarPosition.TOP, duration=4000, parent=self,
@@ -554,16 +546,17 @@ class ForecastingPage(QWidget):
         if self._chart_obj is None:
             return
         path, _ = QFileDialog.getSaveFileName(
-            self, "Export Chart", "recruitment_forecast.png",
-            "PNG files (*.png);;SVG files (*.svg);;All files (*.*)",
+            self.window(), t("forecasting.txt.export_chart"),
+            default_export_path(self._project_dir, "forecasts", "recruitment_forecast.png"),
+            t("forecasting.txt.png_files_png_svg_files_svg"),
         )
         if not path:
             return
         try:
             self._chart_obj.save(path, dpi=300)
             InfoBar.success(
-                title="Chart Exported",
-                content=f"Chart saved to {os.path.basename(path)}",
+                title=t("forecasting.txt.chart_exported"),
+                content=t("forecasting.txt.chart_saved_to_0").format(os.path.basename(path)),
                 orient=Qt.Horizontal, isClosable=True,
                 position=InfoBarPosition.TOP, duration=3000, parent=self,
             )
@@ -571,7 +564,7 @@ class ForecastingPage(QWidget):
             usage_log.event("Forecasting", "exported", "Chart", os.path.basename(path))
         except Exception as exc:
             InfoBar.error(
-                title="Export Error", content=str(exc),
+                title=t("forecasting.txt.export_error"), content=str(exc),
                 orient=Qt.Horizontal, isClosable=True,
                 position=InfoBarPosition.TOP, duration=5000, parent=self,
             )
@@ -583,8 +576,9 @@ class ForecastingPage(QWidget):
         if not self._timeline_rows:
             return
         path, _ = QFileDialog.getSaveFileName(
-            self, "Export Timeline", "recruitment_forecast.csv",
-            "CSV files (*.csv);;All files (*.*)",
+            self.window(), t("forecasting.txt.export_timeline"),
+            default_export_path(self._project_dir, "forecasts", "recruitment_forecast.csv"),
+            t("forecasting.txt.csv_files_csv_all_files"),
         )
         if not path:
             return
@@ -597,8 +591,8 @@ class ForecastingPage(QWidget):
                 writer.writeheader()
                 writer.writerows(self._timeline_rows)
             InfoBar.success(
-                title="Exported",
-                content=f"Timeline saved to {os.path.basename(path)}",
+                title=t("data.txt.exported"),
+                content=t("forecasting.txt.timeline_saved_to_0").format(os.path.basename(path)),
                 orient=Qt.Horizontal, isClosable=True,
                 position=InfoBarPosition.TOP, duration=3000, parent=self,
             )
@@ -606,7 +600,7 @@ class ForecastingPage(QWidget):
             usage_log.event("Forecasting", "exported", "Timeline CSV", os.path.basename(path))
         except Exception as exc:
             InfoBar.error(
-                title="Export Error", content=str(exc),
+                title=t("forecasting.txt.export_error"), content=str(exc),
                 orient=Qt.Horizontal, isClosable=True,
                 position=InfoBarPosition.TOP, duration=5000, parent=self,
             )

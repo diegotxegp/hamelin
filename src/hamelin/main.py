@@ -109,14 +109,20 @@ def _disable_unsupported_gpu():
     except Exception:
         return  # no usable nvidia-smi - let torch/ray behave as normal
 
+    # The verdict is printed rather than signalled through sys.exit(1): a
+    # debugger set to break on raised exceptions pauses on that SystemExit
+    # inside this throwaway subprocess, which looked like a second process
+    # to close every time the app was started under it.
     probe = (
-        "import torch, sys\n"
-        "if not torch.cuda.is_available():\n"
-        "    sys.exit(0)\n"
-        "major, minor = torch.cuda.get_device_capability(0)\n"
-        "arch = f'sm_{major}{minor}'\n"
-        "supported = torch.cuda.get_arch_list()\n"
-        "sys.exit(1 if supported and arch not in supported else 0)\n"
+        "import torch\n"
+        "verdict = 'ok'\n"
+        "if torch.cuda.is_available():\n"
+        "    major, minor = torch.cuda.get_device_capability(0)\n"
+        "    arch = f'sm_{major}{minor}'\n"
+        "    supported = torch.cuda.get_arch_list()\n"
+        "    if supported and arch not in supported:\n"
+        "        verdict = 'unsupported'\n"
+        "print(verdict)\n"
     )
     try:
         # sys.executable [-c] is the same subprocess re-entry pattern Ray
@@ -129,7 +135,7 @@ def _disable_unsupported_gpu():
         log.warning("GPU compatibility probe failed to run; leaving GPU visible")
         return
 
-    if probe_result.returncode == 1:
+    if probe_result.returncode == 0 and b"unsupported" in probe_result.stdout:
         log.warning(
             "Detected GPU's compute capability isn't supported by the "
             "installed PyTorch build - disabling GPU for this session "
@@ -195,12 +201,16 @@ def run_gui():
         set_language(lang)
         log.debug(f"i18n initialized with language: {lang}")
 
-        # qfluentwidgets only sets a pointing-hand cursor on its
-        # HyperlinkButton - every other clickable widget falls back to Qt's
-        # default arrow cursor. Qt Style Sheets don't support a `cursor`
-        # property, so this needs a real event filter rather than QSS.
-        from hamelin.view.widgets import PointingHandCursorFilter
-        _cursor_filter = PointingHandCursorFilter(app)
+        # Warning/error banners become usage-log events (usability study).
+        from hamelin.utils.usage_logger import install_infobar_logging
+        install_infobar_logging()
+
+        # The app uses the plain arrow cursor everywhere; a few widgets
+        # (HyperlinkButton, help buttons) ask for a pointing hand on their
+        # own. Qt Style Sheets have no `cursor` property, so this needs a
+        # real event filter rather than QSS.
+        from hamelin.view.widgets import ArrowCursorFilter
+        _cursor_filter = ArrowCursorFilter(app)
         app.installEventFilter(_cursor_filter)
 
         log.debug("Creating main window")

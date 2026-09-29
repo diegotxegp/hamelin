@@ -45,6 +45,7 @@ from qfluentwidgets import (
 
 from hamelin.analytics.automl.base import AutoMLResult
 from hamelin.utils.logger import log
+from hamelin.i18n import t
 from hamelin.view.widgets.kpi_card_widget import KPICardWidget
 from hamelin.view.widgets.theme_colors import bind_style, isDarkTheme, on_theme_changed
 
@@ -225,11 +226,10 @@ class ModelResultsWidget(QWidget):
 
         # ── Model info label ─────────────────────────────────────────
         self._model_info_lbl.setText(
-            f"Model: {result.model_type}  ·  "
-            f"Trials: {result.num_trials}  ·  "
-            f"Duration: {result.training_time_seconds:.0f}s"
+            t("common.txt.model_0_trials_1_duration_2").format(result.model_type, result.num_trials, result.training_time_seconds)
         )
 
+        self._update_advice(result)
         self._show_results()
         log.debug(f"ModelResultsWidget: loaded result for {result.model_type}")
 
@@ -253,7 +253,7 @@ class ModelResultsWidget(QWidget):
         card_layout.setSpacing(16)
 
         # Title row
-        title_lbl = StrongBodyLabel("Model Results")
+        title_lbl = StrongBodyLabel(t("common.txt.model_results"))
         card_layout.addWidget(title_lbl)
 
         # Model info (type · trials · time)
@@ -314,9 +314,17 @@ class ModelResultsWidget(QWidget):
         on_theme_changed(_apply_interpretation_theme)
         card_layout.addWidget(self._interpretation_lbl)
 
+        # ── How to read this result (rule-based advice) ───────────────
+        self._advice_title = StrongBodyLabel(t("advice.title"))
+        card_layout.addWidget(self._advice_title)
+        self._advice_lbl = BodyLabel("")
+        self._advice_lbl.setWordWrap(True)
+        self._advice_lbl.setTextFormat(Qt.RichText)
+        card_layout.addWidget(self._advice_lbl)
+
         # ── Empty placeholder ─────────────────────────────────────────
         self._empty_lbl = BodyLabel(
-            "Results will appear here after training completes."
+            t("common.txt.results_will_appear_here_after_training")
         )
         self._empty_lbl.setAlignment(Qt.AlignCenter)
         bind_style(self._empty_lbl, lambda c: f"color: {c.text_secondary}; padding: 20px;")
@@ -331,6 +339,8 @@ class ModelResultsWidget(QWidget):
             card.setVisible(False)
         self._extra_metrics_lbl.setVisible(False)
         self._interpretation_lbl.setVisible(False)
+        self._advice_title.setVisible(False)
+        self._advice_lbl.setVisible(False)
         self._empty_lbl.setVisible(True)
 
     def _show_results(self) -> None:
@@ -344,6 +354,23 @@ class ModelResultsWidget(QWidget):
         self._card_sens.setVisible(not self._hide_sens_card)
         self._card_spec.setVisible(not self._hide_spec_card)
         self._interpretation_lbl.setVisible(True)
+        has_advice = bool(self._advice_lbl.text())
+        self._advice_title.setVisible(has_advice)
+        self._advice_lbl.setVisible(has_advice)
+
+    def _update_advice(self, result: AutoMLResult) -> None:
+        """Fill the "How to read this result" block; never lets a problem
+        in the advice rules break the results view."""
+        text = ""
+        try:
+            from hamelin.analytics.result_advice import advice_html, build_advice
+
+            preds = (result.extra or {}).get("test_predictions")
+            adv = build_advice(result.test_metrics, result.train_metrics, preds)
+            text = advice_html(adv)
+        except Exception as exc:  # noqa: BLE001
+            log.warning(f"ModelResultsWidget: advice unavailable — {exc}")
+        self._advice_lbl.setText(text)
 
     @staticmethod
     def _build_interpretation(

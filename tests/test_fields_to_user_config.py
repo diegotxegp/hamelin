@@ -122,3 +122,14 @@ def test_all_fields_together():
     assert cfg["preprocessing"]["oversample_minority"] == 0.5
     assert cfg["hyperopt"]["metric"] == "roc_auc"
     assert cfg["hyperopt"]["executor"]["num_samples"] == 25
+
+
+def test_parallel_trials_is_honoured_even_without_a_search_strategy():
+    """The UI's "Parallel trials" used to be dropped unless a search strategy
+    was chosen, so the hidden default cap (3) applied instead of the value
+    the user saw (4)."""
+    cfg = _fields_to_user_config({"parallel_trials": 4}, "outcome")
+    assert cfg["hyperopt"]["executor"]["max_concurrent_trials"] == 4
+    # nothing set at all -> the memory-safe default still applies
+    cfg = _fields_to_user_config({}, "outcome")
+    assert cfg["hyperopt"]["executor"]["max_concurrent_trials"] == _DEFAULT_MAX_CONCURRENT_TRIALS

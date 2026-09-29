@@ -94,12 +94,6 @@ class ConfigManager:
                 'max_categorical_unique': 20,
                 'date_formats': ['%Y-%m-%d', '%d/%m/%Y', '%m/%d/%Y']
             },
-            'model': {
-                'default_time_limit': 3600,  # 1 hour
-                'validation_split': 0.2,
-                'random_state': 42,
-                'n_jobs': -1  # Use all cores
-            },
             'table1': {
                 'decimal_places': 2,
                 'show_ci': True,
@@ -272,8 +266,6 @@ class ConfigManager:
         validations = [
             (self.get('ui.window.width', 0) > 0, "Window width must be positive"),
             (self.get('ui.window.height', 0) > 0, "Window height must be positive"),
-            (self.get('model.validation_split', 0) > 0, "Validation split must be positive"),
-            (self.get('model.validation_split', 1) < 1, "Validation split must be < 1"),
         ]
         
         is_valid = True

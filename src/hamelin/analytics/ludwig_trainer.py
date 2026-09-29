@@ -320,7 +320,7 @@ class LudwigTrainer:
         # this app happened to be launched from. This is just Ludwig's own
         # internal hyperopt trial dump though, not what the "interface"
         # dashboard shows when opened from Hamelin - that reads
-        # model_checkpoints/ instead (see MainWindow._open_interface_page,
+        # results/models/ instead (see MainWindow._open_interface_page,
         # TrainingPage._on_training_finished), one named subfolder per
         # completed run, saved separately from this. Callers can still
         # override via backend_kwargs.

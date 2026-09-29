@@ -1,0 +1,154 @@
+# Hamelin
+
+**Human-guided Automated Machine Learning for Clinical Studies.** Desktop application for building, evaluating and using machine-learning models on clinical and tabular data — no programming required.**
+
+Hamelin guides you from a spreadsheet to a trained, evaluated and documented predictive model. It is built on [Ludwig](https://ludwig.ai) (declarative deep learning) and [Ray Tune](https://docs.ray.io/en/latest/tune/) for automatic hyperparameter search, and wraps them in a native desktop interface designed for researchers and clinicians: every step is explained in plain language, every result comes with its uncertainty, and everything a study produces is stored together in one project folder.
+
+<p align="center">
+  <img src="docs/hamelin/images/home_page.png" alt="Hamelin home page" width="80%">
+</p>
+
+## Contents
+
+- [Features](#features)
+- [Requirements](#requirements)
+- [Installation](#installation)
+- [Starting the application](#starting-the-application)
+- [Basic workflow](#basic-workflow)
+- [Screenshots](#screenshots)
+- [Projects, configuration and generated models](#projects-configuration-and-generated-models)
+- [Documentation](#documentation)
+- [Development](#development)
+- [Authors](#authors)
+- [License](#license)
+
+## Features
+
+- **Projects.** One folder per study, holding the study description (protocol, institution, objectives), its datasets and every result generated from them.
+- **Data import and exploration.** CSV, TSV, Excel, JSON, Parquet, Feather, Stata, SAS, SPSS and other formats supported by Ludwig; preview, variable-type detection, missing-value and outlier handling, and descriptive statistics ("Table 1").
+- **Automatic model training.** Classification (binary and multiclass) and regression with Ludwig AutoML: choose the outcome, the predictor variables and a time limit, and Hamelin searches for a good architecture and hyperparameters. Advanced controls cover the metric to optimise, parallel trials, maximum iterations, a fixed random seed for reproducibility and a professional early-stopping policy (automatic, fixed patience, or off).
+- **Rigorous evaluation.** Metrics on a held-out test set with 95 % bootstrap confidence intervals, confusion matrix with adjustable decision threshold and patient drill-down, ROC curve, per-subgroup breakdown, and a rule-based plain-language reading of every result ("How to read this result"), including reliability, limitations and suggestions for improvement.
+- **Model comparison.** Rank several models as a table, bars, heat map or radar chart, mark favourites and see which settings differ between two models.
+- **Prediction.** Apply a trained model to new patients, one at a time or from a file.
+- **Recruitment forecasting.** Project the time needed to reach a target sample size from the observed enrolment rate.
+- **Export.** Charts (PNG/PDF), tables (CSV), model reports (CSV/PDF) and predictions, all saved inside the project.
+- **Traceability.** Every model stores its exact configuration, training settings, software versions, seed and notes.
+- **English and Spanish interface**, light and dark themes, built-in help.
+
+## Requirements
+
+- Python **3.12** or newer.
+- [uv](https://docs.astral.sh/uv/) (recommended) or `pip`.
+- Windows, Linux or macOS with a desktop environment.
+- 8 GB of RAM or more recommended. A CUDA-capable NVIDIA GPU is optional: Hamelin falls back to the CPU automatically when the GPU is missing or unsupported.
+
+## Installation
+
+```bash
+git clone https://github.com/diegotxegp/hamelin.git
+cd hamelin
+uv sync
+```
+
+Without uv, create a virtual environment and install from the pinned requirements:
+
+```bash
+python -m venv .venv
+source .venv/bin/activate          # Windows: .venv\Scripts\activate
+pip install -r requirements.txt
+pip install -e .
+```
+
+## Starting the application
+
+```bash
+uv run hamelin
+```
+
+or, inside an activated environment:
+
+```bash
+hamelin
+```
+
+The window opens at a size that fits your screen and remembers its size and position between sessions.
+
+## Basic workflow
+
+1. **Create or open a project** (*Project*). Give it a name and describe the study; Hamelin creates the project folder.
+2. **Load a dataset** (*Data*). Import your file, check the detected variable types, clean missing values and outliers, and generate the descriptive table.
+3. **Train a model** (*Training*). Pick the variable to predict and the predictors, set a time limit (and, optionally, the advanced settings), and start. Progress and the best configuration found so far are shown while it runs.
+4. **Evaluate** (*Evaluation*). Inspect metrics with confidence intervals, the confusion matrix and ROC curve, read the plain-language interpretation, compare models and add notes.
+5. **Use and export** (*Prediction*, *Forecasting*, *Export*). Predict for new patients, forecast recruitment, and export charts, tables and reports.
+
+The built-in **Help** page explains each screen in detail.
+
+## Screenshots
+
+| | |
+|---|---|
+| ![Project](docs/hamelin/images/project_page.png) **Project** | ![Data](docs/hamelin/images/data_page.png) **Data** |
+| ![Training](docs/hamelin/images/training_page.png) **Training** | ![Advanced training settings](docs/hamelin/images/training_page_advanced.png) **Advanced training settings** |
+| ![Evaluation](docs/hamelin/images/evaluation_page.png) **Evaluation** | ![Model comparison](docs/hamelin/images/evaluation_compare_page.png) **Model comparison** |
+| ![Prediction](docs/hamelin/images/prediction_page.png) **Prediction** | ![Forecasting](docs/hamelin/images/forecasting_page.png) **Recruitment forecasting** |
+
+## Projects, configuration and generated models
+
+Hamelin keeps its data in a `workspace/` folder:
+
+```text
+workspace/
+├── config/           application settings (language, theme, window size, defaults)
+├── logs/             application logs (rotated automatically)
+└── Projects/
+    └── <PROJECT>/
+        ├── metadata.json          study description
+        ├── data/                  the project's datasets
+        └── results/
+            ├── models/<model>/    one folder per trained model
+            ├── tables/            exported tables
+            ├── reports/           exported reports
+            ├── predictions/       predictions on new data
+            └── forecasts/         recruitment forecasts
+```
+
+Everything generated for a project stays inside that project's folder, so a project can be archived or shared by copying its directory.
+
+Each trained model folder contains:
+
+| File | Content |
+|---|---|
+| `model/` (weights) | The trained network, reloadable by Ludwig |
+| `model_hyperparameters.json` | The full Ludwig configuration that produced the model |
+| `training_settings.json` | The settings chosen on the Training page (time limit, seed, early stopping, …) |
+| `training_report.json` | Metrics, data schema, software versions and seed |
+| `test_predictions.csv` | Predictions for the held-out test set |
+| `notes.txt` | Your notes about the model (if any) |
+
+Application-wide settings are stored in `workspace/config/app_config.yaml` and can be changed from the **Settings** page.
+
+## Documentation
+
+- The in-app **Help** page.
+- [User manual](docs/hamelin/MANUAL.md) (Spanish), with a description of every screen.
+- [Ludwig documentation](https://ludwig.ai/latest/) for the underlying configuration options.
+
+## Development
+
+```bash
+uv sync --group dev
+QT_QPA_PLATFORM=offscreen uv run pytest -q
+```
+
+A standalone executable can be built with PyInstaller using the provided `hamelin.spec`.
+
+## Authors
+
+- **Diego García-Prieto** — University of Cantabria — <diego.garciaprieto@unican.es>
+- **Camilo Palazuelos** — University of Cantabria — <camilo.palazuelos@unican.es>
+- **Rafael Duque** — University of Cantabria — <rafael.duque@unican.es>
+- **Mano Domingo** — ENSEIRB-MATMECA, Bordeaux INP — <mano.domingo@bordeaux-inp.fr>
+
+## License
+
+Hamelin is free software released under the [GNU General Public License v3.0](LICENSE). You may redistribute and modify it under the terms of the GPLv3.

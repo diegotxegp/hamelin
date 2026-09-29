@@ -57,7 +57,7 @@ class ModelTraining:
         model_name: User-chosen name for this run (e.g. "LPP_risk_v1"),
             entered on the Training page. Falls back to model_id when
             blank - see TrainingPage._sanitize_model_name(), which is also
-            what the checkpoint folder under model_checkpoints/ is named,
+            what the checkpoint folder under results/models/ is named,
             so it's what shows up wherever a model is picked by name (the
             "interface" comparison tool, model-history widgets, ...).
         timestamp: When training started (UTC).
@@ -148,6 +148,61 @@ class ModelTraining:
 # ---------------------------------------------------------------------------
 
 HISTORY_FILENAME = "model_history.json"
+MODELS_SUBDIR = Path("results") / "models"
+_LEGACY_MODELS_DIRNAME = "model_checkpoints"
+
+
+def models_dir(project_dir: Path) -> Path:
+    """Folder where a project's trained-model checkpoints live."""
+    return Path(project_dir) / MODELS_SUBDIR
+
+
+def migrate_legacy_checkpoints(project_dir: Path) -> None:
+    """Move <project>/model_checkpoints/* into <project>/results/models/ and
+    rewrite the matching checkpoint_path values in model_history.json.
+
+    Older versions saved checkpoints in a top-level model_checkpoints/
+    folder. Idempotent: does nothing when that folder doesn't exist, and
+    never overwrites an existing destination folder.
+    """
+    import shutil
+
+    project_dir = Path(project_dir)
+    legacy = project_dir / _LEGACY_MODELS_DIRNAME
+    if not legacy.is_dir():
+        return
+    dest = models_dir(project_dir)
+    try:
+        dest.mkdir(parents=True, exist_ok=True)
+        moved: dict[str, str] = {}
+        for child in list(legacy.iterdir()):
+            target = dest / child.name
+            if target.exists():
+                continue
+            shutil.move(str(child), str(target))
+            moved[str(child)] = str(target)
+
+        history_file = project_dir / HISTORY_FILENAME
+        if history_file.exists():
+            raw = json.loads(history_file.read_text(encoding="utf-8"))
+            changed = False
+            for rec in raw:
+                cp = rec.get("checkpoint_path", "")
+                if not cp:
+                    continue
+                cp_path = Path(cp)
+                if cp_path.parent.name == _LEGACY_MODELS_DIRNAME:
+                    rec["checkpoint_path"] = str(dest / cp_path.name)
+                    changed = True
+            if changed:
+                history_file.write_text(json.dumps(raw, indent=2, ensure_ascii=False), encoding="utf-8")
+        try:
+            legacy.rmdir()  # only succeeds when empty
+        except OSError:
+            pass
+        log.info(f"Migrated {len(moved)} legacy checkpoint(s) into {dest}")
+    except Exception as exc:  # noqa: BLE001
+        log.warning(f"Could not migrate legacy checkpoints in {project_dir}: {exc}")
 
 
 class ModelHistory:
@@ -172,6 +227,7 @@ class ModelHistory:
         Args:
             project_dir: Root directory of the project (must exist).
         """
+        migrate_legacy_checkpoints(project_dir)
         self._path = Path(project_dir) / HISTORY_FILENAME
         self._records: list[ModelTraining] = []
         self._load()
