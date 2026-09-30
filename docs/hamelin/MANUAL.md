@@ -88,6 +88,7 @@ Buttons: **Save Project**, **Reset**, **← Back to Projects**.
 ```
 workspace/Projects/<ACRONYM>/
     metadata.json                       study description
+    model_history.json                  index of the trained models (created by the first training)
     project_state.json                  choices made in the interface (see 4.7 and 6.7)
     data/                               the project's datasets
     data/dataset_index.json             dataset register
@@ -99,7 +100,7 @@ workspace/Projects/<ACRONYM>/
 
 The **Export…** dialogs open, by default, in the matching sub-folder of the active project's `results/` folder, so what a project produces stays with the project. You can pick any other location in the dialog.
 
-**Tidy by design.** Everything generated for a project lives in its folder. The only disposable folder is `ludwig_runs/`, where Ludwig dumps every hyperparameter trial (sometimes hundreds of MB of checkpoints); HAMELIN deletes it after every training run (finished, failed or cancelled) and when a project is opened, because the winning model is already in `results/models/`. Daily technical logs are kept for 30 days; `usage_log.csv` is never deleted automatically.
+**Tidy by design.** Everything generated for a project lives in its folder. Folders are created only when something is first saved into them (a new project starts with just `data/`), and any folder left empty is removed when a project is opened or the app is closed. The only disposable folder is `ludwig_runs/`, where Ludwig dumps every hyperparameter trial (sometimes hundreds of MB of checkpoints); HAMELIN deletes it after every training run (finished, failed or cancelled) and when a project is opened, because the winning model is already in `results/models/`. Daily technical logs are kept for 30 days; `usage_log.csv` is never deleted automatically.
 
 Back up the whole `Projects/` folder wherever you like. Outside any project:
 
@@ -184,6 +185,8 @@ Training a model means teaching a program to recognise patterns in your data tha
 - **Outcome variable** — the column you want to predict.
 - **Predictor variables** — click to select (Ctrl/Shift for several, or **Select All Predictors**). The outcome variable is removed from this list automatically, so a variable can never be used to predict itself; if you change the outcome, the previous one returns to the list. Rules of thumb: include variables available *before* the outcome is known; exclude patient IDs, administrative codes and dates; exclude variables with > 50 % missing values unless you plan to impute them.
 - **Secondary outcomes** (optional) — other endpoints to predict at the same time; this trains a real multi-output model.
+
+Both lists show 10 variables at a time and scroll for the rest. **Loading a dataset needs an open project** (datasets and models are saved inside it); without one, *Browse* and *Load* only show a warning. Throughout the application the mouse wheel never changes a number, a drop-down or a slider: it only scrolls the page.
 
 ### 6.3 Step 2 — Patient selection criteria
 A visual builder for inclusion/exclusion rules (column, operator, value). A patient who does not meet **all** inclusion rules, or who meets **any** exclusion rule, is left out. **Preview** shows how many rows match before you commit. Presets can be saved and reused.

@@ -3,6 +3,7 @@ strings.py and check they render with their arguments filled in."""
 import csv
 
 import pytest
+from pathlib import Path
 from PySide6.QtWidgets import QFileDialog
 
 from hamelin.utils import usage_logger
@@ -52,11 +53,13 @@ def test_data_page_messages(qtbot):
     page = DataPage()
     qtbot.addWidget(page)
     n = _count()
+    page._on_load_clicked()                       # no project open
+    page._project_dir = Path(".")
     page._on_load_clicked()                       # no file selected
     page._generate_quality_report()              # no dataset
     page._exclude_outliers()                      # no dataset -> silent return
     rows = _banners(n)
-    assert rows and rows[0]["element"] == "No File Selected"
+    assert [r["element"] for r in rows][:2] == ["No project open", "No File Selected"]
     _assert_clean(rows)
 
 

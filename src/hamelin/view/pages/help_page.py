@@ -187,6 +187,7 @@ _SECTIONS: list[dict] = [
                     "All project data is stored locally in:\n\n"
                     "    workspace/Projects/<ACRONYM>/  (inside the hamelin repo)\n"
                     "        metadata.json     — project metadata\n"
+                    "        model_history.json — index of the trained models\n"
                     "        data/             — datasets linked to this project\n"
                     "        data/dataset_index.json  — registry of datasets\n"
                     "        results/          — training results and exports\n"
@@ -195,6 +196,9 @@ _SECTIONS: list[dict] = [
                     "        results/tables/, reports/, forecasts/, predictions/ — suggested "
                     "location for everything you export (Table 1, quality report, forecast, "
                     "predictions...)\n\n"
+                    "Folders are created only when something is first saved into them (a new "
+                    "project holds just data/), and empty ones are removed when you open a "
+                    "project or close the app.\n\n"
                     "You can back up the entire Projects/ folder to any location."
                 ),
             },
@@ -540,8 +544,7 @@ _SECTIONS: list[dict] = [
                     "HbA1c_at_12months (numeric).\n\n"
                     "Predictor variables (what the model learns from):\n"
                     "    Click to select the columns you believe are clinically relevant — hold "
-                    "Ctrl or Shift to select several; there is no 'Select All' shortcut here, "
-                    "pick them one by one.\n"
+                    "Ctrl or Shift to select several, or use 'Select All Predictors'.\n"
                     "    Rules of thumb:\n"
                     "      — Include variables that are available BEFORE the outcome is known.\n"
                     "      — Exclude patient ID, administrative codes, and the date column.\n"
@@ -554,7 +557,10 @@ _SECTIONS: list[dict] = [
                     "'Readmission_30d' also ticked here — the model is then trained to predict "
                     "all three.\n"
                     "    A column ticked as both a predictor and a secondary outcome is treated "
-                    "as a predictor only."
+                    "as a predictor only.\n\n"
+                    "Loading a dataset needs an open project (datasets and models are saved inside it). Both lists "
+                    "show 10 variables at a time; scroll inside them to see the rest. The mouse "
+                    "wheel never changes a number or a drop-down: it only scrolls the page."
                 ),
             },
             {

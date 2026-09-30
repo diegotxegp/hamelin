@@ -97,6 +97,7 @@ Botones del formulario: **Save Project**, **Reset** (limpia el formulario), **�
 ```
 workspace/Projects/<ACRÓNIMO>/          (nombre de carpeta siempre en inglés, "Projects")
     metadata.json                        : metadatos del proyecto
+    model_history.json                   : índice de los modelos entrenados (lo crea el primer entrenamiento)
     data/                                 : datasets vinculados a este proyecto
     data/dataset_index.json               : registro de datasets
     results/                              : resultados de entrenamiento y exportaciones
@@ -109,7 +110,7 @@ workspace/Projects/<ACRÓNIMO>/          (nombre de carpeta siempre en inglés, 
 
 Los cuadros de **Export…** de cada página se abren por defecto en la subcarpeta correspondiente de `results/` del proyecto activo (se crea al momento), para que lo que genera un proyecto se quede con el proyecto; puedes elegir cualquier otra ruta en el propio cuadro. Sin proyecto abierto se comportan como siempre.
 
-**Orden garantizado.** Todo lo que se genera para un proyecto vive en su carpeta: datasets en `data/`, y modelos, informes y exportaciones en `results/` (el resumen automático de cada dataset va a `results/reports/`). Solo hay una carpeta desechable, `ludwig_runs/`, donde Ludwig vuelca cada trial de la búsqueda (a veces cientos de MB de checkpoints): Hamelin la borra al terminar (o fallar/cancelar) cada entrenamiento y al abrir el proyecto, porque el modelo ganador ya está en `results/models/`. Al abrir un proyecto de una versión anterior también se colocan en su sitio los modelos de `model_checkpoints/` y los resúmenes que estaban en `data/`. Los logs técnicos diarios se conservan 30 días; `usage_log.csv` (datos del estudio de usabilidad) nunca se borra solo.
+**Orden garantizado.** Un proyecto nuevo solo contiene `data/`; el resto de carpetas se crean al guardar algo en ellas y las que queden vacías se eliminan al abrir el proyecto o cerrar la aplicación. Todo lo que se genera para un proyecto vive en su carpeta: datasets en `data/`, y modelos, informes y exportaciones en `results/` (el resumen automático de cada dataset va a `results/reports/`). Solo hay una carpeta desechable, `ludwig_runs/`, donde Ludwig vuelca cada trial de la búsqueda (a veces cientos de MB de checkpoints): Hamelin la borra al terminar (o fallar/cancelar) cada entrenamiento y al abrir el proyecto, porque el modelo ganador ya está en `results/models/`. Al abrir un proyecto de una versión anterior también se colocan en su sitio los modelos de `model_checkpoints/` y los resúmenes que estaban en `data/`. Los logs técnicos diarios se conservan 30 días; `usage_log.csv` (datos del estudio de usabilidad) nunca se borra solo.
 
 Puedes hacer copia de seguridad de toda la carpeta `Projects/` a cualquier sitio. Fuera de un proyecto concreto:
 
@@ -205,6 +206,8 @@ Entrenar un modelo significa enseñar a un programa a reconocer patrones en tus 
 - **Outcome variable**: la columna que quieres predecir.
 - **Predictor variables**: clic para seleccionar (Ctrl/Shift para varias; no hay "Select All"). Regla general: incluye variables disponibles ANTES de conocer el resultado; excluye ID de paciente, códigos administrativos y columnas de fecha; excluye variables con >50% de valores faltantes salvo que vayas a imputarlas.
 - **Secondary outcomes** (opcional): otros resultados clínicos a predecir junto al principal — esto entrena un modelo multi-output real, no es solo anotación. Una columna marcada a la vez como predictor y como resultado secundario se trata solo como predictor.
+
+Ambas listas muestran 10 variables a la vez y se desplazan para ver el resto. **Cargar un dataset requiere un proyecto abierto** (los datasets y los modelos se guardan dentro de él); sin uno, *Browse* y *Load* solo muestran un aviso. En toda la aplicación la rueda del ratón nunca cambia un número, un desplegable ni un deslizador: solo desplaza la página.
 
 ### 6.3 Paso 2 — Criterios de selección de pacientes
 Constructor visual de reglas de inclusión/exclusión (Columna, Operador, Valor — sin caja de texto libre). Un paciente que NO cumple TODAS las reglas de inclusión queda excluido; un paciente que cumple CUALQUIER regla de exclusión también. Botón **Preview** en cada bloque para ver cuántas filas coinciden antes de comprometerte. **Save preset** / **Reset preset** guardan estos criterios como JSON reutilizable del proyecto, bajo `training_schemas/`.

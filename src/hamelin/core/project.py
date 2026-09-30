@@ -381,12 +381,17 @@ class ProjectRepository:
         Projects/
         └── {project_short_name}/
             ├── metadata.json          # Project metadata
-            ├── data/                  # Project-specific datasets
-            ├── results/               # Analysis results
-            │   ├── table1/           # Table 1 outputs
-            │   ├── models/           # Trained models
-            │   └── reports/          # Generated reports
-            └── recruitment_log.json   # Recruitment tracking data
+            ├── data/                  # Project-specific datasets (+ their change records)
+            ├── model_history.json     # Index of the trained models (created on first training)
+            └── results/               # Everything Hamelin generates, by kind:
+                ├── models/<name>/     # One folder per trained model
+                ├── tables/            # Table 1, cleaned dataset
+                ├── reports/           # Quality / summary / model reports
+                ├── forecasts/         # Recruitment chart and timeline
+                └── predictions/       # Prediction page output
+    Only data/ exists at first; every other folder is created when something
+    is first saved into it, so a project never holds empty folders (see
+    hamelin.core.project_layout).
     
     Example:
         >>> repo = ProjectRepository()
@@ -644,12 +649,8 @@ class ProjectRepository:
         # Create main project directory
         project_path.mkdir(parents=True, exist_ok=True)
         
-        # Create subdirectories
+        # Only data/ up front; results/... folders appear when first used.
         (project_path / "data").mkdir(exist_ok=True)
-        (project_path / "results").mkdir(exist_ok=True)
-        (project_path / "results" / "table1").mkdir(exist_ok=True)
-        (project_path / "results" / "models").mkdir(exist_ok=True)
-        (project_path / "results" / "reports").mkdir(exist_ok=True)
         
         log.debug(f"Created directory structure for project at {project_path}")
 

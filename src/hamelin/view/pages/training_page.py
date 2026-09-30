@@ -145,6 +145,24 @@ def recommended_parallel_trials() -> int:
     return int(max(1, min(cores, ram_gb // 2, 8)))
 
 
+# The predictor / secondary-outcome lists always show 10 rows (scrolling
+# beyond that) and never grow past 12. Row height depends on the theme, so
+# the pixel sizes are worked out from the real rows (see _fit_list_rows);
+# these are only the first guess, before any row exists.
+_LIST_MIN_ROWS, _LIST_MAX_ROWS = 10, 12
+_LIST_ROW_PX = 14
+_LIST_MIN_HEIGHT = _LIST_ROW_PX * _LIST_MIN_ROWS + 8
+_LIST_MAX_HEIGHT = _LIST_ROW_PX * _LIST_MAX_ROWS + 8
+
+
+def _fit_list_rows(lst) -> None:
+    """Size *lst* to show 10 rows (12 at most) of its actual row height."""
+    row = lst.sizeHintForRow(0) if lst.count() else _LIST_ROW_PX
+    frame = 2 * lst.frameWidth() + 4
+    lst.setMinimumHeight(row * _LIST_MIN_ROWS + frame)
+    lst.setMaximumHeight(row * _LIST_MAX_ROWS + frame)
+
+
 class TrainingPage(QWidget):
     """
     Model training and configuration page.
@@ -285,7 +303,8 @@ class TrainingPage(QWidget):
         self._all_columns: list[str] = []
         self.primary_combo.currentIndexChanged.connect(self._sync_predictors_with_outcome)
         self.primary_combo.currentIndexChanged.connect(self._auto_set_problem_type)
-        self.features_list.setMaximumHeight(150)
+        self.features_list.setMinimumHeight(_LIST_MIN_HEIGHT)
+        self.features_list.setMaximumHeight(_LIST_MAX_HEIGHT)
         self.features_list.setSelectionMode(QListWidget.MultiSelection)
         # Hover, not click (attach_help_popup_hover, not attach_help_popup) -
         # clicking an item in this list is how you select/deselect it, so a
@@ -306,7 +325,8 @@ class TrainingPage(QWidget):
         variables_layout.addWidget(secondary_label)
 
         self.secondary_list = QListWidget()
-        self.secondary_list.setMaximumHeight(120)
+        self.secondary_list.setMinimumHeight(_LIST_MIN_HEIGHT)
+        self.secondary_list.setMaximumHeight(_LIST_MAX_HEIGHT)
         self.secondary_list.setSelectionMode(QListWidget.MultiSelection)
         # Hover, not click - same reasoning as features_list above (an
         # item click here selects/deselects it, not a request for help).
@@ -787,6 +807,8 @@ class TrainingPage(QWidget):
             self.secondary_list.addItems(columns)
         except Exception:
             pass
+        _fit_list_rows(self.features_list)
+        _fit_list_rows(self.secondary_list)
         # Enable training only if active dataframe has rows
         self.start_training_btn.setEnabled(len(active_df) > 0)
         self._set_status("ready", f"Ready to train — {len(active_df)} rows, {len(columns)} variables loaded")
@@ -1228,10 +1250,10 @@ class TrainingPage(QWidget):
             return
         # ask for filename (default folder training_schemas)
         schema_dir = self._project_dir / 'training_schemas'
-        schema_dir.mkdir(exist_ok=True)
         name, ok = QInputDialog.getText(self, 'Preset name', 'Enter preset filename (without .json):')
         if not ok or not name:
             return
+        schema_dir.mkdir(exist_ok=True)   # only once there is something to put in it
         fname = (schema_dir / f"{name}.json").resolve()
 
         # build basic preset from UI

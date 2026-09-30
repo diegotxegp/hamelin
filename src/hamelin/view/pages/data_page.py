@@ -638,9 +638,24 @@ class DataPage(QWidget):
         layout.addStretch()
         return card, value_label
     
+    def _require_project(self) -> bool:
+        """Datasets live inside a project, so loading one needs a project
+        open; warn (and return False) when there is none."""
+        if self._project_dir is not None:
+            return True
+        InfoBar.warning(
+            title=t("data.txt.no_project_open"),
+            content=t("data.txt.create_or_open_a_project_first_the"),
+            orient=Qt.Horizontal, isClosable=True,
+            position=InfoBarPosition.TOP, duration=4000, parent=self,
+        )
+        return False
+
     def _browse_file(self):
         """Open file browser dialog"""
         usage_log.event("Data", "click", "Browse button")
+        if not self._require_project():
+            return
         log.info("Opening file browser")
         _DATASETS_DIR.mkdir(parents=True, exist_ok=True)
         file_path, _ = QFileDialog.getOpenFileName(
@@ -796,6 +811,8 @@ class DataPage(QWidget):
 
     def _load_data(self):
         """Load data from the selected file and update all UI sections."""
+        if not self._require_project():
+            return
         file_path = self.file_path_edit.text()
         log.debug(
             f"_load_data called — file='{file_path}' "

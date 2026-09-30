@@ -126,3 +126,18 @@ def test_early_stopping_modes_map_to_the_right_ludwig_settings(page):
 
 def test_max_iterations_minimum_and_default_are_10(page):
     assert page.hyperopt_trials.minimum() == 10 and page.hyperopt_trials.value() == 10
+
+
+def test_variable_lists_show_ten_rows(page):
+    page.features_list.addItems([f"v{i}" for i in range(40)])
+    page.show()
+    for lst in (page.features_list, page.secondary_list):
+        lst.addItems([f"v{i}" for i in range(40)]) if lst is page.secondary_list else None
+        assert lst.minimumHeight() >= 10 * lst.sizeHintForRow(0)
+
+
+def test_saved_models_keep_distinct_folders(tmp_path):
+    (tmp_path / "model_1").mkdir()
+    (tmp_path / "model_1_2").mkdir()
+    assert TrainingPage._unique_checkpoint_name("model_1", tmp_path) == "model_1_3"
+    assert TrainingPage._unique_checkpoint_name("new", tmp_path) == "new"

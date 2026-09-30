@@ -57,3 +57,26 @@ def test_old_daily_logs_are_pruned_but_usage_log_is_kept(tmp_path):
     os.utime(usage, (ancient, ancient))
     _prune_old_logs(tmp_path)
     assert not old.exists() and new.exists() and usage.exists()
+
+
+def test_tidy_removes_empty_folders_but_keeps_data_and_moves_table1(tmp_path):
+    p = tmp_path / "PROJ"
+    (p / "data").mkdir(parents=True)
+    (p / "results" / "models").mkdir(parents=True)
+    (p / "results" / "reports").mkdir()
+    (p / "results" / "table1").mkdir()
+    (p / "results" / "table1" / "t.csv").write_text("x")
+    (p / "training_schemas").mkdir()
+    tidy_project(p)
+    assert (p / "data").is_dir()
+    assert (p / "results" / "tables" / "t.csv").exists()
+    for gone in ("models", "reports", "table1"):
+        assert not (p / "results" / gone).exists()
+    assert not (p / "training_schemas").exists()
+
+
+def test_new_project_only_creates_data(tmp_path):
+    from hamelin.core.project import ProjectRepository
+    repo = ProjectRepository(tmp_path)
+    repo._create_directory_structure(tmp_path / "P")
+    assert [c.name for c in (tmp_path / "P").iterdir()] == ["data"]

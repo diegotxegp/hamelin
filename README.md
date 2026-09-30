@@ -124,12 +124,16 @@ workspace/
 └── Projects/
     └── <PROJECT>/
         ├── metadata.json          study description
+        ├── model_history.json     index of the trained models
         ├── data/                  the project's datasets and their change records (<dataset>.changes.json)
         └── results/
             ├── models/<model>/    one folder per trained model
             ├── tables/            exported tables
-            └── reports/           exported reports
+            ├── reports/           exported reports
+            └── forecasts/, predictions/   exports of those pages
 ```
+
+Folders appear only when something is first saved into them (a new project holds just `data/`); empty ones are removed when a project is opened or the app is closed, and Ludwig's temporary trial files are deleted after every training run.
 
 Everything generated for a project stays inside that project's folder, so a project can be archived or shared by copying its directory.
 

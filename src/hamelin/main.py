@@ -164,6 +164,12 @@ def run_gui():
         _cursor_filter = ArrowCursorFilter(app)
         app.installEventFilter(_cursor_filter)
 
+        # The mouse wheel never changes a spin box / combo box / slider; it
+        # scrolls the page instead.
+        from hamelin.view.widgets import WheelGuard
+        _wheel_guard = WheelGuard(app)
+        app.installEventFilter(_wheel_guard)
+
         log.debug("Creating main window")
         window = MainWindow()
         if splash is not None:

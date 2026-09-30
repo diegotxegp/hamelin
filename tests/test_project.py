@@ -346,10 +346,8 @@ class TestProjectRepositoryCreateProject:
         
         assert project_path.exists()
         assert (project_path / "data").exists()
-        assert (project_path / "results").exists()
-        assert (project_path / "results" / "table1").exists()
-        assert (project_path / "results" / "models").exists()
-        assert (project_path / "results" / "reports").exists()
+        # results/... folders are created on first use, never empty
+        assert not (project_path / "results").exists()
     
     def test_create_project_saves_metadata_json(self, temp_repo, valid_metadata):
         """Test create_project saves metadata.json file."""

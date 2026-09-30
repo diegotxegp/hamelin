@@ -537,6 +537,12 @@ class MainWindow(MSFluentWindow):
         except Exception as exc:  # noqa: BLE001
             log.warning(f"Could not save window size: {exc}")
         
+        # Leave the open project tidy: no Ludwig trial dumps, no empty folders.
+        try:
+            self._tidy(self.training_page._project_dir)
+        except Exception as exc:  # noqa: BLE001
+            log.warning(f"Could not tidy project on exit: {exc}")
+
         # Accept close event
         event.accept()
         log.info("Main Window closed successfully")
