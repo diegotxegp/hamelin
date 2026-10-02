@@ -230,7 +230,7 @@ EN: dict[str, str] = {
     "training.label.problem": "Problem Type",
     "training.label.metric": "Optimization Metric",
     "training.label.strategy": "Hyperparameter Search Strategy",
-    "training.label.timebudget": "Time Budget (s)",
+    "training.label.timebudget": "Time (s)",
     "training.label.trials": "Max Trials",
     "training.label.imbalance": "Handle Class Imbalance",
     "training.label.meanimpute": "Missing numeric values strategy:",
