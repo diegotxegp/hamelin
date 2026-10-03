@@ -1,0 +1,13 @@
+# Outputs written by the notebooks (relative to each notebook's folder)
+results/
+hyperopt/
+ray_results/
+model/
+
+# Notebook checkpoints, caches, benchmark venv
+.ipynb_checkpoints/
+__pycache__/
+.venv-bench/
+
+# Executed notebook copies from run_screening.py
+logs/
