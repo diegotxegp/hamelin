@@ -1,6 +1,6 @@
 # Hamelin
 
-[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.23128035.svg)](https://doi.org/10.5281/zenodo.23128035)
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.23128034.svg)](https://doi.org/10.5281/zenodo.23128034)
 
 **Human-guided Automated Machine Learning for Clinical Studies.** Desktop application for building, evaluating and using machine-learning models on clinical and tabular data — no programming required.
 
