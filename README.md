@@ -153,7 +153,7 @@ Application-wide settings are stored in `workspace/config/app_config.yaml` and c
 
 ## Standalone executable
 
-A single-file executable (no Python needed on the target machine, CPU only) can be built with PyInstaller. See [Building and moving the standalone executable](docs/hamelin/DISTRIBUTION.md) for the build steps and for running it on a virtual machine.
+A prebuilt Linux x86-64 executable (no Python needed, CPU only) can be downloaded from the [Releases page](https://github.com/diegotxegp/hamelin/releases). You can also build one yourself with PyInstaller. See [Building and moving the standalone executable](docs/hamelin/DISTRIBUTION.md) for the build steps and for running it on a virtual machine.
 
 ## Documentation
 
