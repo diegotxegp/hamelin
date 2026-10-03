@@ -1,0 +1,26 @@
+cff-version: 1.2.0
+message: "If you use Hamelin in your research, please cite it as below."
+title: "Hamelin: Human-guided Automated Machine Learning for Clinical Studies"
+type: software
+version: 0.1.0
+doi: 10.5281/zenodo.23128035
+license: GPL-3.0-only
+repository-code: "https://github.com/diegotxegp/hamelin"
+authors:
+  - family-names: García-Prieto
+    given-names: Diego
+    affiliation: University of Cantabria
+    email: diego.garciaprieto@unican.es
+  - family-names: Palazuelos
+    given-names: Camilo
+    affiliation: University of Cantabria
+    email: camilo.palazuelos@unican.es
+  - family-names: Duque
+    given-names: Rafael
+    affiliation: University of Cantabria
+    email: rafael.duque@unican.es
+  - family-names: Domingo
+    given-names: Mano
+    affiliation: "ENSEIRB-MATMECA, Bordeaux INP"
+    email: mano.domingo@bordeaux-inp.fr
+keywords: [automl, machine-learning, clinical-research, ludwig, human-centered-ai]

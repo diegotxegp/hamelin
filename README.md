@@ -1,5 +1,7 @@
 # Hamelin
 
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.23128035.svg)](https://doi.org/10.5281/zenodo.23128035)
+
 **Human-guided Automated Machine Learning for Clinical Studies.** Desktop application for building, evaluating and using machine-learning models on clinical and tabular data — no programming required.
 
 Hamelin guides you from a spreadsheet to a trained, evaluated and documented predictive model. It is built on [Ludwig](https://ludwig.ai) (declarative deep learning) and [Ray Tune](https://docs.ray.io/en/latest/tune/) for automatic hyperparameter search, and wraps them in a native desktop interface designed for researchers and clinicians: every step is explained in plain language, every result comes with its uncertainty, and everything a study produces is stored together in one project folder.
