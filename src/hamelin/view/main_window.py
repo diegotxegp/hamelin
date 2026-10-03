@@ -32,8 +32,9 @@ from hamelin.utils.theme_colors import apply_tooltip_theme, on_theme_changed
 from hamelin.i18n import t
 
 
-# Pages that are visible but not yet available to end users (Prediction, Forecasting).
-LOCKED_PAGES = True
+# Pages that are visible but not yet available to end users. Prediction and
+# Forecasting are unlocked now; flip back to True to grey them out again.
+LOCKED_PAGES = False
 
 
 class MainWindow(MSFluentWindow):

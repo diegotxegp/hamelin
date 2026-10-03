@@ -604,6 +604,39 @@ _MINIMIZE_METRICS = {
 _DEFAULT_MAX_CONCURRENT_TRIALS = 3
 
 
+# Learning method -> trainer.optimizer (see _fields_to_user_config).
+_OPTIMIZERS = {
+    "regularized": {"type": "adamw", "weight_decay": 0.01},
+}
+
+
+def _apply_architecture(config: dict, architecture: str | None) -> None:
+    """Swap the model architecture AutoML chose, in place.
+
+    "light" -> Ludwig's ``concat`` combiner (a small fully-connected network)
+    instead of the ``ft_transformer`` that ``auto_train`` picks by default for
+    tabular data (ludwig/automl/automl.py, _model_select). It cannot be done
+    through ``user_config``: in Ludwig 0.17.9 merging ``{"combiner": {"type":
+    "concat"}}`` leaves the ft_transformer search space (``combiner.num_layers``)
+    in the config, which then fails validation. So, as Ludwig's AutoML guide
+    suggests for manual refinement, the generated config is edited directly:
+    the combiner is replaced and its hyperparameter search space swapped for
+    the concat one. Any other value (or None) leaves the config untouched.
+    """
+    if architecture != "light":
+        return
+    from ludwig.automl.base_config import combiner_defaults
+    from ludwig.utils.data_utils import load_yaml
+
+    concat = load_yaml(combiner_defaults["concat"])
+    config["combiner"] = concat["combiner"]
+    hopt = config.setdefault("hyperopt", {})
+    params = {k: v for k, v in (hopt.get("parameters") or {}).items()
+              if not k.startswith("combiner.")}
+    params.update(concat["hyperopt"]["parameters"])
+    hopt["parameters"] = params
+
+
 def _fields_to_user_config(fields: dict, target: str) -> dict:
     """Translate TrainingPage's flat model-config fields into a partial
     Ludwig config to pass as ``auto_train(user_config=...)`` - merged on top
@@ -672,6 +705,16 @@ def _fields_to_user_config(fields: dict, target: str) -> dict:
         # the "output_features" list problem_type has to work around.
         cfg["defaults"] = {"number": {"preprocessing": {"missing_value_strategy": missing_strategy}}}
 
+    # "Learning method" (TrainingPage). Index 0 / absent leaves AutoML's own
+    # optimizer (adam) untouched. "regularized" is AdamW with a weight decay:
+    # Ludwig's optimizer guide (examples/optimizer_comparison.md) recommends it
+    # "whenever training from scratch with regularisation", with
+    # weight_decay 0.01 in its own example. merge_dict recurses into the nested
+    # trainer.optimizer dict, so only these two keys are overridden.
+    optimizer = _OPTIMIZERS.get(fields.get("optimizer"))
+    if optimizer:
+        cfg.setdefault("trainer", {})["optimizer"] = dict(optimizer)
+
     search = fields.get("search")
     if search and search != "none":
         hopt: dict = {
@@ -723,6 +766,18 @@ def _fields_to_user_config(fields: dict, target: str) -> dict:
 
     cfg["hyperopt"] = hopt
 
+    return cfg
+
+
+def _fields_to_effective_config(fields: dict, target: str) -> dict:
+    """What the Training page reports as "the partial Ludwig config sent":
+    ``_fields_to_user_config`` plus the settings applied to the generated
+    config afterwards (see ``_apply_architecture``), so Preview Config and
+    training_settings.json show the combiner that will really be used. For
+    display only - the extra key is NOT passed to ``auto_train``."""
+    cfg = _fields_to_user_config(fields, target)
+    if fields.get("architecture") == "light":
+        cfg["combiner"] = {"type": "concat"}
     return cfg
 
 
@@ -965,6 +1020,7 @@ class LudwigBackend(AutoMLBackend):
                 user_config=user_config,
                 random_seed=random_seed,
             )
+            _apply_architecture(config, (_fields or {}).get("architecture"))
             problem_type = (_fields or {}).get("problem_type")
             if problem_type:
                 for out_feat in config.get("output_features", []):

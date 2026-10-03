@@ -125,6 +125,22 @@ _MISSING_STRATEGIES = [
 ]
 
 
+# Model size (advanced): None leaves AutoML's own network (a large, attention-
+# based one for tabular data); "light" swaps in a small fully-connected one.
+# See LudwigBackend._apply_architecture. No technical names in the labels.
+_ARCHITECTURES = [
+    ("training.architecture.auto", None),
+    ("training.architecture.light", "light"),
+]
+# Learning method (advanced): None keeps AutoML's optimizer; "regularized" is
+# the same method with a small penalty on large weights - see
+# LudwigBackend._OPTIMIZERS.
+_OPTIMIZERS = [
+    ("training.optimizer.auto", None),
+    ("training.optimizer.regularized", "regularized"),
+]
+
+
 def recommended_parallel_trials() -> int:
     """How many hyperparameter trials to run at once on THIS computer.
 
@@ -584,6 +600,18 @@ class TrainingPage(QWidget):
         self.missing_strategy_combo.addItems([t(label) for label, _ in _MISSING_STRATEGIES])
         self._add_form_row(advanced_form, t("training.label.meanimpute"), self.missing_strategy_combo)
 
+        # Model size and learning method: both default to "Automatic" (index 0),
+        # which sends nothing and trains exactly like plain AutoML.
+        self.architecture_combo = ComboBox()
+        self.architecture_combo.addItems([t(label) for label, _ in _ARCHITECTURES])
+        attach_help_popup(self.architecture_combo, t("training.architecture.help"))
+        self._add_form_row(advanced_form, t("training.label.architecture"), self.architecture_combo)
+
+        self.optimizer_combo = ComboBox()
+        self.optimizer_combo.addItems([t(label) for label, _ in _OPTIMIZERS])
+        attach_help_popup(self.optimizer_combo, t("training.optimizer.help"))
+        self._add_form_row(advanced_form, t("training.label.optimizer"), self.optimizer_combo)
+
         self._hyperopt_content.setVisible(False)
         model_layout.addWidget(self._hyperopt_content)
 
@@ -953,6 +981,7 @@ class TrainingPage(QWidget):
             "max_iterations": self.hyperopt_trials, "parallel_trials": self.parallel_trials,
             "early_stop_mode": self.early_stop_mode, "early_stop": self.early_stop,
             "missing_values": self.missing_strategy_combo, "class_imbalance": self.class_balance_switch,
+            "architecture": self.architecture_combo, "optimizer": self.optimizer_combo,
         }
 
     def _collect_form_state(self) -> dict:
@@ -973,7 +1002,8 @@ class TrainingPage(QWidget):
         try:
             for key in ("problem_type", "metric", "search_strategy", "early_stop_mode",
                         "missing_values", "time_budget", "test_split", "random_seed",
-                        "max_iterations", "parallel_trials", "early_stop", "class_imbalance"):
+                        "max_iterations", "parallel_trials", "early_stop", "class_imbalance",
+                        "architecture", "optimizer"):
                 if key not in state:
                     continue
                 w, v = widgets[key], state[key]
@@ -1447,6 +1477,14 @@ class TrainingPage(QWidget):
                 self.missing_strategy_combo.currentText()
                 if self.missing_strategy_combo.currentIndex() != 0 else ""
             ),
+            "Model Size": (
+                self.architecture_combo.currentText()
+                if self.architecture_combo.currentIndex() != 0 else ""
+            ),
+            "Learning Method": (
+                self.optimizer_combo.currentText()
+                if self.optimizer_combo.currentIndex() != 0 else ""
+            ),
         }
         for element, value in fields.items():
             if value:
@@ -1519,6 +1557,12 @@ class TrainingPage(QWidget):
         missing_strategy = _MISSING_STRATEGIES[self.missing_strategy_combo.currentIndex()][1]
         if missing_strategy is not None:
             fields["missing_strategy"] = missing_strategy
+        architecture = _ARCHITECTURES[self.architecture_combo.currentIndex()][1]
+        if architecture is not None:
+            fields["architecture"] = architecture
+        optimizer = _OPTIMIZERS[self.optimizer_combo.currentIndex()][1]
+        if optimizer is not None:
+            fields["optimizer"] = optimizer
         return fields
 
     def _start_training(self):
@@ -1697,7 +1741,7 @@ class TrainingPage(QWidget):
         from datetime import datetime, timezone
 
         from hamelin import __version__
-        from hamelin.analytics.automl.ludwig_backend import _fields_to_user_config
+        from hamelin.analytics.automl.ludwig_backend import _fields_to_effective_config
 
         dm = self._data_model
         fields = {} if from_config else self._collect_config_fields()
@@ -1738,6 +1782,8 @@ class TrainingPage(QWidget):
                 "early_stopping_patience_rounds": int(self.early_stop.value()),
                 "missing_numeric_values_strategy": fields.get("missing_strategy", "Ludwig default"),
                 "handle_class_imbalance": bool(fields.get("class_imbalance", False)),
+                "model_size": fields.get("architecture", "automatic"),
+                "learning_method": fields.get("optimizer", "automatic"),
             }
             settings["notes"] = [
                 "early_stopping_mode: 'auto' lets Ludwig's own trial scheduler stop weak trials "
@@ -1749,7 +1795,7 @@ class TrainingPage(QWidget):
                 "time_budget_seconds is Ludwig's hyperopt executor.time_budget_s: a limit on the "
                 "search, so the whole run (start-up, last trial, evaluation) takes a bit longer.",
             ]
-            settings["partial_ludwig_config_sent"] = _fields_to_user_config(fields, target)
+            settings["partial_ludwig_config_sent"] = _fields_to_effective_config(fields, target)
         return settings
 
     def _on_early_stop_mode_changed(self) -> None:
@@ -1759,7 +1805,7 @@ class TrainingPage(QWidget):
     def _on_preview_config_clicked(self) -> None:
         """Show the Ludwig config this run would use, without training."""
         usage_log.event("Training", "click", "Preview Config button")
-        from hamelin.analytics.automl.ludwig_backend import _fields_to_user_config
+        from hamelin.analytics.automl.ludwig_backend import _fields_to_effective_config
         from hamelin.view.widgets.config_dialog import show_config_dialog
 
         target = self.primary_combo.currentText().strip()
@@ -1767,7 +1813,7 @@ class TrainingPage(QWidget):
             config = self._pending_config
             note = t("training.preview_config.note.staged")
         else:
-            config = _fields_to_user_config(self._collect_config_fields(), target)
+            config = _fields_to_effective_config(self._collect_config_fields(), target)
             note = t("training.preview_config.note.auto")
         show_config_dialog(self, t("training.preview_config.title"), config, note)
 
