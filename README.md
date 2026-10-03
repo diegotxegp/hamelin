@@ -170,7 +170,6 @@ A single-file executable (no Python needed on the target machine, CPU only) can 
 
 ```bash
 uv sync --group dev
-QT_QPA_PLATFORM=offscreen uv run pytest -q
 ```
 
 A standalone executable can be built with PyInstaller using the provided `hamelin.spec`.
