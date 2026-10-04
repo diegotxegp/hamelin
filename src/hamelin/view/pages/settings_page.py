@@ -10,7 +10,7 @@ from PySide6.QtCore import Qt
 from PySide6.QtGui import QFont
 from qfluentwidgets import (
     TitleLabel, StrongBodyLabel, BodyLabel, CardWidget,
-    PushButton, PrimaryPushButton, ComboBox, SpinBox, SwitchButton,
+    PushButton, PrimaryPushButton, ComboBox, SpinBox, SwitchButton, CheckBox,
     Slider, FluentIcon, OptionsSettingCard, SettingCardGroup,
     ScrollArea, setTheme, Theme, InfoBar, InfoBarPosition, MessageBox
 )
@@ -191,6 +191,12 @@ class SettingsPage(QWidget):
         self._log_level_combo.setCurrentText(level if level in ("DEBUG", "INFO", "WARNING", "ERROR") else "INFO")
         self._log_level_combo.currentTextChanged.connect(self._on_log_level_changed)
         advanced_form.addRow(t("settings.label.log.level"), self._log_level_combo)
+
+        # Summary dialog shown before training starts (Training page)
+        self._confirm_training_check = CheckBox(t("training.summary.setting"))
+        self._confirm_training_check.setChecked(bool(config.get('training.confirm_before_start', True)))
+        self._confirm_training_check.stateChanged.connect(self._on_confirm_training_changed)
+        advanced_form.addRow(self._confirm_training_check)
         
         advanced_layout.addLayout(advanced_form)
         
@@ -302,6 +308,13 @@ class SettingsPage(QWidget):
         config.save()
         usage_log.event("Settings", "select", "Decimal Places", str(value))
 
+    def _on_confirm_training_changed(self, *_args):
+        """Applies at once: the next 'Start training' shows (or skips) the summary."""
+        checked = self._confirm_training_check.isChecked()
+        config.set('training.confirm_before_start', checked)
+        config.save()
+        usage_log.event("Settings", "select", "Confirm before training", str(checked))
+
     def _on_log_level_changed(self, level: str):
         """Applies at once to the running application and is remembered."""
         log.set_level(level)
@@ -381,6 +394,7 @@ class SettingsPage(QWidget):
         }
         self._theme_combo.setCurrentText(mapping.get(theme.lower(), t("settings.theme.light")))
         self._font_size_spin.setValue(config.get('ui.font.size', 10))
+        self._confirm_training_check.setChecked(bool(config.get('training.confirm_before_start', True)))
         lang_code = config.get('app.language', 'en')
         lang_map = {"en": "English", "es": "Español"}
         self._lang_combo.setCurrentText(lang_map.get(lang_code, "English"))

@@ -242,7 +242,7 @@ Solo se muestran tres campos por defecto; el resto vive tras "▶ Advanced optio
 | **Learning method** | **Automatic** (recomendado: el método habitual de Ludwig) o **Cautious**, que añade una pequeña penalización a los valores internos muy grandes para que el modelo memorice menos a los pacientes de entrenamiento. El efecto suele ser pequeño; compara el resultado en Evaluation. |
 
 ### 6.6 Entrenar y monitorizar
-1. **Start Training** (solo activo con un dataset cargado).
+1. **Start Training** (solo activo con un dataset cargado). Se abre la ventana **Revisar antes de entrenar**: lista los datos (pacientes usados, variable de resultado, predictores) y cada ajuste del modelo, marcado como *Por defecto*, *Tu elección* o *Detectado de los datos*, con una explicación breve, y avisa de problemas (por ejemplo, muy pocos pacientes). **Volver** permite cambiar algo; **Iniciar entrenamiento** continúa. Con *No volver a mostrar este resumen* se omite; se reactiva en *Ajustes*.
 2. Barra de progreso y log de entrenamiento en tiempo real — no cierres la app mientras entrena.
 3. Al terminar, el panel de Resultados muestra 4 tarjetas según lo entrenado: clasificación (AUC-ROC, Accuracy, Sensitivity, Specificity) o regresión (R², RMSE, MAE, Loss); cualquier otra métrica de Ludwig aparece en una línea más pequeña. Matriz de confusión y curva ROC para tareas de clasificación, cuando están disponibles.
 4. **Stop** cancela en cualquier momento; se muestran los resultados parciales hasta el último trial completado.

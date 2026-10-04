@@ -219,7 +219,7 @@ A visual builder for inclusion/exclusion rules (column, operator, value). A pati
 | **Learning method** | **Automatic** (recommended: Ludwig's usual method) or **Cautious**, which adds a small penalty on very large internal values so the model memorises the training patients less. The effect is usually small; compare the result in Evaluation. |
 
 ### 6.6 Training and monitoring
-1. **Start Training** (enabled once a dataset is loaded).
+1. **Start Training** (enabled once a dataset is loaded). A **Review before training** window lists the data (patients used, outcome, predictors) and every model setting, each marked *Default*, *Your choice* or *Detected from data* with a one-line explanation, plus warnings (for example, very few patients). Choose **Back** to change something or **Start training** to continue. Tick *Don't show this summary again* to skip it; it can be turned back on in *Settings*.
 2. A progress bar and live log show the training; do not close the application meanwhile.
 3. When it finishes, the Results panel shows four cards: for classification AUC-ROC, Accuracy, Sensitivity and Specificity; for regression R², RMSE, MAE and Loss. Confusion matrix and ROC curve are shown for classification.
 4. **Stop** cancels at any time; partial results up to the last completed trial are shown.

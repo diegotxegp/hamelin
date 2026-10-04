@@ -101,7 +101,7 @@ The window opens at a size that fits your screen and remembers its size and posi
 
 1. **Create or open a project** (*Project*). Give it a name and describe the study; Hamelin creates the project folder.
 2. **Load a dataset** (*Data*). Import your file, check the detected variable types, clean missing values and outliers, and generate the descriptive table.
-3. **Train a model** (*Training*). Pick the variable to predict and the predictors, set a time limit (and, optionally, the advanced settings), and start. Progress and the best configuration found so far are shown while it runs.
+3. **Train a model** (*Training*). Pick the variable to predict and the predictors, set a time limit (and, optionally, the advanced settings), and start. Before it starts, a summary shows every setting that will be used (defaults and your own choices, each explained). Progress and the best configuration found so far are shown while it runs.
 4. **Evaluate** (*Evaluation*). Inspect metrics with confidence intervals, the confusion matrix and ROC curve, read the plain-language interpretation, compare models and add notes.
 5. **Export.** Save charts (PNG/PDF), tables (CSV/Excel/Word) and model reports from each page into the project's `results/` folder.
 

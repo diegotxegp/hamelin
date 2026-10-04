@@ -25,6 +25,7 @@ from qfluentwidgets import (
 
 from hamelin.analytics.automl.base import AutoMLResult
 from hamelin.analytics.ludwig_trainer import LudwigTrainerWorker
+from hamelin.utils.config_manager import config
 from hamelin.utils.logger import log
 from hamelin.utils.usage_logger import usage_log
 from hamelin.utils.export_paths import default_export_path
@@ -225,6 +226,9 @@ class TrainingPage(QWidget):
         self._run_settings: dict | None = None   # snapshot of the run in progress
         log.debug("Initializing Training Page")
         self._init_ui()
+        # The form as first built = the defaults, so the pre-training summary
+        # can tell a setting left alone from one the user changed.
+        self._form_defaults = self._collect_form_state()
         self._refresh_default_model_name()
 
     def _add_form_row(self, form: QFormLayout, label_text: str, widget) -> None:
@@ -1565,6 +1569,131 @@ class TrainingPage(QWidget):
             fields["optimizer"] = optimizer
         return fields
 
+    def _rows_after_rules(self):
+        """The active dataframe (already without excluded rows) narrowed by the
+        inclusion / exclusion rules defined in the RuleBuilders."""
+        df = self._data_model.get_active_df()
+        try:
+            from hamelin.utils.rule_evaluator import apply_rules
+            inc_rules = self.inclusion_builder.get_rules() or []
+            exc_rules = self.exclusion_builder.get_rules() or []
+            # Inclusion: keep rows that match ANY inclusion rule (OR semantics)
+            if inc_rules:
+                inc_result = apply_rules(df, inc_rules, mode='include')
+                df = df.loc[inc_result['mask']]
+            # Exclusion: remove rows that match any exclusion rule
+            if exc_rules:
+                exc_result = apply_rules(df, exc_rules, mode='exclude')
+                df = df.loc[exc_result['mask']]
+        except Exception as exc:  # noqa: BLE001
+            log.warning(f"TrainingPage: rule application failed — {exc}")
+        return df
+
+    def _build_training_summary(self, target: str, features: list, rows_used: int,
+                                from_config: bool):
+        """What the "Review before training" dialog shows: sections of rows
+        (value, where it comes from, what it means), warnings and notes."""
+        from hamelin.view.widgets.training_summary_dialog import (
+            CHOSEN, DEFAULT, DETECTED, SummaryRow, SummarySection)
+
+        dm = self._data_model
+        defaults = self._form_defaults
+        state = self._collect_form_state()
+
+        def origin(key, detected=False):
+            if detected:
+                return DETECTED
+            return DEFAULT if state[key] == defaults[key] else CHOSEN
+
+        def label(key):
+            return t(key).rstrip(": ")
+
+        names = ", ".join(features[:8]) + (f" (+{len(features) - 8})" if len(features) > 8 else "")
+        inc = self.inclusion_builder.get_rules() or []
+        exc = self.exclusion_builder.get_rules() or []
+        secondary = [self.secondary_list.item(i).text() for i in range(self.secondary_list.count())
+                     if self.secondary_list.item(i).isSelected()
+                     and self.secondary_list.item(i).text() not in (target, *features)]
+        data_rows = [
+            SummaryRow(t("training.summary.dataset"),
+                       Path(str(dm.filepath)).name if getattr(dm, "filepath", None) else "—"),
+            SummaryRow(t("training.summary.rows_used"),
+                       t("training.summary.rows_value").format(rows_used, len(dm.df)),
+                       hint=t("training.summary.rows_used.hint")),
+            SummaryRow(t("training.label.outcome.full").rstrip(": "), target),
+            SummaryRow(t("training.summary.predictors"),
+                       f"{len(features)}: {names}"),
+        ]
+        if secondary:
+            data_rows.append(SummaryRow(label("training.label.secondary_outcomes"), ", ".join(secondary)))
+        if inc or exc:
+            data_rows.append(SummaryRow(
+                t("training.summary.selection"),
+                t("training.summary.selection_value").format(len(inc), len(exc))))
+        sections = [SummarySection(t("training.summary.section.data"), data_rows)]
+        warnings: list[str] = []
+        notes: list[str] = []
+
+        if from_config:
+            sections.append(SummarySection(t("training.summary.section.model"), [
+                SummaryRow(t("training.summary.fixed_config"), t("training.summary.fixed_config.value"),
+                           hint=t("training.summary.fixed_config.hint"))]))
+        else:
+            ptype = _PROBLEM_TYPES[state["problem_type"]][1]
+            seconds = int(state["time_budget"])
+            holdout = float(state["test_split"])
+            strategy = _SEARCH_STRATEGIES[state["search_strategy"]][1]
+            early = _EARLY_STOP_MODES[state["early_stop_mode"]][1]
+            model_rows = [
+                SummaryRow(label("training.label.predictiontype"),
+                           t(_PROBLEM_TYPES[state["problem_type"]][0]),
+                           origin("problem_type", ptype == self._suggest_problem_type(target)),
+                           t("training.summary.hint.prediction_type")),
+                SummaryRow(label("training.label.evaluationmetric"), self.metric_combo.currentText(),
+                           origin("metric"), t("training.summary.hint.metric")),
+                SummaryRow(label("training.label.timebudget"),
+                           t("training.summary.time_value").format(seconds, seconds / 60),
+                           origin("time_budget"), t("training.summary.hint.time")),
+                SummaryRow(label("training.label.testsplit"),
+                           t("training.summary.holdout_value").format(holdout * 100, round(rows_used * holdout)),
+                           origin("test_split"), t("training.summary.hint.holdout")),
+                SummaryRow(label("training.label.randomseed"), str(state["random_seed"]),
+                           origin("random_seed"), t("training.summary.hint.seed")),
+                SummaryRow(label("training.label.strategy"), t(_SEARCH_STRATEGIES[state["search_strategy"]][0]),
+                           origin("search_strategy"), t("training.summary.hint.strategy")),
+            ]
+            if strategy != "none":
+                model_rows.append(SummaryRow(label("training.label.maxiterations"), str(state["max_iterations"]),
+                                             origin("max_iterations"), t("training.summary.hint.iterations")))
+            model_rows += [
+                SummaryRow(label("training.label.paralleltrials"), str(state["parallel_trials"]),
+                           origin("parallel_trials"), t("training.summary.hint.parallel")),
+                SummaryRow(label("training.label.earlystop_mode"), t(_EARLY_STOP_MODES[state["early_stop_mode"]][0]),
+                           origin("early_stop_mode"), t("training.summary.hint.early_stop")),
+            ]
+            if early == "patience":
+                model_rows.append(SummaryRow(label("training.label.earlystop"), str(state["early_stop"]),
+                                             origin("early_stop")))
+            model_rows += [
+                SummaryRow(label("training.label.meanimpute"),
+                           t(_MISSING_STRATEGIES[state["missing_values"]][0]),
+                           origin("missing_values"), t("training.summary.hint.missing")),
+                SummaryRow(label("training.label.imbalance"),
+                           t("training.summary.yes") if state["class_imbalance"] else t("training.summary.no"),
+                           origin("class_imbalance"), t("training.summary.hint.imbalance")),
+                SummaryRow(label("training.label.architecture"), t(_ARCHITECTURES[state["architecture"]][0]),
+                           origin("architecture"), t("training.summary.hint.architecture")),
+                SummaryRow(label("training.label.optimizer"), t(_OPTIMIZERS[state["optimizer"]][0]),
+                           origin("optimizer"), t("training.summary.hint.optimizer")),
+            ]
+            sections.append(SummarySection(t("training.summary.section.model"), model_rows))
+            if rows_used < 100:
+                warnings.append(t("training.summary.warn.few_rows").format(rows_used))
+            if features and rows_used < 10 * len(features):
+                warnings.append(t("training.summary.warn.many_predictors").format(len(features), rows_used))
+        notes.append(t("training.summary.note.saved"))
+        return sections, warnings, notes
+
     def _start_training(self):
         """Validate config, build a LudwigTrainerWorker and start it."""
         usage_log.event("Training", "click", "Start Training button")
@@ -1639,6 +1768,14 @@ class TrainingPage(QWidget):
                 )
                 return
 
+        if config.get("training.confirm_before_start", True):
+            from hamelin.view.widgets.training_summary_dialog import confirm_training
+            sections, warnings, notes = self._build_training_summary(
+                target, features, len(self._rows_after_rules()), train_from_config)
+            if not confirm_training(self, sections, warnings, notes):
+                usage_log.event("Training", "click", "Summary: back")
+                return
+
         time_limit_s = 0 if train_from_config else self.time_budget.value()
 
         self.start_training_btn.setEnabled(False)
@@ -1653,24 +1790,7 @@ class TrainingPage(QWidget):
             else t("training.status.training"),
         )
 
-        # Start from the active dataframe (already respects excluded_rows)
-        df = self._data_model.get_active_df()
-
-        # Apply inclusion/exclusion rules defined by the clinician (RuleBuilder)
-        try:
-            from hamelin.utils.rule_evaluator import apply_rules
-            inc_rules = self.inclusion_builder.get_rules() or []
-            exc_rules = self.exclusion_builder.get_rules() or []
-            # Inclusion: keep rows that match ANY inclusion rule (OR semantics)
-            if inc_rules:
-                inc_result = apply_rules(df, inc_rules, mode='include')
-                df = df.loc[inc_result['mask']]
-            # Exclusion: remove rows that match any exclusion rule
-            if exc_rules:
-                exc_result = apply_rules(df, exc_rules, mode='exclude')
-                df = df.loc[exc_result['mask']]
-        except Exception as exc:  # noqa: BLE001
-            log.warning(f"TrainingPage: rule application failed — {exc}")
+        df = self._rows_after_rules()
 
         # Build backend kwargs: a staged config trains as-is, otherwise
         # AutoML picks the architecture, with the model-config card's
