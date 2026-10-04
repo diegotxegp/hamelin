@@ -50,7 +50,10 @@ def _row_widget(row: SummaryRow) -> QWidget:
     lay.setContentsMargins(0, 4, 0, 4)
     lay.setSpacing(12)
 
-    left = QVBoxLayout()
+    left_box = QWidget()
+    left_box.setFixedWidth(330)          # same column width on every row
+    left = QVBoxLayout(left_box)
+    left.setContentsMargins(0, 0, 0, 0)
     left.setSpacing(2)
     label = StrongBodyLabel(row.label)
     label.setWordWrap(True)
@@ -60,19 +63,19 @@ def _row_widget(row: SummaryRow) -> QWidget:
         hint.setWordWrap(True)
         bind_style(hint, lambda c: f"color: {c.text_secondary}; font-size: 12px;")
         left.addWidget(hint)
-    lay.addLayout(left, 5)
+    lay.addWidget(left_box, 0, Qt.AlignTop)
 
     value = BodyLabel(row.value)
     value.setWordWrap(True)
     value.setTextInteractionFlags(Qt.TextSelectableByMouse)
-    lay.addWidget(value, 4)
+    lay.addWidget(value, 1, Qt.AlignTop)
 
     pill = BodyLabel(t(_ORIGIN_KEYS[row.origin]) if row.origin else "")
     pill.setAlignment(Qt.AlignRight | Qt.AlignTop)
     if row.origin:
         pill.setStyleSheet(f"color: {_ORIGIN_COLOURS[row.origin]}; font-weight: 600;")
-    pill.setMinimumWidth(110)
-    lay.addWidget(pill, 0)
+    pill.setFixedWidth(170)
+    lay.addWidget(pill, 0, Qt.AlignTop)
     return box
 
 

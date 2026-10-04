@@ -113,7 +113,8 @@ The built-in **Help** page explains each screen in detail.
 |---|---|
 | ![Project](docs/hamelin/images/project_page.png) **Project** | ![Data](docs/hamelin/images/data_page.png) **Data** |
 | ![Training](docs/hamelin/images/training_page.png) **Training** | ![Advanced training settings](docs/hamelin/images/training_page_advanced.png) **Advanced training settings** |
-| ![Evaluation](docs/hamelin/images/evaluation_page.png) **Evaluation** | ![Model comparison](docs/hamelin/images/evaluation_compare_page.png) **Model comparison** |
+| ![Review before training](docs/hamelin/images/training_summary.png) **Review before training** | ![Evaluation](docs/hamelin/images/evaluation_page.png) **Evaluation** |
+| ![Model comparison](docs/hamelin/images/evaluation_compare_page.png) **Model comparison** | |
 
 ## Projects, configuration and generated models
 

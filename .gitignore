@@ -22,3 +22,4 @@ wheels/
 
 # Stray Ludwig/test output written relative to the working directory
 /results/
+.venv-build/

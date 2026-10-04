@@ -247,6 +247,8 @@ Solo se muestran tres campos por defecto; el resto vive tras "▶ Advanced optio
 3. Al terminar, el panel de Resultados muestra 4 tarjetas según lo entrenado: clasificación (AUC-ROC, Accuracy, Sensitivity, Specificity) o regresión (R², RMSE, MAE, Loss); cualquier otra métrica de Ludwig aparece en una línea más pequeña. Matriz de confusión y curva ROC para tareas de clasificación, cuando están disponibles.
 4. **Stop** cancela en cualquier momento; se muestran los resultados parciales hasta el último trial completado.
 
+![Review before training](images/training_summary.png)
+
 **Preview Config** (junto a Start Training): abre una ventana de solo lectura con la configuración de Ludwig que se usará, construida a partir de tus elecciones en *Model Configuration* — sin entrenar. AutoML completa el resto (arquitectura, encoders…) al empezar; si has preparado una config fija (modelo duplicado o archivo importado), muestra esa config exacta. La configuración final completa de cada modelo entrenado se consulta después en la página *Evaluation* (**View Config**).
 
 **«How to read this result»** (en inglés, debajo del resumen verde; aparece tras entrenar y, para cada modelo, en *Evaluation*). Lo generan **reglas explícitas** (no un modelo de IA), así que es reproducible y auditable. Contiene:
