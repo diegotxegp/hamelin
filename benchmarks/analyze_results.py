@@ -5,10 +5,11 @@ Usage, from the benchmarks/ folder:
     python analyze_results.py <run_mode>            # e.g. full_all_folds_1000s
     python analyze_results.py <run_mode> --no-baseline
     python analyze_results.py <run_mode> --tool sklearn
-    python analyze_results.py --datasets            # dataset table only (needs OpenML, no results)
+    python analyze_results.py --datasets            # results/datasets_summary.csv (needs OpenML, no results)
 
-Reads  ludwig/results/<run_mode>/task_*_ludwig_all_runs.csv  (and the sklearn
-ones if present) and writes analysis_<run_mode>/ next to this script. The
+Reads  results/<run_mode>/ludwig/task_*_ludwig_all_runs.csv  (and the sklearn
+ones in results/<run_mode>/sklearn if present) and writes
+results/<run_mode>/analysis/. The
 notebooks call run_analysis() at their end; its `outputs` argument chooses
 which of these files are written:
 
@@ -34,6 +35,7 @@ import pandas as pd
 from scipy import stats
 
 HERE = os.path.dirname(os.path.abspath(__file__))
+RESULTS = os.path.join(HERE, "results")  # results/<run mode>/{ludwig,sklearn,analysis,logs}
 # Ludwig's `accuracy_micro` is the plain fraction of correct predictions
 # (what scikit-learn calls accuracy); its own `accuracy` is a different quantity.
 LUDWIG_RENAME = {"accuracy": "accuracy_ludwig_native", "accuracy_micro": "accuracy"}
@@ -43,7 +45,7 @@ EXPECTED_RUNS = 10  # official OpenML folds per task; main() adjusts it for test
 
 
 def load_runs(tool, run_mode):
-    folder = os.path.join(HERE, tool, "results", run_mode)
+    folder = os.path.join(RESULTS, run_mode, tool)
     if not os.path.isdir(folder):
         return None
     frames = [pd.read_csv(os.path.join(folder, f)) for f in sorted(os.listdir(folder))
@@ -210,7 +212,7 @@ def dataset_summary(task_ids):
 def ludwig_diagnostics_table(run_mode):
     """Flattens ludwig_run_diagnostics.json: one row per run."""
     import json
-    path = os.path.join(HERE, "ludwig", "results", run_mode, "ludwig_run_diagnostics.json")
+    path = os.path.join(RESULTS, run_mode, "ludwig", "ludwig_run_diagnostics.json")
     if not os.path.isfile(path):
         return None
     with open(path) as f:
@@ -270,7 +272,7 @@ ALL_OUTPUTS = ("summary_table", "per_task_stats", "baseline", "time_and_failures
 
 def run_analysis(run_mode, tool="ludwig", outputs=ALL_OUTPUTS, with_baseline=True,
                  time_limit=1000.0, verbose=True):
-    """Writes analysis_<run_mode>/ for the results of `tool` and returns its summary table.
+    """Writes results/<run_mode>/analysis/ for the results of `tool` and returns its summary table.
 
     `outputs` chooses which files are written (names in ALL_OUTPUTS); the
     notebooks expose it so the author decides what a reader gets. The summary
@@ -286,8 +288,8 @@ def run_analysis(run_mode, tool="ludwig", outputs=ALL_OUTPUTS, with_baseline=Tru
     lud, skl = load_runs("ludwig", run_mode), load_runs("sklearn", run_mode)
     main_runs = {"ludwig": lud, "sklearn": skl}[tool]
     if main_runs is None:
-        raise SystemExit(f"No {tool} results in {tool}/results/{run_mode}")
-    out = os.path.join(HERE, f"analysis_{run_mode}")
+        raise SystemExit(f"No {tool} results in results/{run_mode}/{tool}")
+    out = os.path.join(RESULTS, run_mode, "analysis")
     os.makedirs(out, exist_ok=True)
     say = print if verbose else (lambda *a, **k: None)
     written = []
@@ -361,7 +363,8 @@ def main():
     sys.path.insert(0, HERE)
     if args.datasets:
         from common_utils import ALL_TASK_IDS
-        path = os.path.join(HERE, "datasets_summary.csv")
+        os.makedirs(RESULTS, exist_ok=True)
+        path = os.path.join(RESULTS, "datasets_summary.csv")
         dataset_summary(ALL_TASK_IDS).to_csv(path, index=False)
         print(f"Dataset table written to {path}")
         return

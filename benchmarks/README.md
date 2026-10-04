@@ -45,9 +45,10 @@ keep the browser/VS Code session and the machine awake, or use the script below.
 
 **From a terminal, unattended (for the long run).**
 
-    mkdir -p logs && nohup ./run_benchmark.sh > logs/launcher.log 2>&1 &    # or inside tmux/screen
+    nohup ./run_benchmark.sh > /dev/null 2>&1 &     # or inside tmux/screen
+    tail -f results/full_all_folds_1000s/logs/launcher.log
 
-`run_benchmark.sh` runs the same notebooks as scripts (live logs in `logs/`, no
+`run_benchmark.sh` runs the same notebooks as scripts (live logs in `results/<mode>/logs/`, no
 per-cell timeout), then the analysis. `./run_benchmark.sh ludwig` (or `sklearn`)
 runs only one tool; `PYTHON=/path/to/python` selects the interpreter (default
 `.venv-bench/bin/python`); `BENCH_TEST_MODE=1 ./run_benchmark.sh` is the smoke
@@ -64,15 +65,15 @@ again, or *Run All* again, with the same `BENCH_*` variables. The experiment
 continues dataset by dataset: a dataset with all its runs saved is skipped,
 and one that was only partly done is **discarded and restarted from fold 0**,
 so every dataset comes from one uninterrupted series of runs on the same
-machine. The discarded CSV is kept in `<results>/discarded/` for inspection
+machine. The discarded CSV is kept in `results/<mode>/<tool>/discarded/` for inspection
 and ignored by the analysis. The same happens inside a launch: if one run of a
 dataset fails, the dataset is started over (`BENCH_DATASET_RETRIES`, default 1)
 and then the experiment goes on with the next one. A dataset that keeps
 failing is reported with a `[WARN]` and costs up to twice its normal time.
 
 **To start from scratch** (re-run everything for the same mode) use
-`BENCH_RESUME=0`: the previous results folder is moved to
-`<results>/<mode>.old_<timestamp>` (delete it by hand when sure) and nothing is
+`BENCH_RESUME=0`: the previous `results/<mode>/<tool>/` folder is moved to
+`results/<mode>/<tool>.old_<timestamp>` (delete it by hand when sure) and nothing is
 reused. Do not start two launches at once; the script refuses.
 
 From the command line, `jupyter nbconvert --execute` needs the cell timeout
@@ -132,10 +133,21 @@ temp folder when no other Ray job is running. Results are **not** deleted
 before a run, so that an interrupted experiment can continue; `BENCH_RESUME=0`
 moves them aside (see above).
 
-Each notebook writes next to itself, in one subfolder per run mode
-(`test`, `single_task_<folds>_<time>s`, `full_all_folds_1000s`, ...):
+Everything is written under `results/`, one folder per run mode (`test`,
+`single_task_<folds>_<time>s`, `full_all_folds_1000s`, ...), so one experiment
+is one folder you can zip and share:
 
-| File (in `<tool>/results/<mode>/`) | What it contains |
+    results/
+    ├── datasets_summary.csv           (from `analyze_results.py --datasets`)
+    └── full_all_folds_1000s/          one experiment, everything together
+        ├── ludwig/                    runs, summary, environment, Ludwig diagnostics
+        ├── sklearn/                   runs, summary, environment
+        ├── analysis/                  tables and statistics
+        └── logs/                      logs of the launches (launcher.log = whole session)
+
+Each notebook writes to its tool's folder:
+
+| File (in `results/<mode>/<tool>/`) | What it contains |
 |---|---|
 | `task_<id>_<tool>_all_runs.csv` | One row per run (fold): ids (`task_id`, `repeat`, `fold`, `seed`, `dataset_name`), the metrics and `time_taken` (s, training + evaluation). Classification: `roc_auc` (binary), `accuracy`, `balanced_accuracy`, `f1_macro`; Ludwig also `accuracy_micro` (the plain fraction of correct predictions; its own `accuracy` is a different quantity) and `loss`. Regression: `root_mean_squared_error`, `mean_absolute_error`, `mean_squared_error`, `r2`. Ludwig also `train_time_s`, `n_trials`, `n_trials_failed`; scikit-learn also `best_model`. |
 | `summary_<tool>.csv` | Per task: `n_runs`, and the mean and sample standard deviation of every metric. |
@@ -155,7 +167,7 @@ summary table is always shown). The same analysis runs from a terminal (from
     python analyze_results.py <mode> --no-baseline   # skip the OpenML download
     python analyze_results.py <mode> --tool sklearn  # summary of the sklearn runs
 
-It writes `analysis_<mode>/`:
+It writes `results/<mode>/analysis/`:
 
 | File | What it contains |
 |---|---|
@@ -166,7 +178,7 @@ It writes `analysis_<mode>/`:
 | `ludwig_diagnostics.csv` | The diagnostics JSON flattened, one row per run. |
 | `paired_tests.csv`, `across_tasks.csv` | Ludwig vs scikit-learn (needs both): Wilcoxon per task on the same folds, and across tasks, Holm-corrected. The p-values are slightly optimistic because the training sets of the folds overlap. |
 
-`python analyze_results.py --datasets` writes `datasets_summary.csv` straight
+`python analyze_results.py --datasets` writes `results/datasets_summary.csv` straight
 from OpenML (no results needed): instances, features (target included, as in
 OpenML), numeric/categorical split, missing values, classes, the columns OpenML
 excludes (`excluded_columns`) and the majority-class share, which is the

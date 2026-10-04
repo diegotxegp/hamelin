@@ -81,6 +81,17 @@ else:
     TASK_IDS = ALL_TASK_IDS
     RUN_MODE_NAME = f"full_{FOLDS_LABEL}_{TIME_LIMIT_S}s"
 
+# Everything the benchmark writes lives under results/<run mode>/:
+#   ludwig/  sklearn/  analysis/  logs/      (and results/datasets_summary.csv)
+BENCHMARKS_DIR = os.path.dirname(os.path.abspath(__file__))
+RESULTS_ROOT = os.path.join(BENCHMARKS_DIR, "results")
+
+
+def results_dir(tool):
+    """results/<run mode>/<tool>: where one tool's runs, summary and logs are saved."""
+    return os.path.join(RESULTS_ROOT, RUN_MODE_NAME, tool)
+
+
 # One distinct seed per official fold (fold i -> SEEDS[i]).
 SEEDS = [123, 2027, 99, 7, 42, 1984, 2024, 555, 314, 271]
 

@@ -1,5 +1,6 @@
-# Outputs written by the notebooks (relative to each notebook's folder)
+# Everything the benchmark writes: results/<run mode>/{ludwig,sklearn,analysis,logs}
 results/
+# Ludwig's per-trial scratch folders (deleted around every run)
 hyperopt/
 ray_results/
 model/
@@ -8,6 +9,3 @@ model/
 .ipynb_checkpoints/
 __pycache__/
 .venv-bench/
-analysis_*/
-logs/
-datasets_summary.csv
