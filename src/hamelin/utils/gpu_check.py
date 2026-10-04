@@ -97,3 +97,67 @@ def wait_for_gpu_probe(timeout: float = 40.0) -> None:
     """Block until the probe has decided whether the GPU stays visible."""
     if _thread is not None:
         _thread.join(timeout)
+
+
+# --- GPU wait shared with the desktop -------------------------------------
+
+GPU_WAIT_MARGIN = 0.02  # fraction of GPU memory allowed above the idle baseline
+
+
+def gpu_wait_thresholds(memory_utils: dict, margin: float = GPU_WAIT_MARGIN) -> dict:
+    """Per-GPU memory fraction a new trial may find in use, keyed by GPU id.
+
+    ``memory_utils`` maps GPU id -> fraction of its memory in use right now.
+    """
+    return {str(gpu): util + margin for gpu, util in memory_utils.items()}
+
+
+def init_ray_for_training() -> None:
+    """Start Ray so Ludwig's per-trial GPU wait tolerates what the desktop uses.
+
+    Before every trial Ludwig calls ``ray.tune.utils.wait_for_gpu``, which
+    blocks until the GPU uses at most 1% of its memory (the previous trial may
+    not have freed it yet) and otherwise fails the trial with "GPU memory was
+    not freed". The 1% is hard-coded in Ludwig. A GPU that also draws the
+    screen (Xorg, remote desktop, browser) is never below it, so on a
+    typical computer with a single GPU every trial would fail.
+
+    Here the limit becomes each GPU's memory use right now, before any trial,
+    plus ``GPU_WAIT_MARGIN``: a trial that has not released its memory (a CUDA
+    context alone is ~300 MB) is still waited for. Call it right before
+    ``train_with_config``; Ludwig then reuses this Ray instead of starting its
+    own. Without GPUtil or GPUs it does nothing and Ludwig starts Ray itself.
+    """
+    try:
+        import GPUtil
+        import ray
+        if ray.is_initialized():
+            return
+        baseline = {str(g.id): g.memoryUtil for g in GPUtil.getGPUs()}
+    except Exception:  # noqa: BLE001 - no GPU stack: Ludwig's own init
+        return
+    if not baseline:
+        return
+    thresholds = gpu_wait_thresholds(baseline)
+
+    def relax_gpu_wait():
+        # Runs in every Ray worker before Ludwig is imported there, so
+        # Ludwig's `from ray.tune.utils import wait_for_gpu` gets this one.
+        # Nested (not module level) so Ray ships it by value.
+        import ray.tune.utils
+        original = ray.tune.utils.wait_for_gpu
+
+        def wait_for_gpu(gpu_id=None, target_util=0.01, **kwargs):
+            limit = max(target_util, thresholds.get(str(gpu_id), target_util))
+            return original(gpu_id, target_util=limit, **kwargs)
+
+        ray.tune.utils.wait_for_gpu = wait_for_gpu
+
+    log.info("GPU memory in use before training: "
+             + ", ".join(f"GPU {g} {u:.1%}" for g, u in baseline.items()))
+    os.environ.setdefault("TUNE_FORCE_TRIAL_CLEANUP_S", "120")  # as Ludwig's own init
+    try:
+        ray.init(ignore_reinit_error=True,
+                 runtime_env={"worker_process_setup_hook": relax_gpu_wait})
+    except Exception as exc:  # noqa: BLE001 - let Ludwig start Ray its own way
+        log.warning(f"Could not start Ray with the relaxed GPU wait: {exc}")

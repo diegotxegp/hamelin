@@ -1001,6 +1001,11 @@ class LudwigBackend(AutoMLBackend):
             f"output_directory={output_directory!r}, user_config={user_config!r}"
         )
 
+        # Ludwig's per-trial wait for a free GPU never ends on a GPU that also
+        # draws the screen - see init_ray_for_training.
+        from hamelin.utils.gpu_check import init_ray_for_training
+        init_ray_for_training()
+
         wall_start = time.perf_counter()
         try:
             # Two steps (create_auto_config then train_with_config)

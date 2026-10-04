@@ -4,6 +4,14 @@ All notable changes to Hamelin are listed here, newest first.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the
 version numbers follow [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Fixed
+- Training on a GPU that also drives the screen (the usual single-GPU computer) no longer
+  fails every trial with "GPU memory was not freed". Ludwig waits for the GPU to be almost
+  empty before each trial, which never happens while the desktop uses it; HAMELIN now
+  waits for the level the GPU had before training instead, so every GPU can be used.
+
 ## [0.2.0] - 2026-10-04
 
 ### Added
