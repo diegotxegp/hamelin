@@ -27,6 +27,8 @@ case "$WHAT" in ludwig|sklearn|all) ;; *) echo "Usage: $0 [ludwig|sklearn|all]";
 
 PYTHON="${PYTHON:-.venv-bench/bin/python}"
 [ -x "$PYTHON" ] || PYTHON=python3
+# Absolute path, so it still resolves after run_tool cd's into the tool folder
+case "$PYTHON" in */*) PYTHON="$(cd "$(dirname "$PYTHON")" && pwd)/$(basename "$PYTHON")";; esac
 export BENCH_TEST_MODE="${BENCH_TEST_MODE:-0}"
 PASSES="${BENCH_PASSES:-2}"
 MODE=$("$PYTHON" -c "import common_utils as c; print(c.RUN_MODE_NAME)") || { echo "Cannot import common_utils with $PYTHON"; exit 1; }

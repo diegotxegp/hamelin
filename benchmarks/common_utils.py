@@ -496,6 +496,53 @@ def disable_unsupported_gpu():
         os.environ["CUDA_VISIBLE_DEVICES"] = ""
 
 
+GPU_WAIT_MARGIN = 0.02  # fraction of GPU memory above the idle baseline
+
+
+def init_ray_for_ludwig():
+    """Starts Ray so Ludwig's per-trial GPU wait tolerates the desktop's memory use.
+
+    Before each trial Ludwig calls ray.tune.utils.wait_for_gpu, which blocks
+    until the GPU uses at most 1% of its memory, to avoid starting on top of
+    a previous trial that has not freed it yet. On a GPU that also drives
+    the desktop (Xorg, remote desktop, browser) that never happens, so the
+    trial fails with "GPU memory was not freed" and is retried or lost.
+    Here the threshold becomes each GPU's memory use now, before any trial,
+    plus GPU_WAIT_MARGIN: a leftover trial (a CUDA context alone is ~300 MB)
+    is still waited for. Call it right before auto_train (after
+    cleanup_ludwig_artifacts, which stops Ray); Ludwig reuses this Ray.
+    Without GPUtil or GPUs it does nothing and Ludwig starts Ray itself.
+    """
+    try:
+        import GPUtil
+        import ray
+        baseline = {str(g.id): g.memoryUtil for g in GPUtil.getGPUs()}
+    except Exception:
+        return
+    if not baseline or ray.is_initialized():
+        return
+    thresholds = {gpu: util + GPU_WAIT_MARGIN for gpu, util in baseline.items()}
+
+    def relax_gpu_wait():
+        # Runs in every Ray worker before Ludwig is imported there, so
+        # Ludwig's `from ray.tune.utils import wait_for_gpu` gets this one.
+        # Nested (not module level) so Ray ships it by value.
+        import ray.tune.utils
+        original = ray.tune.utils.wait_for_gpu
+
+        def wait_for_gpu(gpu_id=None, target_util=0.01, **kwargs):
+            limit = max(target_util, thresholds.get(str(gpu_id), target_util))
+            return original(gpu_id, target_util=limit, **kwargs)
+
+        ray.tune.utils.wait_for_gpu = wait_for_gpu
+
+    print("[INFO] GPU memory in use before the trials: "
+          + ", ".join(f"GPU {g} {u:.1%}" for g, u in baseline.items()))
+    os.environ.setdefault("TUNE_FORCE_TRIAL_CLEANUP_S", "120")  # as Ludwig's own init
+    ray.init(ignore_reinit_error=True,
+             runtime_env={"worker_process_setup_hook": relax_gpu_wait})
+
+
 def cleanup_ludwig_artifacts(output_dir="."):
     """Removes Ludwig's disposable per-run files (and Ray's session logs) and stops Ray.
 

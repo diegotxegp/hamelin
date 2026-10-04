@@ -10,6 +10,7 @@ ray[tune]==2.58.0
 torch==2.14.0
 hyperopt==0.3.0
 dask==2026.8.0   # imported by ludwig.automl (auto_train)
+GPUtil==1.4.0    # ray.tune wait_for_gpu, used by Ludwig hyperopt on GPU
 
 # scikit-learn notebook
 scikit-learn==1.9.1

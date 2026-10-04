@@ -118,6 +118,12 @@ Ludwig runs with its own defaults: concurrency and device use (CPUs/GPUs) are
 decided automatically, nothing is limited. Each trial is a full PyTorch
 process (~1-2 GB), so make sure the machine has enough memory.
 
+One exception: before each trial Ludwig waits until its GPU uses at most 1% of
+its memory, which never happens on a GPU that also drives the desktop (the
+trial fails with "GPU memory was not freed"). The notebook measures each GPU's
+memory use before the trials and waits for that level plus 2% instead
+(`init_ray_for_ludwig` in `common_utils.py`), so every GPU can be used.
+
 ## How to read the results
 
 Ludwig runs about 100 s longer than its time limit (or stops earlier if its
