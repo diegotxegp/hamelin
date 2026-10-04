@@ -8,6 +8,6 @@ model/
 .ipynb_checkpoints/
 __pycache__/
 .venv-bench/
-
-# Executed notebook copies from run_screening.py
+analysis_*/
 logs/
+datasets_summary.csv

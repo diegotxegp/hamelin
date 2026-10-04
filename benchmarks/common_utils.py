@@ -27,7 +27,7 @@ import openml
 #   SINGLE_TASK_MODE -> one task (SINGLE_TASK_ID) with ALL its OpenML folds,
 #                       full time limit. Cheap way to compare both tools.
 #   neither          -> every task in ALL_TASK_IDS with all their folds.
-# Each setting can be overridden from the environment (run_screening.py does this),
+# Each setting can be overridden from the environment (BENCH_* variables),
 # so the file does not have to be edited to launch an automated run.
 def _env_bool(name, default):
     value = os.environ.get(name)
@@ -40,8 +40,11 @@ def _env_int(name, default):
 
 
 TEST_MODE = _env_bool("BENCH_TEST_MODE", True)
+# True -> runs already saved in the results CSVs are skipped, so an interrupted
+# experiment continues where it stopped. False -> start over (overwrites them).
+RESUME = _env_bool("BENCH_RESUME", True)
 SINGLE_TASK_MODE = _env_bool("BENCH_SINGLE_TASK_MODE", False)
-TEST_TASK_ID = 37          # diabetes
+TEST_TASK_ID = _env_int("BENCH_TEST_TASK_ID", 37)  # 37 = diabetes
 SINGLE_TASK_ID = TEST_TASK_ID  # same task as the smoke test, so both modes are comparable
 
 ALL_TASK_IDS = [
@@ -56,20 +59,22 @@ if TEST_MODE and SINGLE_TASK_MODE:
 # Time limit per run (seconds) for BOTH tools. None -> 300 s in TEST_MODE, else 1000 s.
 TIME_LIMIT_OVERRIDE_S = _env_int("BENCH_TIME_LIMIT_S", None)
 # Folds per task: None -> every OpenML fold; N -> only the first N (ignored in TEST_MODE,
-# which always runs fold 0). Useful for a cheap screening of the Ludwig variants.
+# which always runs fold 0). Useful for a shorter run.
 MAX_FOLDS = _env_int("BENCH_MAX_FOLDS", None)
 
 TIME_LIMIT_S = TIME_LIMIT_OVERRIDE_S or (300 if TEST_MODE else 1000)
+
+FOLDS_LABEL = f"{MAX_FOLDS}folds" if MAX_FOLDS else "all_folds"
 
 if TEST_MODE:
     TASK_IDS, RUN_MODE_NAME = [TEST_TASK_ID], "test"
 elif SINGLE_TASK_MODE:
     TASK_IDS = [SINGLE_TASK_ID]
     # The name encodes folds and time so runs with different settings never share a folder.
-    RUN_MODE_NAME = f"single_task_{MAX_FOLDS or 'all'}f_{TIME_LIMIT_S}s"
+    RUN_MODE_NAME = f"single_task_{FOLDS_LABEL}_{TIME_LIMIT_S}s"
 else:
     TASK_IDS = ALL_TASK_IDS
-    RUN_MODE_NAME = f"full_{MAX_FOLDS or 'all'}f_{TIME_LIMIT_S}s"
+    RUN_MODE_NAME = f"full_{FOLDS_LABEL}_{TIME_LIMIT_S}s"
 
 # One distinct seed per official fold (fold i -> SEEDS[i]).
 SEEDS = [123, 2027, 99, 7, 42, 1984, 2024, 555, 314, 271]
@@ -176,6 +181,124 @@ def safe_metric_value(value):
     return value
 
 
+def extra_classification_metrics(y_true, y_pred):
+    """Balanced accuracy and macro-F1 from predicted labels (robust to class imbalance).
+
+    Computed with scikit-learn's own definitions for both tools, so they are
+    directly comparable. Evaluation only: it does not touch how models are trained.
+    Returns {} if the metrics cannot be computed.
+    """
+    try:
+        from sklearn.metrics import balanced_accuracy_score, f1_score
+        y_true = pd.Series(y_true).astype(str).to_numpy()
+        y_pred = pd.Series(y_pred).astype(str).to_numpy()
+        if len(y_true) != len(y_pred):
+            raise ValueError(f"{len(y_true)} labels vs {len(y_pred)} predictions")
+        return {
+            "balanced_accuracy": safe_metric_value(balanced_accuracy_score(y_true, y_pred)),
+            "f1_macro": safe_metric_value(f1_score(y_true, y_pred, average="macro")),
+        }
+    except Exception as e:
+        print(f"[WARN] Could not compute balanced accuracy / macro-F1: {e}")
+        return {}
+
+
+def save_environment_info(save_dir, tool):
+    """Writes environment_<tool>.json: the machine and library versions of this run.
+
+    Ludwig decides concurrency and device use on its own, so its results depend
+    on the hardware; this file is what to quote in the paper (CPU, RAM, GPUs,
+    versions, time limit, run mode). Never raises.
+    """
+    import json
+    import platform
+    from datetime import datetime
+    from importlib import metadata
+
+    def version(pkg):
+        try:
+            return metadata.version(pkg)
+        except metadata.PackageNotFoundError:
+            return None
+
+    info = {
+        "tool": tool,
+        "date": datetime.now().isoformat(timespec="seconds"),
+        "run_mode": RUN_MODE_NAME,
+        "time_limit_s": TIME_LIMIT_S,
+        "max_folds": MAX_FOLDS,
+        "seeds": SEEDS,
+        "os": platform.platform(),
+        "python": platform.python_version(),
+        "cpu_model": platform.processor() or None,
+        "libraries": {p: version(p) for p in (
+            "ludwig", "ray", "torch", "scikit-learn", "openml", "numpy", "pandas")},
+    }
+    try:
+        import psutil
+        info["cpu_physical_cores"] = psutil.cpu_count(logical=False)
+        info["cpu_logical_cores"] = psutil.cpu_count(logical=True)
+        info["ram_gb"] = round(psutil.virtual_memory().total / 1024**3, 1)
+    except Exception:
+        pass
+    try:
+        with open("/proc/cpuinfo") as f:
+            for line in f:
+                if line.startswith("model name"):
+                    info["cpu_model"] = line.split(":", 1)[1].strip()
+                    break
+    except OSError:
+        pass
+    # GPUs present on the machine, and whether they are visible to this run
+    # (disable_unsupported_gpu() hides them by setting CUDA_VISIBLE_DEVICES="").
+    try:
+        import psutil
+        freq = psutil.cpu_freq()
+        if freq:
+            info["cpu_max_mhz"] = round(freq.max or freq.current)
+    except Exception:
+        pass
+    try:  # code version, so the numbers can be tied to the exact scripts that made them
+        here = os.path.dirname(os.path.abspath(__file__))
+        git = lambda *a: subprocess.run(["git", "-C", here, *a], capture_output=True,
+                                        text=True, timeout=30).stdout.strip()
+        info["git_commit"] = git("rev-parse", "HEAD") or None
+        info["git_uncommitted_changes"] = bool(git("status", "--porcelain", "--", here))
+    except Exception:
+        pass
+    if tool == "ludwig":
+        try:  # static build info only: it must not create a CUDA context
+            import torch
+            info["torch_cuda_build"] = torch.version.cuda
+            info["torch_cuda_arch_list"] = torch.cuda.get_arch_list()
+        except Exception:
+            pass
+    info["cuda_visible_devices"] = os.environ.get("CUDA_VISIBLE_DEVICES")
+    if shutil.which("nvidia-smi"):
+        try:
+            out = subprocess.run(
+                ["nvidia-smi", "--query-gpu=name,memory.total,driver_version,compute_cap",
+                 "--format=csv,noheader"], capture_output=True, text=True, timeout=30)
+            info["gpus_on_machine"] = [g.strip() for g in out.stdout.strip().splitlines() if g.strip()]
+        except Exception:
+            pass
+    # scikit-learn never uses the GPU; only Ludwig does, if it stays visible.
+    info["gpus_used"] = (tool == "ludwig" and bool(info.get("gpus_on_machine"))
+                         and info["cuda_visible_devices"] != "")
+    try:
+        os.makedirs(save_dir, exist_ok=True)
+        path = os.path.join(save_dir, f"environment_{tool}.json")
+        if RESUME and os.path.isfile(path):
+            # Resumed run (maybe on another machine): keep the original file.
+            path = os.path.join(save_dir, "environment_{}_resumed_{}.json".format(
+                tool, datetime.now().strftime("%Y%m%d_%H%M%S")))
+        with open(path, "w") as f:
+            json.dump(info, f, indent=2)
+        print(f"[SAVE] {os.path.basename(path)}")
+    except Exception as e:
+        print(f"[WARN] Could not save the environment info: {e}")
+
+
 def is_binary_classification(task_type, y_train):
     return "classification" in task_type.lower() and y_train.nunique() == 2
 
@@ -207,6 +330,34 @@ def save_incremental_results(task_id, method, runs, dataset_name, task_type,
         print(f"[SAVE] {filename}")
     except Exception as e:
         print(f"[ERROR] Saving incremental results for {method}: {e}")
+
+
+def load_completed_runs(save_dir, task_id, method):
+    """Runs already saved for this task/method, in the format `save_incremental_results` takes.
+
+    Returns (runs, (dataset_name, task_type, evaluation_measure)); both empty
+    when there is nothing to resume from or RESUME is off.
+    """
+    path = os.path.join(save_dir, f"task_{task_id}_{method}_all_runs.csv")
+    if not RESUME or not os.path.isfile(path):
+        return [], (None, None, None)
+    try:
+        df = pd.read_csv(path)
+        id_cols = ["task_id", "method", "repeat", "fold", "seed",
+                   "dataset_name", "task_type", "evaluation_measure"]
+        runs = []
+        for _, row in df.iterrows():
+            metrics = {k: v for k, v in row.items() if k not in id_cols and pd.notna(v)}
+            runs.append({"repeat": int(row["repeat"]), "fold": int(row["fold"]),
+                         "seed": int(row["seed"]), "metrics": metrics})
+        first = df.iloc[0]
+        meta = (first["dataset_name"], first["task_type"],
+                first["evaluation_measure"] if pd.notna(first["evaluation_measure"]) else None)
+        print(f"[RESUME] task {task_id}: {len(runs)} run(s) already saved, they will be skipped.")
+        return runs, meta
+    except Exception as e:
+        print(f"[WARN] Could not read {path} to resume ({e}); starting this task over.")
+        return [], (None, None, None)
 
 
 def save_summary(save_dir, method):
@@ -246,7 +397,6 @@ def save_summary(save_dir, method):
 
 # =================================================================
 # LUDWIG HELPERS: GPU FALLBACK AND TEMPORARY FILES
-# (same approach as Hamelin's utils/gpu_check.py and ludwig_backend.py)
 # =================================================================
 
 def disable_unsupported_gpu():
@@ -308,7 +458,7 @@ def cleanup_ludwig_artifacts(output_dir="."):
             print(f"[WARN] Could not remove {hyperopt_dir}: {e}")
 
     # Ray's own session logs/spill files live outside the project. Only
-    # removed when no Ray is running at all (e.g. Hamelin training in
+    # removed when no Ray is running at all (e.g. another Ludwig job in
     # parallel), since deleting them from under a live cluster breaks it.
     try:
         import psutil
