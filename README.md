@@ -162,6 +162,7 @@ A prebuilt Linux x86-64 executable (no Python needed, CPU only) can be downloade
 
 - The in-app **Help** page.
 - [User manual](docs/hamelin/MANUAL.md), with a description of every screen.
+- [Changelog](CHANGELOG.md) and [how to make a release](docs/hamelin/RELEASING.md).
 - [Ludwig documentation](https://ludwig.ai/latest/) for the underlying configuration options.
 
 ## References
