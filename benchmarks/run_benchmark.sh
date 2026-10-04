@@ -65,7 +65,8 @@ run_tool() {
 [ "$WHAT" = "all" ] || [ "$WHAT" = "sklearn" ] && run_tool sklearn
 
 echo "[$(date '+%F %T')] Analysis"
-"$PYTHON" analyze_results.py "$MODE" 2>&1 | tee -a "logs/analysis_${STAMP}.log"
+TOOL=ludwig; [ "$WHAT" = "sklearn" ] && TOOL=sklearn
+"$PYTHON" analyze_results.py "$MODE" --tool "$TOOL" 2>&1 | tee -a "logs/analysis_${STAMP}.log"
 "$PYTHON" analyze_results.py --datasets 2>&1 | tee -a "logs/analysis_${STAMP}.log"
 if [ "$FAILED" -ne 0 ]; then
     echo "[$(date '+%F %T')] Finished WITH ERRORS: check the logs in logs/. Launch again to retry what is missing."

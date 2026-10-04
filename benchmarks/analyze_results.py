@@ -4,20 +4,23 @@ Usage, from the benchmarks/ folder:
 
     python analyze_results.py <run_mode>            # e.g. full_all_folds_1000s
     python analyze_results.py <run_mode> --no-baseline
+    python analyze_results.py <run_mode> --tool sklearn
     python analyze_results.py --datasets            # dataset table only (needs OpenML, no results)
 
 Reads  ludwig/results/<run_mode>/task_*_ludwig_all_runs.csv  (and the sklearn
-ones if present) and writes analysis_<run_mode>/ next to this script:
+ones if present) and writes analysis_<run_mode>/ next to this script. The
+notebooks call run_analysis() at their end; its `outputs` argument chooses
+which of these files are written:
 
   per_task_stats.csv   mean, sd, 95% CI (t, n runs), median, min, max per task/metric
   baseline.csv         constant-predictor reference on the same folds (majority
                        class / training mean); a tool at or below it is broken
   paired_tests.csv     Ludwig vs scikit-learn on the same folds (Wilcoxon per task)
   across_tasks.csv     Ludwig vs scikit-learn across tasks (Wilcoxon on task means, Holm)
-  time_and_failures.csv  time used vs the limit and failed runs per task
+  time_and_failures_<tool>.csv  time used vs the limit and failed runs per task
   ludwig_diagnostics.csv trials launched/failed, epochs of the best trial, model type,
                        from ludwig_run_diagnostics.json (what Ludwig did in each run)
-  summary_table.csv/.md  one row per task, "mean ± sd" (+ constant baseline and
+  summary_table_<tool>.csv/.md  one row per task, "mean ± sd" (+ constant baseline and
                        mean time), ready to paste into the paper
 
 Wilcoxon p-values with 10 overlapping folds are slightly optimistic (training
@@ -261,9 +264,93 @@ def summary_table(runs, tool, base, times, digits=3):
     return table
 
 
+ALL_OUTPUTS = ("summary_table", "per_task_stats", "baseline", "time_and_failures",
+               "ludwig_diagnostics", "paired_tests")
+
+
+def run_analysis(run_mode, tool="ludwig", outputs=ALL_OUTPUTS, with_baseline=True,
+                 time_limit=1000.0, verbose=True):
+    """Writes analysis_<run_mode>/ for the results of `tool` and returns its summary table.
+
+    `outputs` chooses which files are written (names in ALL_OUTPUTS); the
+    notebooks expose it so the author decides what a reader gets. The summary
+    table is always returned, whether or not it is written.
+    """
+    import common_utils
+    global EXPECTED_RUNS
+    EXPECTED_RUNS = 1 if common_utils.TEST_MODE else (common_utils.MAX_FOLDS or 10)
+    unknown = set(outputs) - set(ALL_OUTPUTS)
+    if unknown:
+        raise ValueError(f"Unknown analysis outputs {sorted(unknown)}; choose from {ALL_OUTPUTS}")
+
+    lud, skl = load_runs("ludwig", run_mode), load_runs("sklearn", run_mode)
+    main_runs = {"ludwig": lud, "sklearn": skl}[tool]
+    if main_runs is None:
+        raise SystemExit(f"No {tool} results in {tool}/results/{run_mode}")
+    out = os.path.join(HERE, f"analysis_{run_mode}")
+    os.makedirs(out, exist_ok=True)
+    say = print if verbose else (lambda *a, **k: None)
+    written = []
+    # Files of an earlier analysis (maybe with other `outputs`) must not linger
+    stale = [f"summary_table_{tool}.csv", f"summary_table_{tool}.md", f"time_and_failures_{tool}.csv",
+             "per_task_stats.csv", "baseline.csv", "paired_tests.csv", "across_tasks.csv"]
+    if tool == "ludwig":
+        stale.append("ludwig_diagnostics.csv")
+    for name in stale:
+        if os.path.isfile(os.path.join(out, name)):
+            os.remove(os.path.join(out, name))
+
+    def write(name, df, ext="csv"):
+        path = os.path.join(out, f"{name}.{ext}")
+        df.to_csv(path, index=False)
+        written.append(os.path.basename(path))
+
+    if "per_task_stats" in outputs:
+        parts = [per_task_stats(r, t) for t, r in (("ludwig", lud), ("sklearn", skl)) if r is not None]
+        write("per_task_stats", pd.concat(parts))
+
+    tf = time_and_failures(main_runs, time_limit)
+    if "time_and_failures" in outputs:
+        write(f"time_and_failures_{tool}", tf)
+    for _, r in tf[tf["runs_failed"] > 0].iterrows():
+        say(f"[WARN] {tool}, task {r['task_id']} ({r['dataset']}): {r['runs_ok']} of {EXPECTED_RUNS} "
+            f"runs completed. Launch the benchmark again to redo it.")
+
+    if tool == "ludwig" and "ludwig_diagnostics" in outputs:
+        diag = ludwig_diagnostics_table(run_mode)
+        if diag is not None:
+            write("ludwig_diagnostics", diag)
+
+    base = baseline(main_runs) if with_baseline else None
+    if base is not None and "baseline" in outputs:
+        write("baseline", base)
+
+    table = summary_table(main_runs, tool, base, tf)
+    if "summary_table" in outputs:
+        write(f"summary_table_{tool}", table)
+        with open(os.path.join(out, f"summary_table_{tool}.md"), "w") as f:
+            cols = list(table.columns)
+            f.write("| " + " | ".join(cols) + " |\n|" + "---|" * len(cols) + "\n")
+            for _, r in table.fillna("").iterrows():
+                f.write("| " + " | ".join(str(r[c]) for c in cols) + " |\n")
+        written.append(f"summary_table_{tool}.md")
+
+    if "paired_tests" in outputs:
+        if lud is not None and skl is not None:
+            pt, ac = paired(lud, skl)
+            write("paired_tests", pt)
+            write("across_tasks", ac)
+        else:
+            say("[INFO] Results of only one tool: paired tests skipped.")
+    say(f"Analysis written to {out}: {', '.join(written)}")
+    return table
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawTextHelpFormatter)
     ap.add_argument("run_mode", nargs="?", help="results subfolder, e.g. full_all_folds_1000s")
+    ap.add_argument("--tool", choices=("ludwig", "sklearn"), default="ludwig",
+                    help="tool whose summary is built (default ludwig)")
     ap.add_argument("--datasets", action="store_true",
                     help="write datasets_summary.csv for the 14 benchmark tasks and exit")
     ap.add_argument("--no-baseline", action="store_true", help="skip the OpenML download for the baseline")
@@ -280,51 +367,8 @@ def main():
         return
     if not args.run_mode:
         ap.error("give a run_mode (or --datasets)")
-
-    out = os.path.join(HERE, f"analysis_{args.run_mode}")
-    os.makedirs(out, exist_ok=True)
-    global EXPECTED_RUNS
-    import common_utils
-    EXPECTED_RUNS = 1 if common_utils.TEST_MODE else (common_utils.MAX_FOLDS or 10)
-    lud, skl = load_runs("ludwig", args.run_mode), load_runs("sklearn", args.run_mode)
-    if lud is None:
-        raise SystemExit(f"No Ludwig results in ludwig/results/{args.run_mode}")
-
-    parts = [per_task_stats(lud, "ludwig")]
-    if skl is not None:
-        parts.append(per_task_stats(skl, "sklearn"))
-    pd.concat(parts).to_csv(os.path.join(out, "per_task_stats.csv"), index=False)
-
-    tf = time_and_failures(lud, args.time_limit)
-    tf.to_csv(os.path.join(out, "time_and_failures.csv"), index=False)
-    for _, r in tf[tf["runs_failed"] > 0].iterrows():
-        print(f"[WARN] Ludwig, task {r['task_id']} ({r['dataset']}): {r['runs_ok']} of {EXPECTED_RUNS} runs "
-              f"completed. Launch the benchmark again to retry the missing ones.")
-
-    diag = ludwig_diagnostics_table(args.run_mode)
-    if diag is not None:
-        diag.to_csv(os.path.join(out, "ludwig_diagnostics.csv"), index=False)
-
-    base = None
-    if not args.no_baseline:
-        base = baseline(lud)
-        base.to_csv(os.path.join(out, "baseline.csv"), index=False)
-
-    table = summary_table(lud, "ludwig", base, time_and_failures(lud, args.time_limit))
-    table.to_csv(os.path.join(out, "summary_table.csv"), index=False)
-    with open(os.path.join(out, "summary_table.md"), "w") as f:
-        cols = list(table.columns)
-        f.write("| " + " | ".join(cols) + " |\n|" + "---|" * len(cols) + "\n")
-        for _, r in table.fillna("").iterrows():
-            f.write("| " + " | ".join(str(r[c]) for c in cols) + " |\n")
-
-    if skl is not None:
-        pt, ac = paired(lud, skl)
-        pt.to_csv(os.path.join(out, "paired_tests.csv"), index=False)
-        ac.to_csv(os.path.join(out, "across_tasks.csv"), index=False)
-    else:
-        print("[INFO] No scikit-learn results for this run mode: paired tests skipped.")
-    print(f"Analysis written to {out}")
+    run_analysis(args.run_mode, tool=args.tool, with_baseline=not args.no_baseline,
+                 time_limit=args.time_limit)
 
 
 if __name__ == "__main__":

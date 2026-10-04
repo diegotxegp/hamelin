@@ -294,7 +294,15 @@ def save_environment_info(save_dir, tool):
         os.makedirs(save_dir, exist_ok=True)
         path = os.path.join(save_dir, f"environment_{tool}.json")
         if RESUME and os.path.isfile(path):
-            # Resumed run (maybe on another machine): keep the original file.
+            # Resumed run: keep the original file, and add another one only if the
+            # machine or the software differ from it (e.g. resumed on another PC).
+            with open(path) as f:
+                original = json.load(f)
+            same_env = ("os", "python", "cpu_model", "cpu_logical_cores", "ram_gb",
+                        "libraries", "gpus_on_machine", "gpus_used", "git_commit")
+            if all(original.get(k) == info.get(k) for k in same_env):
+                print(f"[ENV] Same machine and versions as {os.path.basename(path)}; nothing new recorded.")
+                return
             path = os.path.join(save_dir, "environment_{}_resumed_{}.json".format(
                 tool, datetime.now().strftime("%Y%m%d_%H%M%S")))
         with open(path, "w") as f:
@@ -335,6 +343,21 @@ def save_incremental_results(task_id, method, runs, dataset_name, task_type,
         print(f"[SAVE] {filename}")
     except Exception as e:
         print(f"[ERROR] Saving incremental results for {method}: {e}")
+
+
+def start_fresh_if_requested(save_dir):
+    """With BENCH_RESUME=0, moves the previous results of this run mode aside.
+
+    The folder becomes <save_dir>.old_<timestamp> (never overwritten in place, so
+    a mistyped variable cannot destroy days of results; delete it by hand when
+    sure). With the default RESUME on, nothing is touched.
+    """
+    if RESUME or not os.path.isdir(save_dir) or not os.listdir(save_dir):
+        return
+    from datetime import datetime
+    backup = f"{save_dir}.old_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
+    shutil.move(save_dir, backup)
+    print(f"[FRESH START] Previous results moved to {os.path.relpath(backup, os.path.dirname(save_dir))}")
 
 
 def archive_task_results(save_dir, task_id, method):
