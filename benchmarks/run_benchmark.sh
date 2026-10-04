@@ -6,7 +6,8 @@
 #   BENCH_TEST_MODE=1 ./run_benchmark.sh    # smoke test instead of the full experiment
 #
 # Safe to interrupt (Ctrl+C, reboot, crash) and to launch again: runs already
-# saved in the CSVs are skipped. Run it inside tmux/screen or with nohup:
+# datasets with all their runs saved are skipped and half-done ones are discarded
+# and restarted from fold 0. Run it inside tmux/screen or with nohup:
 #
 #   mkdir -p logs && nohup ./run_benchmark.sh > logs/launcher.log 2>&1 &
 #
@@ -14,7 +15,7 @@
 # printed live and there is no per-cell timeout. Logs go to logs/.
 #
 # Environment: PYTHON (default .venv-bench/bin/python), BENCH_PASSES (default 2:
-# the second pass retries runs that failed in the first), BENCH_TEST_MODE
+# the second pass redoes datasets that did not finish in the first), BENCH_TEST_MODE
 # (default 0), plus the BENCH_* variables listed in README.md.
 set -u
 cd "$(dirname "$0")"

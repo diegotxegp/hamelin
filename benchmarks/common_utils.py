@@ -40,9 +40,14 @@ def _env_int(name, default):
 
 
 TEST_MODE = _env_bool("BENCH_TEST_MODE", True)
-# True -> runs already saved in the results CSVs are skipped, so an interrupted
-# experiment continues where it stopped. False -> start over (overwrites them).
+# True -> a dataset that already has all its runs saved is skipped, and one that
+# is only partly done is discarded and restarted from fold 0 (so an interrupted
+# experiment continues dataset by dataset). False -> start over (overwrites).
 RESUME = _env_bool("BENCH_RESUME", True)
+# Times a dataset is started over from fold 0 when one of its runs fails. Its
+# earlier runs are discarded (moved to <results>/discarded/) so every dataset
+# comes from one uninterrupted, homogeneous series of runs.
+DATASET_RETRIES = _env_int("BENCH_DATASET_RETRIES", 1)
 SINGLE_TASK_MODE = _env_bool("BENCH_SINGLE_TASK_MODE", False)
 TEST_TASK_ID = _env_int("BENCH_TEST_TASK_ID", 37)  # 37 = diabetes
 SINGLE_TASK_ID = TEST_TASK_ID  # same task as the smoke test, so both modes are comparable
@@ -332,15 +337,33 @@ def save_incremental_results(task_id, method, runs, dataset_name, task_type,
         print(f"[ERROR] Saving incremental results for {method}: {e}")
 
 
-def load_completed_runs(save_dir, task_id, method):
-    """Runs already saved for this task/method, in the format `save_incremental_results` takes.
+def archive_task_results(save_dir, task_id, method):
+    """Moves a dataset's runs CSV to <save_dir>/discarded/ (kept for inspection; the analysis ignores it)."""
+    path = os.path.join(save_dir, f"task_{task_id}_{method}_all_runs.csv")
+    if not os.path.isfile(path):
+        return
+    from datetime import datetime
+    dest_dir = os.path.join(save_dir, "discarded")
+    os.makedirs(dest_dir, exist_ok=True)
+    dest = os.path.join(dest_dir, "task_{}_{}_all_runs_{}.csv".format(
+        task_id, method, datetime.now().strftime("%Y%m%d_%H%M%S")))
+    shutil.move(path, dest)
+    print(f"[DISCARD] task {task_id}: previous runs moved to {os.path.relpath(dest, save_dir)}")
 
-    Returns (runs, (dataset_name, task_type, evaluation_measure)); both empty
-    when there is nothing to resume from or RESUME is off.
+
+def load_completed_runs(save_dir, task_id, method, expected_runs):
+    """Resume point for one dataset, in the format `save_incremental_results` takes.
+
+    - All `expected_runs` runs saved -> returns them (the dataset is skipped).
+    - Only some saved -> they are discarded (archived) and the dataset restarts
+      from fold 0: returns no runs.
+    - Nothing saved, or RESUME off -> returns no runs.
+    Returns (runs, (dataset_name, task_type, evaluation_measure)).
     """
+    empty = ([], (None, None, None))
     path = os.path.join(save_dir, f"task_{task_id}_{method}_all_runs.csv")
     if not RESUME or not os.path.isfile(path):
-        return [], (None, None, None)
+        return empty
     try:
         df = pd.read_csv(path)
         id_cols = ["task_id", "method", "repeat", "fold", "seed",
@@ -350,14 +373,18 @@ def load_completed_runs(save_dir, task_id, method):
             metrics = {k: v for k, v in row.items() if k not in id_cols and pd.notna(v)}
             runs.append({"repeat": int(row["repeat"]), "fold": int(row["fold"]),
                          "seed": int(row["seed"]), "metrics": metrics})
-        first = df.iloc[0]
-        meta = (first["dataset_name"], first["task_type"],
-                first["evaluation_measure"] if pd.notna(first["evaluation_measure"]) else None)
-        print(f"[RESUME] task {task_id}: {len(runs)} run(s) already saved, they will be skipped.")
-        return runs, meta
+        if len(runs) >= expected_runs:
+            first = df.iloc[0]
+            meta = (first["dataset_name"], first["task_type"],
+                    first["evaluation_measure"] if pd.notna(first["evaluation_measure"]) else None)
+            print(f"[RESUME] task {task_id}: all {len(runs)} runs already saved, skipping the dataset.")
+            return runs, meta
+        print(f"[RESTART] task {task_id}: only {len(runs)} of {expected_runs} runs were saved; "
+              f"discarding them and starting the dataset over from fold 0.")
     except Exception as e:
-        print(f"[WARN] Could not read {path} to resume ({e}); starting this task over.")
-        return [], (None, None, None)
+        print(f"[WARN] Could not read {path} ({e}); starting this task over.")
+    archive_task_results(save_dir, task_id, method)
+    return empty
 
 
 def save_summary(save_dir, method):

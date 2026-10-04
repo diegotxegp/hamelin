@@ -8,7 +8,7 @@ tasks, folds and seeds, and record metrics and training time.
 | `ludwig/ludwig_experiment.ipynb` | Ludwig AutoML (`auto_train`, default configuration) on a list of OpenML tasks |
 | `sklearn/sklearn_experiment.ipynb` | scikit-learn pipelines + `RandomizedSearchCV` on the same tasks |
 | `common_utils.py` | Shared helpers imported by both notebooks (OpenML split download, resume, environment info, ...) |
-| `run_benchmark.sh` | Runs everything unattended (Ludwig, scikit-learn, analysis); resumable |
+| `run_benchmark.sh` | Runs everything unattended (Ludwig, scikit-learn, analysis); restarts interrupted datasets |
 | `analyze_results.py` | Statistics, paper tables and the dataset table (trains nothing) |
 | `requirements.txt` | Pinned dependency versions |
 
@@ -39,16 +39,24 @@ Run the smoke test first (`TEST_MODE = True`, the default): it takes about
 live logs to `logs/`. `./run_benchmark.sh ludwig` (or `sklearn`) runs only one
 tool; `PYTHON=/path/to/python` selects the interpreter (default
 `.venv-bench/bin/python`); `BENCH_TEST_MODE=1 ./run_benchmark.sh` is the smoke
-test. A second pass retries the runs that failed in the first one
+test. A second pass redoes the datasets that did not finish in the first one
 (`BENCH_PASSES=1` disables it).
 
 The Ludwig experiment is 14 tasks x 10 folds x up to 1000 s (plus the ~100 s
 Ludwig overshoots), roughly 42 h on a machine like the one in
 `environment_ludwig.json`; scikit-learn usually takes far less (it stops when
 its small search space is exhausted, 28 s on diabetes). If anything interrupts
-it (Ctrl+C, reboot, crash), **launch the same command again**: runs already
-saved in the CSVs are skipped (`BENCH_RESUME=0` starts over and overwrites
-them). Do not start two launches at once; the script refuses.
+it (Ctrl+C, reboot, crash), **launch the same command again** with the same
+`BENCH_*` variables. The experiment continues dataset by dataset: a dataset
+with all its runs saved is skipped, and one that was only partly done is
+**discarded and restarted from fold 0**, so every dataset comes from one
+uninterrupted series of runs on the same machine. The discarded CSV is kept in
+`<results>/discarded/` for inspection and ignored by the analysis. The same
+happens inside a launch: if one run of a dataset fails, the dataset is started
+over (`BENCH_DATASET_RETRIES`, default 1) and then the experiment goes on with
+the next one. A dataset that keeps failing is reported with a `[WARN]` and
+costs up to twice its normal time. `BENCH_RESUME=0` ignores what is saved and
+overwrites it. Do not start two launches at once; the script refuses.
 
 Running the notebooks by hand also works: open each one and *Run All* (no cell
 needs to be run by hand). From the command line, `jupyter nbconvert` needs the
