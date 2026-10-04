@@ -25,7 +25,6 @@ from qfluentwidgets import (
 
 from hamelin.analytics.automl.base import AutoMLResult
 from hamelin.analytics.ludwig_trainer import LudwigTrainerWorker
-from hamelin.utils.config_manager import config
 from hamelin.utils.logger import log
 from hamelin.utils.usage_logger import usage_log
 from hamelin.utils.export_paths import default_export_path
@@ -1687,6 +1686,12 @@ class TrainingPage(QWidget):
                            origin("optimizer"), t("training.summary.hint.optimizer")),
             ]
             sections.append(SummarySection(t("training.summary.section.model"), model_rows))
+            # Measured on this app's own runs: a 300 s budget took 355-490 s
+            # in total (Ray start-up, the trial running when the budget ends,
+            # final evaluation) - so roughly +45 s up to 1.5x + 2 min.
+            low, high = seconds + 45, int(seconds * 1.5) + 120
+            notes.insert(0, t("training.summary.estimate").format(
+                max(1, round(low / 60)), max(2, round(high / 60))))
             if rows_used < 100:
                 warnings.append(t("training.summary.warn.few_rows").format(rows_used))
             if features and rows_used < 10 * len(features):
@@ -1768,13 +1773,12 @@ class TrainingPage(QWidget):
                 )
                 return
 
-        if config.get("training.confirm_before_start", True):
-            from hamelin.view.widgets.training_summary_dialog import confirm_training
-            sections, warnings, notes = self._build_training_summary(
-                target, features, len(self._rows_after_rules()), train_from_config)
-            if not confirm_training(self, sections, warnings, notes):
-                usage_log.event("Training", "click", "Summary: back")
-                return
+        from hamelin.view.widgets.training_summary_dialog import confirm_training
+        sections, warnings, notes = self._build_training_summary(
+            target, features, len(self._rows_after_rules()), train_from_config)
+        if not confirm_training(self, sections, warnings, notes):
+            usage_log.event("Training", "click", "Summary: back")
+            return
 
         time_limit_s = 0 if train_from_config else self.time_budget.value()
 

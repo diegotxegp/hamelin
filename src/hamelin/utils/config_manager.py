@@ -95,9 +95,6 @@ class ConfigManager:
                 'max_categorical_unique': 20,
                 'date_formats': ['%Y-%m-%d', '%d/%m/%Y', '%m/%d/%Y']
             },
-            'training': {
-                'confirm_before_start': True  # show the settings summary before training
-            },
             'table1': {
                 'decimal_places': 2,
                 'show_ci': True,

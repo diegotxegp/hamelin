@@ -15,10 +15,9 @@ from dataclasses import dataclass, field
 
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QDialog, QHBoxLayout, QScrollArea, QVBoxLayout, QWidget
-from qfluentwidgets import BodyLabel, CheckBox, PrimaryPushButton, PushButton, StrongBodyLabel, TitleLabel
+from qfluentwidgets import BodyLabel, PrimaryPushButton, PushButton, StrongBodyLabel, TitleLabel
 
 from hamelin.i18n import t
-from hamelin.utils.config_manager import config
 from hamelin.view.widgets.theme_colors import bind_style
 
 # Where a value comes from.
@@ -131,9 +130,6 @@ def confirm_training(parent, sections: list[SummarySection], warnings: list[str]
     scroll.setWidget(body)
     outer.addWidget(scroll, 1)
 
-    dont_ask = CheckBox(t("training.summary.dont_ask"))
-    outer.addWidget(dont_ask)
-
     buttons = QHBoxLayout()
     buttons.addStretch()
     back = PushButton(t("training.summary.back"))
@@ -146,8 +142,4 @@ def confirm_training(parent, sections: list[SummarySection], warnings: list[str]
     outer.addLayout(buttons)
 
     bind_style(dlg, lambda c: f"QDialog {{ background: {c.card_background}; }}")
-    accepted = dlg.exec() == QDialog.Accepted
-    if accepted and dont_ask.isChecked():
-        config.set("training.confirm_before_start", False)
-        config.save()
-    return accepted
+    return dlg.exec() == QDialog.Accepted
