@@ -25,6 +25,7 @@ from qfluentwidgets import (
 
 from hamelin.analytics.automl.base import AutoMLResult
 from hamelin.analytics.ludwig_trainer import LudwigTrainerWorker
+from hamelin import __version__
 from hamelin.utils.logger import log
 from hamelin.utils.usage_logger import usage_log
 from hamelin.utils.export_paths import default_export_path
@@ -2350,7 +2351,7 @@ class TrainingPage(QWidget):
         features = [item.text() for item in selected_items if item.text() != target]
 
         export_data = {
-            "hamelin_version": "0.1.0",
+            "hamelin_version": __version__,
             "export_timestamp": datetime.now().isoformat(),
             "model_type": result.model_type,
             "target_variable": target,

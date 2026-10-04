@@ -17,6 +17,7 @@ Version: 2.0
 from dataclasses import dataclass, field, asdict
 from datetime import date, datetime
 from pathlib import Path
+from hamelin import __version__
 from hamelin.utils.paths import workspace_dir
 from typing import List, Optional, Dict, Any
 import json
@@ -95,7 +96,7 @@ class ProjectMetadata:
     
     # Metadata
     version: str = "1.0"
-    hamelin_version: str = "0.1.0"
+    hamelin_version: str = __version__
     
     def __post_init__(self):
         """Validate required fields immediately after initialization."""

@@ -23,6 +23,7 @@ Usage:
 import yaml
 from pathlib import Path
 from hamelin.utils.paths import workspace_dir
+from hamelin import __version__
 from typing import Any, Optional, Dict
 from copy import deepcopy
 
@@ -67,7 +68,7 @@ class ConfigManager:
         return {
             'app': {
                 'name': 'HAMELIN',
-                'version': '0.1.0',
+                'version': __version__,
                 'language': 'en',  # English UI
                 'debug': False
             },

@@ -2,7 +2,7 @@ cff-version: 1.2.0
 message: "If you use Hamelin in your research, please cite it as below."
 title: "Hamelin: Human-guided Automated Machine Learning for Clinical Studies"
 type: software
-version: 0.1.0
+version: 0.2.0
 doi: 10.5281/zenodo.23128034
 identifiers:
   - type: doi

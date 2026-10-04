@@ -1,6 +1,6 @@
 [project]
 name = "hamelin"
-version = "0.1.0"
+version = "0.2.0"
 description = "Human-guided AutoML desktop application for building, evaluating and using machine-learning models on clinical and tabular data."
 readme = "README.md"
 authors = [

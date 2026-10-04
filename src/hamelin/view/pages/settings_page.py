@@ -15,6 +15,7 @@ from qfluentwidgets import (
     ScrollArea, setTheme, Theme, InfoBar, InfoBarPosition, MessageBox
 )
 
+from hamelin import __version__
 from hamelin.utils.logger import log
 from hamelin.utils.usage_logger import usage_log
 from hamelin.utils.config_manager import config
@@ -213,7 +214,7 @@ class SettingsPage(QWidget):
         about_title = StrongBodyLabel(t("settings.section.about"))
         about_layout.addWidget(about_title)
 
-        version_label = BodyLabel(f"{t('settings.label.version.label')} {config.get('app.version', '0.1.0')}")
+        version_label = BodyLabel(f"{t('settings.label.version.label')} {__version__}")
         about_layout.addWidget(version_label)
 
         desc_label = BodyLabel(t("settings.about.description"))
