@@ -543,13 +543,44 @@ def init_ray_for_ludwig():
              runtime_env={"worker_process_setup_hook": relax_gpu_wait})
 
 
+LUDWIG_TMP_ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), ".ludwig-tmp")
+
+
+def use_private_tmpdir():
+    """Points TMPDIR (this process and the Ray workers it starts) at a private dir.
+
+    Ludwig's hyperopt copies the whole model into a fresh tempfile.mkdtemp()
+    on every epoch of every trial and never deletes it, so /tmp fills the
+    disk over a long benchmark. Here those copies land in
+    .ludwig-tmp/<pid>/, which cleanup_ludwig_artifacts empties. Must run
+    before Ray starts so the workers inherit it.
+    """
+    path = os.path.join(LUDWIG_TMP_ROOT, str(os.getpid()))
+    os.makedirs(path, exist_ok=True)
+    os.environ["TMPDIR"] = path
+    # Ray derives its session dir from TMPDIR, and the socket paths inside it
+    # would exceed the 107-byte AF_UNIX limit under this project's path.
+    os.environ.setdefault("RAY_TMPDIR", "/tmp")
+    tempfile.tempdir = path
+
+
+def _purge_private_tmpdirs():
+    """Deletes this process's private tmp dir and those of processes that no longer exist."""
+    if not os.path.isdir(LUDWIG_TMP_ROOT):
+        return
+    for name in os.listdir(LUDWIG_TMP_ROOT):
+        if name == str(os.getpid()) or not (name.isdigit() and os.path.exists(f"/proc/{name}")):
+            shutil.rmtree(os.path.join(LUDWIG_TMP_ROOT, name), ignore_errors=True)
+
+
 def cleanup_ludwig_artifacts(output_dir="."):
     """Removes Ludwig's disposable per-run files (and Ray's session logs) and stops Ray.
 
     auto_train dumps every hyperopt trial (checkpoints, logs, error files)
     under <output_dir>/hyperopt. The benchmark only needs the metrics, which
     are computed in memory before this is called, so nothing in there is
-    needed afterwards. A stale hyperopt/ is also harmful: Ray auto-resumes
+    needed afterwards (nor are the per-epoch model copies in the private
+    tmp dir, see use_private_tmpdir). A stale hyperopt/ is also harmful: Ray auto-resumes
     from it and can poison the next run. Call it before and after each run.
     """
     try:
@@ -558,6 +589,8 @@ def cleanup_ludwig_artifacts(output_dir="."):
             ray.shutdown()
     except Exception:
         pass
+    _purge_private_tmpdirs()
+    use_private_tmpdir()
     hyperopt_dir = os.path.join(output_dir, "hyperopt")
     if os.path.isdir(hyperopt_dir):
         try:
@@ -574,7 +607,7 @@ def cleanup_ludwig_artifacts(output_dir="."):
             (p.info["name"] or "").startswith(("raylet", "gcs_server"))
             for p in psutil.process_iter(["name"])
         )
-        ray_tmp = os.path.join(tempfile.gettempdir(), "ray")
+        ray_tmp = os.path.join(os.environ.get("RAY_TMPDIR", "/tmp"), "ray")
         if not ray_running and os.path.isdir(ray_tmp):
             shutil.rmtree(ray_tmp, ignore_errors=True)
     except Exception:
