@@ -183,7 +183,6 @@ A standalone executable can be built with PyInstaller using the provided `hameli
 - **Diego García-Prieto** — University of Cantabria — <diego.garciaprieto@unican.es>
 - **Camilo Palazuelos** — University of Cantabria — <camilo.palazuelos@unican.es>
 - **Rafael Duque** — University of Cantabria — <rafael.duque@unican.es>
-- **Mano Domingo** — ENSEIRB-MATMECA, Bordeaux INP — <mano.domingo@bordeaux-inp.fr>
 
 ## License
 

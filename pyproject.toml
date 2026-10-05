@@ -1,13 +1,12 @@
 [project]
 name = "hamelin"
-version = "0.2.0"
+version = "0.2.1"
 description = "Human-guided AutoML desktop application for building, evaluating and using machine-learning models on clinical and tabular data."
 readme = "README.md"
 authors = [
     { name = "Diego García-Prieto", email = "diego.garciaprieto@unican.es" },
     { name = "Camilo Palazuelos", email = "camilo.palazuelos@unican.es" },
     { name = "Rafael Duque", email = "rafael.duque@unican.es" },
-    { name = "Mano Domingo", email = "mano.domingo@bordeaux-inp.fr" }
 ]
 license = "GPL-3.0-only"
 license-files = ["LICENSE"]

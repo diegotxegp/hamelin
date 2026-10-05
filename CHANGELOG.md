@@ -4,7 +4,11 @@ All notable changes to Hamelin are listed here, newest first.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the
 version numbers follow [Semantic Versioning](https://semver.org/).
 
-## [Unreleased]
+## [0.2.1] - 2026-10-05
+
+### Changed
+- Removed Mano Domingo and the ENSEIRB-MATMECA / Bordeaux INP affiliation from the authors
+  (About section of Settings, README, `CITATION.cff`, package metadata and screenshots).
 
 ### Fixed
 - Training on a GPU that also drives the screen (the usual single-GPU computer) no longer
@@ -44,5 +48,6 @@ First public release (Linux x86-64 standalone executable, CPU only).
 - English and Spanish interface, light and dark themes, built-in help.
 - Per-model record of the settings, software versions, seed and dataset changes.
 
+[0.2.1]: https://github.com/diegotxegp/hamelin/releases/tag/v0.2.1
 [0.2.0]: https://github.com/diegotxegp/hamelin/releases/tag/v0.2.0
 [0.1.0]: https://github.com/diegotxegp/hamelin/releases/tag/v0.1.0

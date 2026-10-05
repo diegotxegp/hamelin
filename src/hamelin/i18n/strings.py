@@ -488,7 +488,6 @@ EN: dict[str, str] = {
         "modelling without requiring programming expertise.",
     
     "settings.about.university": "University of Cantabria",
-    "settings.about.enseirb": "ENSEIRB-MATMECA, Bordeaux INP",
     
     "settings.about.repository": "Repository: https://github.com/diegotxegp/hamelin",
 
@@ -1588,7 +1587,6 @@ ES: dict[str, str] = {
         "modelado predictivo sin requerir habilidades de programación.",
     
     "settings.about.university": "Universidad de Cantabria (España)",
-    "settings.about.enseirb": "ENSEIRB-MATMECA, Bordeaux INP (Francia)",
     
     "settings.about.repository": "Repositorio: https://github.com/diegotxegp/hamelin",
 

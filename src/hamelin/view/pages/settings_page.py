@@ -229,10 +229,8 @@ class SettingsPage(QWidget):
         authors_label = BodyLabel(
             "Diego García-Prieto  (diego.garciaprieto@unican.es)\n"
             "Camilo Palazuelos  (camilo.palazuelos@unican.es)\n"
-            "Rafael Duque  (rafael.duque@unican.es)\n"
-            "Mano Domingo  (mano.domingo@bordeaux-inp.fr)\n\n"
-            f"{t('settings.about.university')}\n"
-            f"{t('settings.about.enseirb')}"
+            "Rafael Duque  (rafael.duque@unican.es)\n\n"
+            f"{t('settings.about.university')}"
         )
         about_layout.addWidget(authors_label)
 
