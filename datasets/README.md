@@ -10,4 +10,9 @@ The 14 public datasets used in the benchmarks (`benchmarks/`), downloaded from
 | `Classification/` (multiclass) | analcatdata_dmft, cmc, hypothyroid, mfeat-morphological, vehicle |
 | `Regression/` | cholesterol, cloud, liver-disorders, plasma_retinol |
 
+The benchmarks read these files directly, so the folder layout matters: the subfolder
+(`Binary`, `Classification`, `Regression`) says whether a dataset is a classification or a
+regression task, and each dataset's target column is listed in the `DATASETS` table of the
+notebook's Parameters cell (`benchmarks/ludwig/ludwig_experiment.ipynb`); it is the last column of every file.
+
 Each dataset keeps the licence of its OpenML entry.

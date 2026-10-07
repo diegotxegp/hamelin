@@ -1,4 +1,4 @@
-# Everything the benchmark writes: results/<run mode>/{ludwig,sklearn,analysis,logs}
+# Everything the benchmark writes: results/<run mode>/{ludwig,analysis,logs}
 results/
 # Ludwig's per-trial scratch folders (deleted around every run)
 hyperopt/

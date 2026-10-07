@@ -2,9 +2,9 @@
 # Python 3.12 (tested with 3.12.14).
 # Install in a clean venv:  uv pip install -r requirements.txt
 # (torch: pick the build matching your hardware if the default does not fit;
-#  the notebooks fall back to CPU automatically on unsupported GPUs.)
+#  the notebook falls back to CPU automatically on unsupported GPUs.)
 
-# Ludwig notebook
+# Ludwig
 ludwig==0.17.9
 ray[tune]==2.58.0
 torch==2.14.0
@@ -12,19 +12,14 @@ hyperopt==0.3.0
 dask==2026.8.0   # imported by ludwig.automl (auto_train)
 GPUtil==1.4.0    # ray.tune wait_for_gpu, used by Ludwig hyperopt on GPU
 
-# scikit-learn notebook
-scikit-learn==1.9.1
+# Shared (common_utils.py, analyze_results.py)
 scipy==1.18.1
-joblib==1.6.0
-
-# Shared (common_utils.py)
-openml==0.15.1
 numpy==2.5.3
 pandas==3.0.6
 pyarrow==25.0.1
 psutil==7.2.2
 
-# Running the notebooks
+# Running the notebook
 ipykernel==7.4.0
 ipywidgets==8.1.9
 nbclient==0.11.0

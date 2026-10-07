@@ -1,184 +1,51 @@
 """
-Shared utilities for the Ludwig and scikit-learn benchmark notebooks.
+Helper functions for the Ludwig benchmark notebook (ludwig/ludwig_experiment.ipynb).
 
-This module is intentionally lightweight (openml, pandas, numpy only) so
-it can be installed without conflict in either the Ludwig venv or the
-scikit-learn venv. Both notebooks import from here to guarantee they use
-the EXACT SAME task list, fold/seed assignment, and I/O format — this is
-required for the two sets of results to be directly comparable.
+Everything a user or reviewer may want to change (run mode, time limit, the 80/20 split,
+datasets and targets, seeds) is in the notebook's "Parameters" cell, not here. This module
+only has functions: loading a dataset, saving and resuming results, recording the machine,
+and the helpers Ludwig needs to run unattended (GPU fallback, temp files). They receive
+what they need as arguments.
 """
 
+import json
 import os
 import shutil
 import subprocess
 import sys
 import tempfile
-import numpy as np
 import pandas as pd
-import openml
 
 
 # =================================================================
-# SHARED EXPERIMENTAL CONFIGURATION
+# DATASETS
 # =================================================================
 
-# Run modes (set at most one to True; both False -> full experiment):
-#   TEST_MODE        -> smoke test: TEST_TASK_ID, fold 0 only, short time limit.
-#   SINGLE_TASK_MODE -> one task (SINGLE_TASK_ID) with ALL its OpenML folds,
-#                       full time limit. Cheap way to compare both tools.
-#   neither          -> every task in ALL_TASK_IDS with all their folds.
-# Each setting can be overridden from the environment (BENCH_* variables),
-# so the file does not have to be edited to launch an automated run.
-def _env_bool(name, default):
-    value = os.environ.get(name)
-    return default if value is None else value.strip().lower() in ("1", "true", "yes")
+def load_dataset(name, datasets, datasets_dir):
+    """Reads <datasets_dir>/<group>/<name>.csv, where `datasets[name]` starts with (group, target).
 
-
-def _env_int(name, default):
-    value = os.environ.get(name)
-    return default if not value else int(value)
-
-
-TEST_MODE = _env_bool("BENCH_TEST_MODE", True)
-# True -> a dataset that already has all its runs saved is skipped, and one that
-# is only partly done is discarded and restarted from fold 0 (so an interrupted
-# experiment continues dataset by dataset). False -> start over (overwrites).
-RESUME = _env_bool("BENCH_RESUME", True)
-# Times a dataset is started over from fold 0 when one of its runs fails. Its
-# earlier runs are discarded (moved to <results>/discarded/) so every dataset
-# comes from one uninterrupted, homogeneous series of runs.
-DATASET_RETRIES = _env_int("BENCH_DATASET_RETRIES", 1)
-SINGLE_TASK_MODE = _env_bool("BENCH_SINGLE_TASK_MODE", False)
-TEST_TASK_ID = _env_int("BENCH_TEST_TASK_ID", 37)  # 37 = diabetes
-SINGLE_TASK_ID = TEST_TASK_ID  # same task as the smoke test, so both modes are comparable
-
-ALL_TASK_IDS = [
-    10101, 15, 31, 37, 9957,         # Binary classification
-    3560, 23, 3011, 18, 53,          # Multi-class classification
-    2295, 2301, 52948, 4839          # Regression
-]
-
-if TEST_MODE and SINGLE_TASK_MODE:
-    raise ValueError("Set only one of TEST_MODE / SINGLE_TASK_MODE to True.")
-
-# Time limit per run (seconds) for BOTH tools. None -> 300 s in TEST_MODE, else 1000 s.
-TIME_LIMIT_OVERRIDE_S = _env_int("BENCH_TIME_LIMIT_S", None)
-# Folds per task: None -> every OpenML fold; N -> only the first N (ignored in TEST_MODE,
-# which always runs fold 0). Useful for a shorter run.
-MAX_FOLDS = _env_int("BENCH_MAX_FOLDS", None)
-
-TIME_LIMIT_S = TIME_LIMIT_OVERRIDE_S or (300 if TEST_MODE else 1000)
-
-FOLDS_LABEL = f"{MAX_FOLDS}folds" if MAX_FOLDS else "all_folds"
-
-if TEST_MODE:
-    TASK_IDS, RUN_MODE_NAME = [TEST_TASK_ID], "test"
-elif SINGLE_TASK_MODE:
-    TASK_IDS = [SINGLE_TASK_ID]
-    # The name encodes folds and time so runs with different settings never share a folder.
-    RUN_MODE_NAME = f"single_task_{FOLDS_LABEL}_{TIME_LIMIT_S}s"
-else:
-    TASK_IDS = ALL_TASK_IDS
-    RUN_MODE_NAME = f"full_{FOLDS_LABEL}_{TIME_LIMIT_S}s"
-
-# Everything the benchmark writes lives under results/<run mode>/:
-#   ludwig/  sklearn/  analysis/  logs/      (and results/datasets_summary.csv)
-BENCHMARKS_DIR = os.path.dirname(os.path.abspath(__file__))
-RESULTS_ROOT = os.path.join(BENCHMARKS_DIR, "results")
-
-
-def results_dir(tool):
-    """results/<run mode>/<tool>: where one tool's runs, summary and logs are saved."""
-    return os.path.join(RESULTS_ROOT, RUN_MODE_NAME, tool)
-
-
-# One distinct seed per official fold (fold i -> SEEDS[i]).
-SEEDS = [123, 2027, 99, 7, 42, 1984, 2024, 555, 314, 271]
-
-# True  -> one run per official fold, seeds assigned without repetition.
-# False -> every official fold repeated with every seed (fully-crossed
-#          design; N_folds x N_seeds runs per task).
-ROTATE_SEEDS_ACROSS_FOLDS = True
-
-
-# =================================================================
-# PROTOCOL: FOLD/REPEAT DISCOVERY AND DATA RETRIEVAL
-# =================================================================
-
-def get_fold_repeat_seed_plan(task):
-    """
-    Builds the list of (repeat, fold, seed) runs for a task, based on
-    the fold/repeat structure OpenML actually defines for it.
+    Returns a dict with the DataFrame (`df`), `target_column`, `group` and `task_type`
+    ("classification" for the Binary and Classification groups, "regression" for Regression),
+    or None if the file cannot be read or does not have the target column.
     """
     try:
-        n_repeats, n_folds, _n_samples = task.get_split_dimensions()
-    except Exception as e:
-        print(f"[WARN] Could not read split dimensions for task "
-              f"{task.task_id}: {e}. Falling back to (repeat=0, fold=0).")
-        n_repeats, n_folds = 1, 1
-
-    if TEST_MODE:
-        n_repeats, n_folds = 1, 1
-    elif MAX_FOLDS:
-        n_folds = min(n_folds, MAX_FOLDS)
-
-    plan = []
-    idx = 0
-    for r in range(n_repeats):
-        for f in range(n_folds):
-            if ROTATE_SEEDS_ACROSS_FOLDS:
-                seed = SEEDS[idx % len(SEEDS)]
-                plan.append((r, f, seed))
-                idx += 1
-            else:
-                for seed in SEEDS:
-                    plan.append((r, f, seed))
-
-    print(f"[INFO] Task {task.task_id}: n_repeats={n_repeats}, n_folds={n_folds} "
-          f"-> {len(plan)} runs planned.")
-    return plan
-
-
-def download_openml_task_split(task, repeat, fold):
-    """Retrieves a specific (repeat, fold) train/test split for a task."""
-    try:
-        dataset = task.get_dataset()
-        X, y, categorical_indicator, attribute_names = dataset.get_data(
-            dataset_format="dataframe", target=task.target_name
-        )
-
-        train_indices, test_indices = task.get_train_test_split_indices(
-            repeat=repeat, fold=fold
-        )
-
-        X_train = X.iloc[train_indices].copy()
-        X_test = X.iloc[test_indices].copy()
-        y_train = y.iloc[train_indices].copy()
-        y_test = y.iloc[test_indices].copy()
-
-        train_df = X_train.copy()
-        train_df[task.target_name] = y_train
-
-        test_df = X_test.copy()
-        test_df[task.target_name] = y_test
-
+        group, target = datasets[name][:2]
+        df = pd.read_csv(os.path.join(datasets_dir, group, f"{name}.csv"))
+        if target not in df.columns:
+            raise ValueError(f"no column '{target}' (columns: {list(df.columns)})")
         return {
-            "train_df": train_df,
-            "test_df": test_df,
-            "target_column": task.target_name,
-            "evaluation_measure": task.evaluation_measure,
-            "dataset_name": dataset.name,
-            "task_type": task.task_type,
-            "categorical_indicator": categorical_indicator,
-            "attribute_names": attribute_names,
+            "df": df,
+            "target_column": target,
+            "group": group,
+            "task_type": "regression" if group == "Regression" else "classification",
         }
     except Exception as e:
-        print(f"[ERROR] Downloading task {task.task_id} (repeat={repeat}, fold={fold}): {e}")
+        print(f"[ERROR] Reading dataset {name}: {e}")
         return None
 
 
 # =================================================================
-# SHARED UTILITIES
+# RESULT FILES
 # =================================================================
 
 def safe_metric_value(value):
@@ -197,36 +64,27 @@ def safe_metric_value(value):
     return value
 
 
-def extra_classification_metrics(y_true, y_pred):
-    """Balanced accuracy and macro-F1 from predicted labels (robust to class imbalance).
+def save_parameters(save_dir, parameters):
+    """Writes parameters.json: the settings of this launch (the notebook's Parameters cell).
 
-    Computed with scikit-learn's own definitions for both tools, so they are
-    directly comparable. Evaluation only: it does not touch how models are trained.
-    Returns {} if the metrics cannot be computed.
+    Overwritten at every launch; the analysis reads it to know the time limit and how many
+    runs each dataset should have.
     """
     try:
-        from sklearn.metrics import balanced_accuracy_score, f1_score
-        y_true = pd.Series(y_true).astype(str).to_numpy()
-        y_pred = pd.Series(y_pred).astype(str).to_numpy()
-        if len(y_true) != len(y_pred):
-            raise ValueError(f"{len(y_true)} labels vs {len(y_pred)} predictions")
-        return {
-            "balanced_accuracy": safe_metric_value(balanced_accuracy_score(y_true, y_pred)),
-            "f1_macro": safe_metric_value(f1_score(y_true, y_pred, average="macro")),
-        }
+        os.makedirs(save_dir, exist_ok=True)
+        with open(os.path.join(save_dir, "parameters.json"), "w") as f:
+            json.dump(parameters, f, indent=2)
     except Exception as e:
-        print(f"[WARN] Could not compute balanced accuracy / macro-F1: {e}")
-        return {}
+        print(f"[WARN] Could not save parameters.json: {e}")
 
 
-def save_environment_info(save_dir, tool):
-    """Writes environment_<tool>.json: the machine and library versions of this run.
+def save_environment_info(save_dir, parameters, resume):
+    """Writes environment_ludwig.json: the machine and library versions of this run.
 
     Ludwig decides concurrency and device use on its own, so its results depend
     on the hardware; this file is what to quote in the paper (CPU, RAM, GPUs,
-    versions, time limit, run mode). Never raises.
+    versions, parameters). Never raises.
     """
-    import json
     import platform
     from datetime import datetime
     from importlib import metadata
@@ -238,23 +96,22 @@ def save_environment_info(save_dir, tool):
             return None
 
     info = {
-        "tool": tool,
+        "tool": "ludwig",
         "date": datetime.now().isoformat(timespec="seconds"),
-        "run_mode": RUN_MODE_NAME,
-        "time_limit_s": TIME_LIMIT_S,
-        "max_folds": MAX_FOLDS,
-        "seeds": SEEDS,
+        "parameters": parameters,
         "os": platform.platform(),
         "python": platform.python_version(),
         "cpu_model": platform.processor() or None,
-        "libraries": {p: version(p) for p in (
-            "ludwig", "ray", "torch", "scikit-learn", "openml", "numpy", "pandas")},
+        "libraries": {p: version(p) for p in ("ludwig", "ray", "torch", "numpy", "pandas")},
     }
     try:
         import psutil
         info["cpu_physical_cores"] = psutil.cpu_count(logical=False)
         info["cpu_logical_cores"] = psutil.cpu_count(logical=True)
         info["ram_gb"] = round(psutil.virtual_memory().total / 1024**3, 1)
+        freq = psutil.cpu_freq()
+        if freq:
+            info["cpu_max_mhz"] = round(freq.max or freq.current)
     except Exception:
         pass
     try:
@@ -265,15 +122,6 @@ def save_environment_info(save_dir, tool):
                     break
     except OSError:
         pass
-    # GPUs present on the machine, and whether they are visible to this run
-    # (disable_unsupported_gpu() hides them by setting CUDA_VISIBLE_DEVICES="").
-    try:
-        import psutil
-        freq = psutil.cpu_freq()
-        if freq:
-            info["cpu_max_mhz"] = round(freq.max or freq.current)
-    except Exception:
-        pass
     try:  # code version, so the numbers can be tied to the exact scripts that made them
         here = os.path.dirname(os.path.abspath(__file__))
         git = lambda *a: subprocess.run(["git", "-C", here, *a], capture_output=True,
@@ -282,13 +130,14 @@ def save_environment_info(save_dir, tool):
         info["git_uncommitted_changes"] = bool(git("status", "--porcelain", "--", here))
     except Exception:
         pass
-    if tool == "ludwig":
-        try:  # static build info only: it must not create a CUDA context
-            import torch
-            info["torch_cuda_build"] = torch.version.cuda
-            info["torch_cuda_arch_list"] = torch.cuda.get_arch_list()
-        except Exception:
-            pass
+    try:  # static build info only: it must not create a CUDA context
+        import torch
+        info["torch_cuda_build"] = torch.version.cuda
+        info["torch_cuda_arch_list"] = torch.cuda.get_arch_list()
+    except Exception:
+        pass
+    # GPUs present on the machine, and whether they are visible to this run
+    # (disable_unsupported_gpu() hides them by setting CUDA_VISIBLE_DEVICES="").
     info["cuda_visible_devices"] = os.environ.get("CUDA_VISIBLE_DEVICES")
     if shutil.which("nvidia-smi"):
         try:
@@ -298,13 +147,11 @@ def save_environment_info(save_dir, tool):
             info["gpus_on_machine"] = [g.strip() for g in out.stdout.strip().splitlines() if g.strip()]
         except Exception:
             pass
-    # scikit-learn never uses the GPU; only Ludwig does, if it stays visible.
-    info["gpus_used"] = (tool == "ludwig" and bool(info.get("gpus_on_machine"))
-                         and info["cuda_visible_devices"] != "")
+    info["gpus_used"] = bool(info.get("gpus_on_machine")) and info["cuda_visible_devices"] != ""
     try:
         os.makedirs(save_dir, exist_ok=True)
-        path = os.path.join(save_dir, f"environment_{tool}.json")
-        if RESUME and os.path.isfile(path):
+        path = os.path.join(save_dir, "environment_ludwig.json")
+        if resume and os.path.isfile(path):
             # Resumed run: keep the original file, and add another one only if the
             # machine or the software differ from it (e.g. resumed on another PC).
             with open(path) as f:
@@ -314,8 +161,8 @@ def save_environment_info(save_dir, tool):
             if all(original.get(k) == info.get(k) for k in same_env):
                 print(f"[ENV] Same machine and versions as {os.path.basename(path)}; nothing new recorded.")
                 return
-            path = os.path.join(save_dir, "environment_{}_resumed_{}.json".format(
-                tool, datetime.now().strftime("%Y%m%d_%H%M%S")))
+            path = os.path.join(save_dir, "environment_ludwig_resumed_{}.json".format(
+                datetime.now().strftime("%Y%m%d_%H%M%S")))
         with open(path, "w") as f:
             json.dump(info, f, indent=2)
         print(f"[SAVE] {os.path.basename(path)}")
@@ -323,47 +170,32 @@ def save_environment_info(save_dir, tool):
         print(f"[WARN] Could not save the environment info: {e}")
 
 
-def is_binary_classification(task_type, y_train):
-    return "classification" in task_type.lower() and y_train.nunique() == 2
+def runs_path(save_dir, dataset):
+    return os.path.join(save_dir, f"{dataset}_runs.csv")
 
 
-def save_incremental_results(task_id, method, runs, dataset_name, task_type,
-                              evaluation_measure, save_dir):
-    """Writes results to disk incrementally, one CSV per task/method."""
+def save_incremental_results(dataset, group, runs, save_dir):
+    """Writes <dataset>_runs.csv: one row per run (seed), with its metrics."""
     try:
         os.makedirs(save_dir, exist_ok=True)
         if not runs:
             return
-        rows = []
-        for run in runs:
-            row = {
-                "task_id": task_id,
-                "method": method,
-                "repeat": run["repeat"],
-                "fold": run["fold"],
-                "seed": run["seed"],
-                "dataset_name": dataset_name,
-                "task_type": task_type,
-                "evaluation_measure": evaluation_measure,
-            }
-            row.update(run["metrics"])
-            rows.append(row)
-        df = pd.DataFrame(rows)
-        filename = f"task_{task_id}_{method}_all_runs.csv"
-        df.to_csv(os.path.join(save_dir, filename), index=False)
-        print(f"[SAVE] {filename}")
+        rows = [{"dataset": dataset, "group": group, "seed": run["seed"], **run["metrics"]}
+                for run in runs]
+        pd.DataFrame(rows).to_csv(runs_path(save_dir, dataset), index=False)
+        print(f"[SAVE] {dataset}_runs.csv")
     except Exception as e:
-        print(f"[ERROR] Saving incremental results for {method}: {e}")
+        print(f"[ERROR] Saving the results of {dataset}: {e}")
 
 
-def start_fresh_if_requested(save_dir):
-    """With BENCH_RESUME=0, moves the previous results of this run mode aside.
+def start_fresh_if_requested(save_dir, resume):
+    """With resume=False, moves the previous results of this run mode aside.
 
     The folder becomes <save_dir>.old_<timestamp> (never overwritten in place, so
-    a mistyped variable cannot destroy days of results; delete it by hand when
-    sure). With the default RESUME on, nothing is touched.
+    a wrong setting cannot destroy days of results; delete it by hand when
+    sure). With resume=True, nothing is touched.
     """
-    if RESUME or not os.path.isdir(save_dir) or not os.listdir(save_dir):
+    if resume or not os.path.isdir(save_dir) or not os.listdir(save_dir):
         return
     from datetime import datetime
     backup = f"{save_dir}.old_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
@@ -371,89 +203,45 @@ def start_fresh_if_requested(save_dir):
     print(f"[FRESH START] Previous results moved to {os.path.relpath(backup, os.path.dirname(save_dir))}")
 
 
-def archive_task_results(save_dir, task_id, method):
+def archive_dataset_results(save_dir, dataset):
     """Moves a dataset's runs CSV to <save_dir>/discarded/ (kept for inspection; the analysis ignores it)."""
-    path = os.path.join(save_dir, f"task_{task_id}_{method}_all_runs.csv")
+    path = runs_path(save_dir, dataset)
     if not os.path.isfile(path):
         return
     from datetime import datetime
     dest_dir = os.path.join(save_dir, "discarded")
     os.makedirs(dest_dir, exist_ok=True)
-    dest = os.path.join(dest_dir, "task_{}_{}_all_runs_{}.csv".format(
-        task_id, method, datetime.now().strftime("%Y%m%d_%H%M%S")))
+    dest = os.path.join(dest_dir, "{}_runs_{}.csv".format(dataset, datetime.now().strftime("%Y%m%d_%H%M%S")))
     shutil.move(path, dest)
-    print(f"[DISCARD] task {task_id}: previous runs moved to {os.path.relpath(dest, save_dir)}")
+    print(f"[DISCARD] {dataset}: previous runs moved to {os.path.relpath(dest, save_dir)}")
 
 
-def load_completed_runs(save_dir, task_id, method, expected_runs):
+def load_completed_runs(save_dir, dataset, expected_runs, resume):
     """Resume point for one dataset, in the format `save_incremental_results` takes.
 
     - All `expected_runs` runs saved -> returns them (the dataset is skipped).
     - Only some saved -> they are discarded (archived) and the dataset restarts
-      from fold 0: returns no runs.
-    - Nothing saved, or RESUME off -> returns no runs.
-    Returns (runs, (dataset_name, task_type, evaluation_measure)).
+      from its first seed: returns no runs.
+    - Nothing saved, or resume=False -> returns no runs.
     """
-    empty = ([], (None, None, None))
-    path = os.path.join(save_dir, f"task_{task_id}_{method}_all_runs.csv")
-    if not RESUME or not os.path.isfile(path):
-        return empty
+    path = runs_path(save_dir, dataset)
+    if not resume or not os.path.isfile(path):
+        return []
     try:
         df = pd.read_csv(path)
-        id_cols = ["task_id", "method", "repeat", "fold", "seed",
-                   "dataset_name", "task_type", "evaluation_measure"]
         runs = []
         for _, row in df.iterrows():
-            metrics = {k: v for k, v in row.items() if k not in id_cols and pd.notna(v)}
-            runs.append({"repeat": int(row["repeat"]), "fold": int(row["fold"]),
-                         "seed": int(row["seed"]), "metrics": metrics})
+            metrics = {k: v for k, v in row.items() if k not in ("dataset", "group", "seed") and pd.notna(v)}
+            runs.append({"seed": int(row["seed"]), "metrics": metrics})
         if len(runs) >= expected_runs:
-            first = df.iloc[0]
-            meta = (first["dataset_name"], first["task_type"],
-                    first["evaluation_measure"] if pd.notna(first["evaluation_measure"]) else None)
-            print(f"[RESUME] task {task_id}: all {len(runs)} runs already saved, skipping the dataset.")
-            return runs, meta
-        print(f"[RESTART] task {task_id}: only {len(runs)} of {expected_runs} runs were saved; "
-              f"discarding them and starting the dataset over from fold 0.")
+            print(f"[RESUME] {dataset}: all {len(runs)} runs already saved, skipping the dataset.")
+            return runs
+        print(f"[RESTART] {dataset}: only {len(runs)} of {expected_runs} runs were saved; "
+              f"discarding them and starting the dataset over from its first seed.")
     except Exception as e:
-        print(f"[WARN] Could not read {path} ({e}); starting this task over.")
-    archive_task_results(save_dir, task_id, method)
-    return empty
-
-
-def save_summary(save_dir, method):
-    """Writes summary_<method>.csv: mean and std of every numeric metric per task.
-
-    Built from the task_*_<method>_all_runs.csv files already in save_dir, so
-    it can be called at any time (it covers whatever tasks have finished).
-    Std is the sample std (ddof=1); it is empty when a task has a single run.
-    """
-    try:
-        frames = [
-            pd.read_csv(os.path.join(save_dir, f))
-            for f in sorted(os.listdir(save_dir))
-            if f.startswith("task_") and f.endswith(f"_{method}_all_runs.csv")
-        ]
-        if not frames:
-            return
-        df = pd.concat(frames, ignore_index=True)
-        id_cols = ["task_id", "method", "dataset_name", "task_type", "evaluation_measure"]
-        skip = set(id_cols) | {"repeat", "fold", "seed"}
-        metric_cols = [c for c in df.columns
-                       if c not in skip and pd.api.types.is_numeric_dtype(df[c])]
-        rows = []
-        for keys, g in df.groupby(id_cols, sort=False, dropna=False):
-            row = dict(zip(id_cols, keys))
-            row["n_runs"] = len(g)
-            for c in metric_cols:
-                row[f"{c}_mean"] = g[c].mean()
-                row[f"{c}_std"] = g[c].std()
-            rows.append(row)
-        pd.DataFrame(rows).to_csv(
-            os.path.join(save_dir, f"summary_{method}.csv"), index=False)
-        print(f"[SAVE] summary_{method}.csv")
-    except Exception as e:
-        print(f"[ERROR] Saving summary for {method}: {e}")
+        print(f"[WARN] Could not read {path} ({e}); starting this dataset over.")
+    archive_dataset_results(save_dir, dataset)
+    return []
 
 
 # =================================================================
@@ -610,5 +398,28 @@ def cleanup_ludwig_artifacts(output_dir="."):
         ray_tmp = os.path.join(os.environ.get("RAY_TMPDIR", "/tmp"), "ray")
         if not ray_running and os.path.isdir(ray_tmp):
             shutil.rmtree(ray_tmp, ignore_errors=True)
+    except Exception:
+        pass
+
+    # Memory of this process: the model of the finished run (and its CUDA cache) must not pile up
+    # over the hours a notebook kernel lives.
+    import gc
+    gc.collect()
+    try:
+        import torch
+        if torch.cuda.is_initialized():
+            torch.cuda.empty_cache()
+    except Exception:
+        pass
+
+
+def log_available_memory(warn_below_gb=4.0):
+    """Prints the RAM available before a run. Ludwig runs as many trials in parallel as it sees
+    fit (~0.5-1.5 GB each); if the machine is short of memory Ray kills trials and the run fails."""
+    try:
+        import psutil
+        free_gb = psutil.virtual_memory().available / 1024**3
+        warning = "  [WARN] low: Ray may kill trials; close other applications" if free_gb < warn_below_gb else ""
+        print(f"[INFO] RAM available: {free_gb:.1f} GB{warning}")
     except Exception:
         pass
