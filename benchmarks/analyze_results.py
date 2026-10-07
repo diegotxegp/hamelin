@@ -9,13 +9,9 @@ saves with the results: time limit, datasets, seeds) and writes results/<run_mod
 The notebook calls run_analysis() at its end; its `outputs` argument chooses which of
 these files are written:
 
-  summary_table.csv/.md  one row per dataset, "mean ± sd" of the main metrics over the
-                         seeds and the mean time, ready to paste into the paper
-  per_dataset_stats.csv  per dataset and metric: mean, sd, 95% CI (t, n runs), median, min, max
-  time_and_failures.csv  runs completed vs expected per dataset, and the time used vs the limit
+  summary_metrics.csv    one row per dataset, every metric: mean, std, median, worst, best run and
+                         95% CI (t, n runs); also runs expected/failed and the time vs the limit
   datasets_summary.csv   size, feature types, classes and majority-class share of each dataset
-  ludwig_diagnostics.csv trials launched/failed, epochs of the best trial, model type,
-                         from ludwig_run_diagnostics.json (what Ludwig did in each run)
 
 The metrics are Ludwig's own, on its test split (20% of the dataset, see the notebook).
 """
@@ -40,8 +36,7 @@ PAPER_METRICS = {  # metric -> label, in the order they appear in the table
     "regression": [("root_mean_squared_error", "RMSE"), ("mean_absolute_error", "MAE"),
                    ("r2", "R2")],
 }
-ALL_OUTPUTS = ("summary_table", "per_dataset_stats", "time_and_failures", "ludwig_diagnostics",
-               "datasets_summary")
+ALL_OUTPUTS = ("summary_metrics", "datasets_summary")
 
 
 def load_runs(mode_dir):
@@ -64,58 +59,42 @@ def task_kind(group):
     return "regression" if group == "Regression" else "classification"
 
 
-def per_dataset_stats(df):
+LOWER_IS_BETTER = ("loss", "error", "time", "failed")  # in a column name: best = min, worst = max
+
+
+def summary_metrics(runs, parameters):
+    """One row per dataset, every numeric column of the runs, and how complete the dataset is.
+
+    Per metric: mean, std (sample, empty with one run), median, worst, best and the 95% CI of
+    the mean (t, n runs; empty with one run). Columns keep Ludwig's own names (accuracy_micro
+    is the plain accuracy). Best is the minimum for losses, errors, times and failed trials
+    and the maximum for the rest. Also runs_expected / runs_failed (from the seeds in
+    parameters.json) and the mean time as a percentage of the time limit.
+    """
+    runs = runs.rename(columns={v: k for k, v in LUDWIG_RENAME.items()})
+    cols = [c for c in metric_columns(runs) if c != "seed"]
     rows = []
-    for name, g in df.groupby("dataset", sort=False):
-        for m in metric_columns(df):
-            x = g[m].dropna().to_numpy(dtype=float)
-            if len(x) == 0:
+    for (name, group), g in runs.groupby(["dataset", "group"], sort=False):
+        expected = len(parameters["seeds_per_dataset"][name])
+        row = {"dataset_name": name, "task_type": group, "n_runs": len(g),
+               "runs_expected": expected, "runs_failed": max(0, expected - len(g))}
+        for c in cols:
+            x = g[c].dropna()
+            if x.empty:
                 continue
+            low = any(k in c for k in LOWER_IS_BETTER)
             sd = x.std(ddof=1) if len(x) > 1 else np.nan
             half = stats.t.ppf(0.975, len(x) - 1) * sd / np.sqrt(len(x)) if len(x) > 1 else np.nan
-            rows.append(dict(dataset=name, metric=m, n=len(x), mean=x.mean(), sd=sd,
-                             ci95_low=x.mean() - half, ci95_high=x.mean() + half,
-                             median=np.median(x), min=x.min(), max=x.max()))
+            row.update({f"{c}_mean": x.mean(), f"{c}_std": sd, f"{c}_median": x.median(),
+                        f"{c}_worst": x.max() if low else x.min(),
+                        f"{c}_best": x.min() if low else x.max(),
+                        f"{c}_ci95_low": x.mean() - half, f"{c}_ci95_high": x.mean() + half})
+        row["time_taken_pct_of_limit"] = 100 * g["time_taken"].mean() / parameters["time_limit_s"]
+        rows.append(row)
     return pd.DataFrame(rows)
 
 
-def time_and_failures(df, parameters):
-    limit_s = parameters["time_limit_s"]
-    rows = []
-    for name, g in df.groupby("dataset", sort=False):
-        expected = len(parameters["seeds_per_dataset"][name])
-        rows.append(dict(dataset=name, runs_ok=len(g), runs_expected=expected,
-                         runs_failed=max(0, expected - len(g)),
-                         time_mean_s=g["time_taken"].mean(), time_sd_s=g["time_taken"].std(ddof=1),
-                         time_min_s=g["time_taken"].min(), time_max_s=g["time_taken"].max(),
-                         time_mean_pct_of_limit=100 * g["time_taken"].mean() / limit_s))
-    return pd.DataFrame(rows)
-
-
-def ludwig_diagnostics_table(mode_dir):
-    """Flattens ludwig_run_diagnostics.json: one row per run."""
-    path = os.path.join(mode_dir, "ludwig", "ludwig_run_diagnostics.json")
-    if not os.path.isfile(path):
-        return None
-    with open(path) as f:
-        log = json.load(f)
-    rows = []
-    for key, d in log.items():
-        trainer = d.get("trainer") or {}
-        res = d.get("ray_resources") or {}
-        rows.append(dict(run=key, n_trials=d.get("n_trials"),
-                         trials_by_status=d.get("trials_by_status"),
-                         best_trial_epochs=d.get("best_trial_epochs"),
-                         best_trial_time_s=d.get("best_trial_time_s"),
-                         sum_trial_time_s=d.get("sum_trial_time_s"),
-                         model_type=d.get("model_type"), combiner=d.get("combiner"),
-                         max_epochs=trainer.get("epochs"), batch_size=trainer.get("batch_size"),
-                         early_stop=trainer.get("early_stop"),
-                         ray_cpus=res.get("CPU"), ray_gpus=res.get("GPU")))
-    return pd.DataFrame(rows)
-
-
-def summary_table(runs, times, digits=3):
+def summary_table(runs, digits=3):
     """One row per dataset: 'mean ± sd' per metric over its seeds, and the mean time."""
     rows = []
     for (name, group), g in runs.groupby(["dataset", "group"], sort=False):
@@ -126,7 +105,7 @@ def summary_table(runs, times, digits=3):
                 x = g[m].dropna()
                 sd = x.std(ddof=1) if len(x) > 1 else float("nan")
                 row[label] = f"{x.mean():.{digits}f} ± {sd:.{digits}f}"
-        row["Time (s)"] = f"{times.loc[times['dataset'] == name, 'time_mean_s'].iloc[0]:.0f}"
+        row["Time (s)"] = f"{g['time_taken'].mean():.0f}"
         rows.append(row)
     return pd.DataFrame(rows)
 
@@ -180,8 +159,8 @@ def run_analysis(mode_dir, outputs=ALL_OUTPUTS, verbose=True):
     os.makedirs(out, exist_ok=True)
     say = print if verbose else (lambda *a, **k: None)
     written = []
-    # Files of an earlier analysis (maybe with other `outputs`) must not linger
-    for name in ("summary_table.csv", "summary_table.md", "per_dataset_stats.csv",
+    # Files of an earlier analysis (maybe with other `outputs`, or from older versions) must not linger
+    for name in ("summary_table.csv", "summary_table.md", "summary_metrics.csv", "per_dataset_stats.csv",
                  "time_and_failures.csv", "ludwig_diagnostics.csv", "datasets_summary.csv"):
         if os.path.isfile(os.path.join(out, name)):
             os.remove(os.path.join(out, name))
@@ -190,33 +169,17 @@ def run_analysis(mode_dir, outputs=ALL_OUTPUTS, verbose=True):
         df.to_csv(os.path.join(out, f"{name}.csv"), index=False)
         written.append(f"{name}.csv")
 
-    if "per_dataset_stats" in outputs:
-        write("per_dataset_stats", per_dataset_stats(runs))
-
-    tf = time_and_failures(runs, parameters)
-    if "time_and_failures" in outputs:
-        write("time_and_failures", tf)
-    for _, r in tf[tf["runs_failed"] > 0].iterrows():
-        say(f"[WARN] {r['dataset']}: {r['runs_ok']} of {r['runs_expected']} runs completed. "
+    metrics = summary_metrics(runs, parameters)
+    if "summary_metrics" in outputs:
+        write("summary_metrics", metrics)
+    for _, r in metrics[metrics["runs_failed"] > 0].iterrows():
+        say(f"[WARN] {r['dataset_name']}: {r['n_runs']} of {r['runs_expected']} runs completed. "
             f"Launch the benchmark again to redo it.")
-
-    if "ludwig_diagnostics" in outputs:
-        diag = ludwig_diagnostics_table(mode_dir)
-        if diag is not None:
-            write("ludwig_diagnostics", diag)
 
     if "datasets_summary" in outputs:
         write("datasets_summary", dataset_summary(parameters))
 
-    table = summary_table(runs, tf)
-    if "summary_table" in outputs:
-        write("summary_table", table)
-        with open(os.path.join(out, "summary_table.md"), "w") as f:
-            cols = list(table.columns)
-            f.write("| " + " | ".join(cols) + " |\n|" + "---|" * len(cols) + "\n")
-            for _, r in table.fillna("").iterrows():
-                f.write("| " + " | ".join(str(r[c]) for c in cols) + " |\n")
-        written.append("summary_table.md")
+    table = summary_table(runs)  # "mean ± sd" view of summary_metrics; shown by the notebook, not saved
 
     say(f"Analysis written to {out}: {', '.join(written)}")
     return table

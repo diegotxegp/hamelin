@@ -1,9 +1,12 @@
 #!/usr/bin/env bash
 # Runs the Ludwig benchmark notebook unattended (without opening Jupyter).
 #
-#   ./run_benchmark.sh
+#   ./run_benchmark.sh full        # the whole experiment (TEST_MODE = False)
+#   ./run_benchmark.sh test        # smoke test (TEST_MODE = True), about 7 minutes
+#   ./run_benchmark.sh             # whatever TEST_MODE the notebook has
 #
-# The settings (test or full run, time limit, datasets, seeds, ...) are the ones in the
+# The mode given here overrides TEST_MODE for this launch only; the notebook is not edited.
+# The other settings (test or full run, time limit, datasets, seeds, ...) are the ones in the
 # "Parameters" cell of ludwig/ludwig_experiment.ipynb: edit them there. The notebook's last
 # cell runs the analysis, so the results and tables are left ready.
 #
@@ -22,6 +25,13 @@
 set -u
 cd "$(dirname "$0")"
 
+MODE=""
+case "${1:-}" in
+    "") ;;
+    full|test) MODE="$1" ;;
+    *) echo "Usage: ./run_benchmark.sh [full|test]"; exit 2 ;;
+esac
+
 PYTHON="${PYTHON:-.venv-bench/bin/python}"
 [ -x "$PYTHON" ] || PYTHON=python3
 # Absolute path, so it still resolves after cd'ing into the notebook's folder
@@ -39,15 +49,19 @@ fi
 # Keep a copy of everything this script prints
 exec > >(tee -a "$LOGDIR/launcher.log") 2>&1
 STAMP=$(date +%Y%m%d_%H%M%S)
-echo "[$(date '+%F %T')] Start, python: $PYTHON"
+echo "[$(date '+%F %T')] Start, python: $PYTHON, mode: ${MODE:-as in the notebook}"
 
 # The notebook's code cells, as a plain script (no nbconvert needed)
 SCRIPT="$PWD/$LOGDIR/scripts/ludwig_experiment_$STAMP.py"
-"$PYTHON" - "$SCRIPT" <<'PY'
-import json, sys
+"$PYTHON" - "$SCRIPT" "$MODE" <<'PY'
+import json, re, sys
 notebook = json.load(open("ludwig/ludwig_experiment.ipynb"))
-code = ["".join(c["source"]) for c in notebook["cells"] if c["cell_type"] == "code"]
-open(sys.argv[1], "w").write("\n\n".join(code))
+code = "\n\n".join("".join(c["source"]) for c in notebook["cells"] if c["cell_type"] == "code")
+if sys.argv[2]:  # full / test: overrides TEST_MODE in the generated script only
+    code, n = re.subn(r"^TEST_MODE = (True|False)", f"TEST_MODE = {sys.argv[2] == 'test'}", code, flags=re.M)
+    if n != 1:
+        sys.exit("Could not find the TEST_MODE line in the notebook.")
+open(sys.argv[1], "w").write(code)
 PY
 [ -f "$SCRIPT" ] || { echo "Could not extract the notebook's code."; exit 1; }
 

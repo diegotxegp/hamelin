@@ -41,18 +41,18 @@ experiment set `TEST_MODE = False` (all datasets, all their seeds, 1000 s per ru
 |---|---|
 | `TEST_MODE`, `TEST_DATASET` | `True`: smoke test on `TEST_DATASET`, first seed only. `False`: every dataset in `DATASETS` with all its seeds |
 | `TIME_LIMIT_S` | Time budget of each run: 300 s in test mode, 1000 s otherwise |
-| `TEST_FRACTION`, `VALIDATION_FRACTION` | The split of the whole dataset: 0.2 test and 0.1 validation by default, so 0.7 train (Ludwig's own defaults). Any other values are accepted; the test share is part of the results folder's name |
+| `TEST_FRACTION` | Share of the whole dataset used as test (0.2 by default). The rest is split internally into train and validation (0.7 / 0.1, Ludwig's defaults). The test share is part of the results folder's name |
 | `DATASETS` | One row per dataset: `name: (folder in datasets/, target column, seeds)`. Add, remove or change datasets, targets and seeds here |
 | `RESUME`, `DATASET_RETRIES` | What to do after an interruption or a failed run (see below) |
 | `DATASETS_DIR`, `RESULTS_ROOT` | Where the CSV files are read from and the results are written to |
 
 A dataset is run once per seed, so the number of seeds of a row is the number of runs of that
-dataset: 52 runs in total (from 1 seed for hypothyroid up to 6 for credit-g).
+dataset: 59 runs in total (from 2 seeds for hypothyroid up to 6 for credit-g).
 
 ### Interruptions
 
-A full run takes hours: 52 runs x up to 1000 s (plus the ~100 s Ludwig overshoots), at most
-roughly 16 h on a machine like the one in `environment_ludwig.json`.
+A full run takes hours: 59 runs x up to 1000 s (plus the ~100 s Ludwig overshoots), at most
+roughly 18 h on a machine like the one in `environment_ludwig.json`.
 Keep the browser/VS Code session and the machine awake, or use `run_benchmark.sh`.
 
 If anything interrupts it (Ctrl+C, reboot, crash), run the notebook again with the same
@@ -67,11 +67,15 @@ moved to `results/<mode>/ludwig.old_<timestamp>` (delete it by hand when sure).
 
 ### From a terminal
 
-    nohup ./run_benchmark.sh > /dev/null 2>&1 &     # or inside tmux/screen
+    ./run_benchmark.sh test          # smoke test, about 7 minutes
+    ./run_benchmark.sh full          # the whole experiment
     tail -f results/logs/launcher.log
 
 `run_benchmark.sh` extracts the notebook's code cells into a script and runs it, with live logs in
-`results/logs/` and no per-cell timeout. It uses the notebook's Parameters cell as it is.
+`results/logs/` and no per-cell timeout. `full` / `test` override `TEST_MODE` for that launch
+(the notebook is not edited); without either, the notebook's value is used. It runs in the
+foreground: for a long run use tmux/screen or `nohup ./run_benchmark.sh full > /dev/null 2>&1 &`
+(then `tail -f results/logs/launcher.log`). The rest of the Parameters cell is used as it is.
 `PYTHON=/path/to/python` selects the interpreter (default `.venv-bench/bin/python`); a second
 pass redoes the datasets that did not finish in the first one (`BENCH_PASSES=1` disables it).
 Do not start two launches at once; the script refuses.
@@ -147,10 +151,7 @@ It writes `results/<mode>/analysis/`:
 
 | File | What it contains |
 |---|---|
-| `summary_table.csv/.md` | One row per dataset: `mean ± sd` of the main metrics over the seeds and the mean time. Ready for the paper. |
-| `per_dataset_stats.csv` | Per dataset and metric: mean, sd, 95% CI (t, n runs), median, min, max. |
-| `time_and_failures.csv` | Runs completed vs expected per dataset, and the time used (mean, sd, min, max, % of the limit). |
-| `ludwig_diagnostics.csv` | The diagnostics JSON flattened, one row per run. |
+| `summary_metrics.csv` | One row per dataset, every metric Ludwig reports plus times and trials: mean, std, median, worst and best run and the 95% CI of the mean (t, n runs). Also `runs_expected`, `runs_failed` and the mean time as a percentage of the limit. Best is the minimum for losses, errors, times and failed trials. |
 | `datasets_summary.csv` | Per dataset: instances, features, numeric/other split (by column type), missing values, classes and the majority-class share (the accuracy of the constant predictor). Use only what the paper needs. |
 
 ## Before committing
