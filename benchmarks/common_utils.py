@@ -1,12 +1,4 @@
-"""
-Helper functions for the Ludwig benchmark notebook (ludwig/ludwig_experiment.ipynb).
-
-Everything a user or reviewer may want to change (run mode, time limit, the 80/20 split,
-datasets and targets, seeds) is in the notebook's "Parameters" cell, not here. This module
-only has functions: loading a dataset, saving and resuming results, recording the machine,
-and the helpers Ludwig needs to run unattended (GPU fallback, temp files). They receive
-what they need as arguments.
-"""
+"""Helpers shared by the benchmark notebooks: dataset loading, saving and resuming results, machine record, GPU and temp handling."""
 
 import json
 import os
@@ -22,12 +14,7 @@ import pandas as pd
 # =================================================================
 
 def load_dataset(name, datasets, datasets_dir):
-    """Reads <datasets_dir>/<group>/<name>.csv, where `datasets[name]` starts with (group, target).
-
-    Returns a dict with the DataFrame (`df`), `target_column`, `group` and `task_type`
-    ("classification" for the Binary and Classification groups, "regression" for Regression),
-    or None if the file cannot be read or does not have the target column.
-    """
+    """Reads <datasets_dir>/<group>/<name>.csv, where `datasets[name]` starts with (group, target)."""
     try:
         group, target = datasets[name][:2]
         df = pd.read_csv(os.path.join(datasets_dir, group, f"{name}.csv"))
@@ -65,11 +52,7 @@ def safe_metric_value(value):
 
 
 def save_parameters(save_dir, parameters):
-    """Writes parameters.json: the settings of this launch (the notebook's Parameters cell).
-
-    Overwritten at every launch; the analysis reads it to know the time limit and how many
-    runs each dataset should have.
-    """
+    """Writes parameters.json."""
     try:
         os.makedirs(save_dir, exist_ok=True)
         with open(os.path.join(save_dir, "parameters.json"), "w") as f:
@@ -78,13 +61,8 @@ def save_parameters(save_dir, parameters):
         print(f"[WARN] Could not save parameters.json: {e}")
 
 
-def save_environment_info(save_dir, parameters, resume):
-    """Writes environment_ludwig.json: the machine and library versions of this run.
-
-    Ludwig decides concurrency and device use on its own, so its results depend
-    on the hardware; this file is what to quote in the paper (CPU, RAM, GPUs,
-    versions, parameters). Never raises.
-    """
+def save_environment_info(save_dir, parameters, resume, tool="ludwig"):
+    """Writes environment_<tool>.json."""
     import platform
     from datetime import datetime
     from importlib import metadata
@@ -96,7 +74,7 @@ def save_environment_info(save_dir, parameters, resume):
             return None
 
     info = {
-        "tool": "ludwig",
+        "tool": tool,
         "date": datetime.now().isoformat(timespec="seconds"),
         "parameters": parameters,
         "os": platform.platform(),
@@ -150,7 +128,7 @@ def save_environment_info(save_dir, parameters, resume):
     info["gpus_used"] = bool(info.get("gpus_on_machine")) and info["cuda_visible_devices"] != ""
     try:
         os.makedirs(save_dir, exist_ok=True)
-        path = os.path.join(save_dir, "environment_ludwig.json")
+        path = os.path.join(save_dir, f"environment_{tool}.json")
         if resume and os.path.isfile(path):
             # Resumed run: keep the original file, and add another one only if the
             # machine or the software differ from it (e.g. resumed on another PC).
@@ -161,7 +139,7 @@ def save_environment_info(save_dir, parameters, resume):
             if all(original.get(k) == info.get(k) for k in same_env):
                 print(f"[ENV] Same machine and versions as {os.path.basename(path)}; nothing new recorded.")
                 return
-            path = os.path.join(save_dir, "environment_ludwig_resumed_{}.json".format(
+            path = os.path.join(save_dir, f"environment_{tool}_resumed_" + "{}.json".format(
                 datetime.now().strftime("%Y%m%d_%H%M%S")))
         with open(path, "w") as f:
             json.dump(info, f, indent=2)
@@ -175,7 +153,7 @@ def runs_path(save_dir, dataset):
 
 
 def save_incremental_results(dataset, group, runs, save_dir):
-    """Writes <dataset>_runs.csv: one row per run (seed), with its metrics."""
+    """Writes <dataset>_runs.csv."""
     try:
         os.makedirs(save_dir, exist_ok=True)
         if not runs:
@@ -189,12 +167,7 @@ def save_incremental_results(dataset, group, runs, save_dir):
 
 
 def start_fresh_if_requested(save_dir, resume):
-    """With resume=False, moves the previous results of this run mode aside.
-
-    The folder becomes <save_dir>.old_<timestamp> (never overwritten in place, so
-    a wrong setting cannot destroy days of results; delete it by hand when
-    sure). With resume=True, nothing is touched.
-    """
+    """With resume=False, moves the previous results of this run mode aside."""
     if resume or not os.path.isdir(save_dir) or not os.listdir(save_dir):
         return
     from datetime import datetime
@@ -217,13 +190,7 @@ def archive_dataset_results(save_dir, dataset):
 
 
 def load_completed_runs(save_dir, dataset, expected_runs, resume):
-    """Resume point for one dataset, in the format `save_incremental_results` takes.
-
-    - All `expected_runs` runs saved -> returns them (the dataset is skipped).
-    - Only some saved -> they are discarded (archived) and the dataset restarts
-      from its first seed: returns no runs.
-    - Nothing saved, or resume=False -> returns no runs.
-    """
+    """Resume point for one dataset, in the format `save_incremental_results` takes."""
     path = runs_path(save_dir, dataset)
     if not resume or not os.path.isfile(path):
         return []
@@ -249,15 +216,7 @@ def load_completed_runs(save_dir, dataset, expected_runs, resume):
 # =================================================================
 
 def disable_unsupported_gpu():
-    """Hides a CUDA GPU the installed PyTorch build has no kernels for.
-
-    Without this, Ray/Ludwig schedule trials on the GPU and every one of
-    them dies with CUBLAS_STATUS_ARCH_MISMATCH (e.g. compute capability
-    sm_50 with a torch build that only ships sm_75+). Must be called BEFORE
-    importing ludwig/torch so Ray workers inherit CUDA_VISIBLE_DEVICES.
-    The check runs in throwaway subprocesses so no CUDA context is created
-    in this process.
-    """
+    """Hides a CUDA GPU the installed PyTorch build has no kernels for."""
     if "CUDA_VISIBLE_DEVICES" in os.environ:
         return  # already explicitly configured - respect it
     if shutil.which("nvidia-smi") is None:
@@ -288,19 +247,7 @@ GPU_WAIT_MARGIN = 0.02  # fraction of GPU memory above the idle baseline
 
 
 def init_ray_for_ludwig():
-    """Starts Ray so Ludwig's per-trial GPU wait tolerates the desktop's memory use.
-
-    Before each trial Ludwig calls ray.tune.utils.wait_for_gpu, which blocks
-    until the GPU uses at most 1% of its memory, to avoid starting on top of
-    a previous trial that has not freed it yet. On a GPU that also drives
-    the desktop (Xorg, remote desktop, browser) that never happens, so the
-    trial fails with "GPU memory was not freed" and is retried or lost.
-    Here the threshold becomes each GPU's memory use now, before any trial,
-    plus GPU_WAIT_MARGIN: a leftover trial (a CUDA context alone is ~300 MB)
-    is still waited for. Call it right before auto_train (after
-    cleanup_ludwig_artifacts, which stops Ray); Ludwig reuses this Ray.
-    Without GPUtil or GPUs it does nothing and Ludwig starts Ray itself.
-    """
+    """Starts Ray so Ludwig's per-trial GPU wait tolerates the desktop's memory use."""
     try:
         import GPUtil
         import ray
@@ -335,14 +282,7 @@ LUDWIG_TMP_ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), ".lud
 
 
 def use_private_tmpdir():
-    """Points TMPDIR (this process and the Ray workers it starts) at a private dir.
-
-    Ludwig's hyperopt copies the whole model into a fresh tempfile.mkdtemp()
-    on every epoch of every trial and never deletes it, so /tmp fills the
-    disk over a long benchmark. Here those copies land in
-    .ludwig-tmp/<pid>/, which cleanup_ludwig_artifacts empties. Must run
-    before Ray starts so the workers inherit it.
-    """
+    """Points TMPDIR (this process and the Ray workers it starts) at a private dir."""
     path = os.path.join(LUDWIG_TMP_ROOT, str(os.getpid()))
     os.makedirs(path, exist_ok=True)
     os.environ["TMPDIR"] = path
@@ -362,15 +302,7 @@ def _purge_private_tmpdirs():
 
 
 def cleanup_ludwig_artifacts(output_dir="."):
-    """Removes Ludwig's disposable per-run files (and Ray's session logs) and stops Ray.
-
-    auto_train dumps every hyperopt trial (checkpoints, logs, error files)
-    under <output_dir>/hyperopt. The benchmark only needs the metrics, which
-    are computed in memory before this is called, so nothing in there is
-    needed afterwards (nor are the per-epoch model copies in the private
-    tmp dir, see use_private_tmpdir). A stale hyperopt/ is also harmful: Ray auto-resumes
-    from it and can poison the next run. Call it before and after each run.
-    """
+    """Removes Ludwig's disposable per-run files (and Ray's session logs) and stops Ray."""
     try:
         import ray
         if ray.is_initialized():
@@ -414,8 +346,7 @@ def cleanup_ludwig_artifacts(output_dir="."):
 
 
 def log_available_memory(warn_below_gb=4.0):
-    """Prints the RAM available before a run. Ludwig runs as many trials in parallel as it sees
-    fit (~0.5-1.5 GB each); if the machine is short of memory Ray kills trials and the run fails."""
+    """Prints the RAM available before a run."""
     try:
         import psutil
         free_gb = psutil.virtual_memory().available / 1024**3

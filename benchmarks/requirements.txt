@@ -1,8 +1,5 @@
-# Pinned versions the benchmark results were produced with.
-# Python 3.12 (tested with 3.12.14).
-# Install in a clean venv:  uv pip install -r requirements.txt
-# (torch: pick the build matching your hardware if the default does not fit;
-#  the notebook falls back to CPU automatically on unsupported GPUs.)
+# Python 3.12. Install in a clean venv:  uv pip install -r requirements.txt
+# (torch: pick the build matching your hardware if the default does not fit)
 
 # Ludwig
 ludwig==0.17.9
@@ -11,6 +8,13 @@ torch==2.14.0
 hyperopt==0.3.0
 dask==2026.8.0   # imported by ludwig.automl (auto_train)
 GPUtil==1.4.0    # ray.tune wait_for_gpu, used by Ludwig hyperopt on GPU
+
+# InsuML
+scikit-learn==1.9.1
+PySide6==6.11.2
+PySide6-Fluent-Widgets==1.11.3
+PyYAML==6.0.3
+matplotlib==3.11.2
 
 # Shared (common_utils.py, analyze_results.py)
 scipy==1.18.1

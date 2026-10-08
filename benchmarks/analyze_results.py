@@ -1,20 +1,4 @@
-"""Analysis of the Ludwig benchmark results (reads the CSVs, trains nothing).
-
-Usage, from the benchmarks/ folder:
-
-    python analyze_results.py <run_mode>            # e.g. full_1000s_test20pct, a folder of results/
-
-Reads results/<run_mode>/ludwig/<dataset>_runs.csv (and parameters.json, which the notebook
-saves with the results: time limit, datasets, seeds) and writes results/<run_mode>/analysis/.
-The notebook calls run_analysis() at its end; its `outputs` argument chooses which of
-these files are written:
-
-  summary_metrics.csv    one row per dataset, every metric: mean, std, median, worst, best run and
-                         95% CI (t, n runs); also runs expected/failed and the time vs the limit
-  datasets_summary.csv   size, feature types, classes and majority-class share of each dataset
-
-The metrics are Ludwig's own, on its test split (20% of the dataset, see the notebook).
-"""
+"""Summary tables and statistics of the benchmark results (reads the CSVs, trains nothing)."""
 import argparse
 import json
 import os
@@ -25,7 +9,13 @@ import pandas as pd
 from scipy import stats
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-RESULTS = os.path.join(HERE, "results")  # results/<run mode>/{ludwig,analysis,logs}
+
+
+def results_root(tool):
+    """Each benchmark keeps its results inside its own folder."""
+    return os.path.join(HERE, tool, "results")
+
+
 # Ludwig's `accuracy_micro` is the plain fraction of correct predictions;
 # its own `accuracy` is a different quantity.
 LUDWIG_RENAME = {"accuracy": "accuracy_ludwig_native", "accuracy_micro": "accuracy"}
@@ -39,9 +29,9 @@ PAPER_METRICS = {  # metric -> label, in the order they appear in the table
 ALL_OUTPUTS = ("summary_metrics", "datasets_summary")
 
 
-def load_runs(mode_dir):
+def load_runs(mode_dir, tool="ludwig"):
     """Every run of every dataset (one row each), or None if there are none."""
-    folder = os.path.join(mode_dir, "ludwig")
+    folder = os.path.join(mode_dir, tool)
     if not os.path.isdir(folder):
         return None
     frames = [pd.read_csv(os.path.join(folder, f)) for f in sorted(os.listdir(folder))
@@ -63,14 +53,7 @@ LOWER_IS_BETTER = ("loss", "error", "time", "failed")  # in a column name: best 
 
 
 def summary_metrics(runs, parameters):
-    """One row per dataset, every numeric column of the runs, and how complete the dataset is.
-
-    Per metric: mean, std (sample, empty with one run), median, worst, best and the 95% CI of
-    the mean (t, n runs; empty with one run). Columns keep Ludwig's own names (accuracy_micro
-    is the plain accuracy). Best is the minimum for losses, errors, times and failed trials
-    and the maximum for the rest. Also runs_expected / runs_failed (from the seeds in
-    parameters.json) and the mean time as a percentage of the time limit.
-    """
+    """One row per dataset, every numeric column of the runs, and how complete the dataset is."""
     runs = runs.rename(columns={v: k for k, v in LUDWIG_RENAME.items()})
     cols = [c for c in metric_columns(runs) if c != "seed"]
     rows = []
@@ -95,7 +78,7 @@ def summary_metrics(runs, parameters):
 
 
 def summary_table(runs, digits=3):
-    """One row per dataset: 'mean ± sd' per metric over its seeds, and the mean time."""
+    """One row per dataset."""
     rows = []
     for (name, group), g in runs.groupby(["dataset", "group"], sort=False):
         kind = task_kind(group)
@@ -111,12 +94,7 @@ def summary_table(runs, digits=3):
 
 
 def dataset_summary(parameters):
-    """One row per dataset of the run: size, feature types, classes, missing values.
-
-    Read straight from the CSVs (`datasets` and `datasets_dir` in parameters.json). The
-    majority-class share is the accuracy of the constant predictor, the reference any
-    classifier has to beat. Feature types are the CSV column types (numeric or not).
-    """
+    """One row per dataset of the run."""
     from common_utils import load_dataset
     datasets, rows = parameters["datasets"], []
     for name in datasets:
@@ -139,20 +117,15 @@ def dataset_summary(parameters):
     return pd.DataFrame(rows)
 
 
-def run_analysis(mode_dir, outputs=ALL_OUTPUTS, verbose=True):
-    """Writes <mode_dir>/analysis/ (mode_dir = results/<run mode>) and returns the summary table.
-
-    `outputs` chooses which files are written (names in ALL_OUTPUTS); the notebook
-    exposes it so the author decides what a reader gets. The summary table is always
-    returned, whether or not it is written.
-    """
+def run_analysis(mode_dir, outputs=ALL_OUTPUTS, verbose=True, tool="ludwig"):
+    """Writes <mode_dir>/analysis/ (mode_dir = results/<run mode>) and returns the summary table."""
     unknown = set(outputs) - set(ALL_OUTPUTS)
     if unknown:
         raise ValueError(f"Unknown analysis outputs {sorted(unknown)}; choose from {ALL_OUTPUTS}")
-    runs = load_runs(mode_dir)
+    runs = load_runs(mode_dir, tool)
     if runs is None:
-        raise SystemExit(f"No results in {mode_dir}/ludwig")
-    with open(os.path.join(mode_dir, "ludwig", "parameters.json")) as f:
+        raise SystemExit(f"No results in {mode_dir}/{tool}")
+    with open(os.path.join(mode_dir, tool, "parameters.json")) as f:
         parameters = json.load(f)
 
     out = os.path.join(mode_dir, "analysis")
@@ -187,12 +160,14 @@ def run_analysis(mode_dir, outputs=ALL_OUTPUTS, verbose=True):
 
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawTextHelpFormatter)
-    ap.add_argument("run_mode", help="a folder of results/ (e.g. full_1000s_test20pct) or the path to one")
+    ap.add_argument("run_mode", help="a folder of <tool>/results/ (e.g. full_1000s_test20pct) or the path to one")
+    ap.add_argument("--tool", default="ludwig", choices=("ludwig", "InsuML"),
+                    help="which benchmark's results to analyse (default: ludwig)")
     args = ap.parse_args()
 
     sys.path.insert(0, HERE)
-    mode_dir = args.run_mode if os.path.isdir(args.run_mode) else os.path.join(RESULTS, args.run_mode)
-    run_analysis(mode_dir)
+    mode_dir = args.run_mode if os.path.isdir(args.run_mode) else os.path.join(results_root(args.tool), args.run_mode)
+    run_analysis(mode_dir, tool=args.tool)
 
 
 if __name__ == "__main__":
