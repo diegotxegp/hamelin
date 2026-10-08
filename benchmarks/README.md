@@ -147,7 +147,8 @@ shown). The same analysis runs from a terminal (from `benchmarks/`):
 
     python analyze_results.py <mode>                 # e.g. full_1000s_test20pct
 
-It writes `results/<mode>/analysis/`:
+It writes `results/<mode>/analysis/`. The notebook also refreshes it each time a dataset finishes, so the
+summary grows while the benchmark runs:
 
 | File | What it contains |
 |---|---|

@@ -52,7 +52,7 @@ STAMP=$(date +%Y%m%d_%H%M%S)
 echo "[$(date '+%F %T')] Start, python: $PYTHON, mode: ${MODE:-as in the notebook}"
 
 # The notebook's code cells, as a plain script (no nbconvert needed)
-SCRIPT="$PWD/$LOGDIR/scripts/ludwig_experiment_$STAMP.py"
+SCRIPT="$PWD/$LOGDIR/scripts/ludwig_experiment.py"
 "$PYTHON" - "$SCRIPT" "$MODE" <<'PY'
 import json, re, sys
 notebook = json.load(open("ludwig/ludwig_experiment.ipynb"))
