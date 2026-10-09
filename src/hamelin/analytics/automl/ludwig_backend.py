@@ -12,6 +12,7 @@ Date: February 20, 2026
 
 from __future__ import annotations
 
+import copy
 import json
 import os
 import shutil
@@ -211,6 +212,41 @@ def _held_out_test_set(df: pd.DataFrame, target: str, test_split: float, random_
         )
     except ValueError:
         return train_test_split(df, test_size=test_split, random_state=random_seed)
+
+
+_SPLIT_COLUMN = "__hamelin_split__"
+# Validation share of the rows handed to Ludwig: 1/8 keeps Ludwig's usual
+# 70:10 train:validation ratio once the 20 % test set is already set aside.
+_VALIDATION_FRACTION = 0.125
+
+
+def _with_fixed_split(df: pd.DataFrame, target: str, config: dict, random_seed: int):
+    """(df plus a split column, copy of config using it).
+
+    run() already holds out the test set, so everything left is for training
+    and validation. Without this, Ludwig splits those rows again 70/10/20
+    and the extra 20 % "test" part, which nothing reads, is lost to training.
+    Marks the validation rows (1) with the same stratified idea as
+    _held_out_test_set; the rest (0) trains.
+    """
+    from sklearn.model_selection import train_test_split
+
+    n_val = max(1, int(round(len(df) * _VALIDATION_FRACTION)))
+    positions = list(range(len(df)))
+    try:
+        _, val_pos = train_test_split(
+            positions, test_size=n_val, random_state=random_seed, stratify=df[target],
+        )
+    except ValueError:
+        _, val_pos = train_test_split(positions, test_size=n_val, random_state=random_seed)
+    split = pd.Series(0, index=range(len(df)), dtype="int8")
+    split.iloc[list(val_pos)] = 1
+    df = df.copy()
+    df[_SPLIT_COLUMN] = split.to_numpy()
+    config = copy.deepcopy(config)
+    preprocessing = config.setdefault("preprocessing", {})
+    preprocessing["split"] = {"type": "fixed", "column": _SPLIT_COLUMN}
+    return df, config
 
 
 def _binary_output_mapping(df: pd.DataFrame, target: str, pred_series: pd.Series):
@@ -1061,6 +1097,9 @@ class LudwigBackend(AutoMLBackend):
             # values (see _build_predictions_frame(test_df, ...)), not this
             # remapped encoding.
             train_df_ludwig = _normalize_binary_columns(train_df, config)
+            # Test set already held out: hand Ludwig a ready train/validation
+            # split (see _with_fixed_split) instead of letting it re-split 70/10/20.
+            train_df_ludwig, config = _with_fixed_split(train_df_ludwig, target, config, random_seed)
 
             results = train_with_config(
                 dataset=train_df_ludwig,
@@ -1216,6 +1255,9 @@ class LudwigBackend(AutoMLBackend):
             # (e.g. from "duplicate this model") carry their own declared
             # output feature types and are just as exposed to Ludwig's
             # numeric-binary-cast blind spot as an auto-generated config.
+            train_ludwig, config = _with_fixed_split(
+                _normalize_binary_columns(train_df, config), target, config, random_seed,
+            )
             model = LudwigModel(config=config, backend="local")
             # LudwigModel.train() writes its run artifacts to "results"
             # relative to the current directory unless told otherwise, which
@@ -1225,7 +1267,7 @@ class LudwigBackend(AutoMLBackend):
             train_kwargs = {}
             if output_directory:
                 train_kwargs["output_directory"] = os.path.join(output_directory, "config_runs")
-            model.train(dataset=_normalize_binary_columns(train_df, config), **train_kwargs)
+            model.train(dataset=train_ludwig, **train_kwargs)
         except Exception as exc:
             raise RuntimeError(f"Ludwig training with fixed config failed: {exc}") from exc
 
